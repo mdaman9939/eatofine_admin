@@ -24,7 +24,7 @@ export default async function WithdrawRequestsPage() {
       columns={[
         { header: "#", cell: (r) => r.id, className: "font-mono" },
         { header: "Requester", cell: (r) => r.vendor_id ? `vendor #${r.vendor_id}` : r.delivery_man_id ? `DM #${r.delivery_man_id}` : "—" },
-        { header: "Amount", cell: (r) => `₹${r.amount.toFixed(2)}` },
+        { header: "Amount", cell: (r) => `₹${Number(r.amount ?? 0).toFixed(2)}` },
         { header: "Type", cell: (r) => r.type },
         { header: "Status", cell: (r) => <span className={`text-xs ${r.approved ? "text-emerald-600" : "text-amber-600"}`}>{r.approved ? "approved" : "pending"}</span> },
         { header: "Note", cell: (r) => <span className="text-xs">{r.transaction_note ?? ""}</span> },

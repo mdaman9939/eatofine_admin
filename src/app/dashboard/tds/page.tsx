@@ -26,6 +26,19 @@ export default async function TDSPage({ searchParams }: { searchParams: Promise<
   if (sp.threshold) qs.push(`threshold=${sp.threshold}`);
   const data = await adminFetch<TDSReport>(`/admin/tds/report${qs.length ? `?${qs.join("&")}` : ""}`);
 
+  // Coerce numeric fields — MongoDB returns null for absent values.
+  data.tds_rate = Number(data.tds_rate ?? 0);
+  data.threshold = Number(data.threshold ?? 0);
+  for (const r of data.rows ?? []) {
+    r.orders = Number(r.orders ?? 0);
+    r.gross_payout = Number(r.gross_payout ?? 0);
+    r.admin_commission_pct = Number(r.admin_commission_pct ?? 0);
+    r.admin_cut = Number(r.admin_cut ?? 0);
+    r.net_vendor_payout = Number(r.net_vendor_payout ?? 0);
+    r.tds_amount = Number(r.tds_amount ?? 0);
+    r.final_disbursement = Number(r.final_disbursement ?? 0);
+  }
+
   const totals = data.rows.reduce(
     (acc, r) => ({
       orders: acc.orders + r.orders,

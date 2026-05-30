@@ -15,10 +15,17 @@ export function ImageUpload({
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const NODE_PUBLIC =
-    typeof window !== "undefined"
-      ? `${window.location.protocol}//${window.location.hostname}:3000`
-      : "http://127.0.0.1:3000";
+  // Use NEXT_PUBLIC_API_BASE_URL when present (production), otherwise
+  // assume the dev server is on the same host port 3000. Strip the trailing
+  // `/api/v1` if present so we end up with the backend's origin.
+  const NODE_PUBLIC = (() => {
+    const envBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (envBase) return envBase.replace(/\/api\/v1\/?$/, '');
+    if (typeof window !== 'undefined') {
+      return `${window.location.protocol}//${window.location.hostname}:3000`;
+    }
+    return 'https://eatofine-backend.onrender.com';
+  })();
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];

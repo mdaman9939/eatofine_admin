@@ -57,8 +57,13 @@ export function SettingsEditor({ initial }: { initial: Setting[] }) {
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
       <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 divide-y divide-zinc-100 dark:divide-zinc-700">
         {initial.map((s) => {
-          const isLong = (s.value ?? "").length > 80 || (s.value ?? "").includes("\n");
-          const current = dirty[s.key] !== undefined ? dirty[s.key] : s.value ?? "";
+          // MongoDB may return values as numbers, objects, or null. Coerce to
+          // string so the input/textarea + length/includes calls don't crash.
+          const safeValue = s.value === null || s.value === undefined
+            ? ""
+            : typeof s.value === "string" ? s.value : String(s.value);
+          const isLong = safeValue.length > 80 || safeValue.includes("\n");
+          const current = dirty[s.key] !== undefined ? dirty[s.key] : safeValue;
           return (
             <div key={s.key} className="px-4 py-3 flex flex-col md:flex-row md:items-start gap-3">
               <div className="md:w-1/3 break-all">

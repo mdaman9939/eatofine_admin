@@ -16,6 +16,10 @@ interface TdsSettings {
 export default async function TdsSettingsPage() {
   const settings = await adminFetch<TdsSettings>("/admin/tds/settings");
 
+  // Coerce numeric fields — MongoDB returns null for absent values.
+  settings.default_rate = Number(settings.default_rate ?? 0);
+  settings.threshold = Number(settings.threshold ?? 0);
+
   return (
     <div className="relative p-8 space-y-6">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.06),transparent_60%)]" />

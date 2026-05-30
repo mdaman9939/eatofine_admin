@@ -22,6 +22,12 @@ const PIE_COLORS = ["#10B981", "#14B8A6", "#22C55E", "#06B6D4", "#84CC16", "#0EA
 export default async function AdditionalChargesPage() {
   const charges = await adminFetch<Charge[]>("/admin/additional-charges");
 
+  // Coerce numeric fields — MongoDB returns null for absent values.
+  for (const c of charges) {
+    c.amount = Number(c.amount ?? 0);
+    c.gst_rate = Number(c.gst_rate ?? 0);
+  }
+
   const active = charges.filter((c) => c.status);
   const activeCount = active.length;
   const totalFixed = active

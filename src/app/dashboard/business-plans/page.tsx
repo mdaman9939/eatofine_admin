@@ -20,6 +20,16 @@ interface Slab {
 export default async function BusinessPlansPage() {
   const slabs = await adminFetch<Slab[]>("/admin/business-plans/slabs");
 
+  // MongoDB returns null for absent numeric fields. Coerce everything to a
+  // safe number so `.toFixed()` / arithmetic don't blow up downstream.
+  for (const s of slabs) {
+    s.min_order_value = Number(s.min_order_value ?? 0);
+    s.max_order_value = Number(s.max_order_value ?? 0);
+    s.fixed_charge = Number(s.fixed_charge ?? 0);
+    s.extra_charge = Number(s.extra_charge ?? 0);
+    s.gst_rate = Number(s.gst_rate ?? 0);
+  }
+
   const activeSlabs = slabs.filter((s) => s.status).length;
   const avgFixed = slabs.length ? slabs.reduce((a, s) => a + s.fixed_charge, 0) / slabs.length : 0;
   const avgGst = slabs.length ? slabs.reduce((a, s) => a + s.gst_rate, 0) / slabs.length : 0;

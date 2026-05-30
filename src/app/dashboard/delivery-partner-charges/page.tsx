@@ -38,6 +38,17 @@ export default async function DeliveryPartnerChargesPage() {
     adminFetch<Surcharge[]>("/admin/dm-charges/surcharges"),
   ]);
 
+  // Coerce numeric fields — MongoDB returns null for absent values.
+  for (const s of slabs) {
+    s.min_km = Number(s.min_km ?? 0);
+    s.max_km = Number(s.max_km ?? 0);
+    s.base_charge = Number(s.base_charge ?? 0);
+    s.extra_per_km = Number(s.extra_per_km ?? 0);
+  }
+  for (const sc of surcharges) {
+    sc.amount = Number(sc.amount ?? 0);
+  }
+
   const sortedSlabs = [...slabs].sort((a, b) => a.min_km - b.min_km);
   const activeSlabs = slabs.filter((s) => s.status);
   const minKm = activeSlabs.length ? Math.min(...activeSlabs.map((s) => s.min_km)) : 0;

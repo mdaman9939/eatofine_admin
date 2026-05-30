@@ -48,6 +48,12 @@ export default async function RefundsPage() {
   const data = await adminFetch<{ total: number; items: Refund[] }>("/admin/refunds?limit=100");
   const refunds = data.items;
 
+  // Normalise all numeric fields — MongoDB returns null/string for some rows
+  // where Prisma used to coerce Decimal → number. Guard every reducer/format.
+  for (const r of refunds) {
+    r.refund_amount = Number(r.refund_amount ?? 0);
+  }
+
   const pendingCount = refunds.filter((r) => r.refund_status === "pending").length;
   const approvedCount = refunds.filter((r) => r.refund_status === "approved").length;
   const completedCount = refunds.filter((r) => r.refund_status === "completed").length;
@@ -164,7 +170,7 @@ export default async function RefundsPage() {
                     )}
                   </td>
                   <td className="px-4 py-4 text-right tabular-nums font-semibold text-slate-900">
-                    ₹{r.refund_amount.toFixed(2)}
+                    ₹{Number(r.refund_amount ?? 0).toFixed(2)}
                   </td>
                   <td className="px-4 py-4">
                     <MethodPill method={r.refund_method} />

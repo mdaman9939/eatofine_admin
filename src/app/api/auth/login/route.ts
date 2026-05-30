@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const API_URL = process.env.NODE_API_URL ?? "http://127.0.0.1:3000/api/v1";
+const API_URL = process.env.NODE_API_URL ?? "https://eatofine-backend.onrender.com/api/v1";
 const COOKIE_NAME = process.env.ADMIN_COOKIE_NAME ?? "eatofine_admin_token";
 
 export async function POST(req: Request) {
