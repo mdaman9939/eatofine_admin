@@ -522,7 +522,7 @@ function RevenueChart({ series }: { series: SalesPoint[] }) {
       {points.map((p, i) => (
         <g key={i}>
           <circle cx={p.x} cy={p.y} r={4} fill="white" stroke="#10B981" strokeWidth={2} />
-          <title>{p.day}: ₹{inrNumber(p.rev)}</title>
+          <title>{`${p.day}: ₹${inrNumber(p.rev)}`}</title>
         </g>
       ))}
       {/* X-axis labels (sparse) */}
