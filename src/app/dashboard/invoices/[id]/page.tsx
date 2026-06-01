@@ -5,11 +5,20 @@ interface Invoice {
   invoice_no: string;
   issued_on: string | null;
   bill_from: { name: string; address: string; gstin: string; state: string; state_code: string };
-  bill_to: { name: string; email: string | null; phone: string | null; address: string | null };
+  // `address` may be a plain string, or — for Mongo orders migrated from the
+  // old MySQL schema — an object { address, latitude, longitude }. Coerce to
+  // string at render time so React doesn't blow up on the object shape.
+  bill_to: { name: string; email: string | null; phone: string | null; address: string | { address?: string; formatted?: string } | null };
   items: Array<{ id: number; name: string; hsn: string; qty: number; unit_price: number; subtotal: number; tax: number }>;
   summary: { subtotal: number; delivery_charge: number; tax_total: number; cgst: number; sgst: number; igst: number; grand_total: number };
   payment_method: string | null;
   payment_status: string;
+}
+
+function formatAddress(value: Invoice["bill_to"]["address"]): string {
+  if (value == null) return "—";
+  if (typeof value === "string") return value;
+  return value.address ?? value.formatted ?? "—";
 }
 
 export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -50,7 +59,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <div className="font-semibold text-slate-800">{inv.bill_to.name}</div>
             <div className="text-sm text-slate-600">{inv.bill_to.email}</div>
             <div className="text-sm text-slate-600">{inv.bill_to.phone}</div>
-            <div className="text-xs text-slate-500 mt-1">{inv.bill_to.address}</div>
+            <div className="text-xs text-slate-500 mt-1">{formatAddress(inv.bill_to.address)}</div>
           </div>
         </div>
 

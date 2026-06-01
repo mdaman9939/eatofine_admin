@@ -30,7 +30,15 @@ interface DocStats {
   total: number;
 }
 
-const STORAGE_BASE = "http://192.168.0.159:3000/storage/document/";
+// Resolve the backend's storage origin from the same env var the API base
+// URL uses (strip the `/api/v1` suffix). Falls back to localhost for dev.
+function resolveStorageBase(): string {
+  const api = process.env.NEXT_PUBLIC_API_BASE_URL
+    ?? process.env.NODE_API_URL
+    ?? "http://127.0.0.1:3000/api/v1";
+  return api.replace(/\/api\/v1\/?$/, "") + "/storage/document/";
+}
+const STORAGE_BASE = resolveStorageBase();
 
 const OWNER_LABEL: Record<string, string> = {
   vendor: "Vendor",

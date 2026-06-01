@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-const API_URL = process.env.NODE_API_URL ?? "https://eatofine-backend.onrender.com/api/v1";
+const API_URL = process.env.NODE_API_URL ?? "http://127.0.0.1:3000/api/v1";
 const COOKIE_NAME = process.env.ADMIN_COOKIE_NAME ?? "eatofine_admin_token";
+const IS_PROD = process.env.NODE_ENV === "production";
 
 export async function POST(req: Request) {
   let body: { email?: string; password?: string };
@@ -34,6 +35,8 @@ export async function POST(req: Request) {
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 12,
+    // Set `secure` in production so browsers refuse to send the cookie over plain HTTP.
+    secure: IS_PROD,
   });
   return res;
 }

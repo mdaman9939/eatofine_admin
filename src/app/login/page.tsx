@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // error.tsx redirects here with `?reason=session_expired` when the JWT
+  // is rejected — show the user *why* they're back on the login screen
+  // instead of silently kicking them out.
+  const sessionExpired = searchParams?.get("reason") === "session_expired";
   const [email, setEmail] = useState("admin@admin.com");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -61,6 +66,15 @@ export default function LoginPage() {
             <h2 className="text-xl font-bold text-slate-900">Welcome back</h2>
             <p className="text-xs text-slate-500 mt-1">Use your administrator credentials to continue.</p>
           </div>
+
+          {sessionExpired && !error && (
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+              <svg className="w-4 h-4 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-xs font-medium">Your session expired. Please sign in again.</p>
+            </div>
+          )}
 
           <label className="block">
             <span className="text-xs font-semibold text-slate-700 tracking-wide uppercase">Email</span>
@@ -165,5 +179,15 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+// useSearchParams() requires a Suspense boundary in Next 15+, otherwise the
+// page bails out of static rendering with a build warning.
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

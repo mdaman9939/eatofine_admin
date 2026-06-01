@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "regions": ["bom1"],
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "env": {
+    "NODE_API_URL": "@node_api_url",
+    "NEXT_PUBLIC_API_BASE_URL": "@next_public_api_base_url",
+    "ADMIN_COOKIE_NAME": "@admin_cookie_name"
+  },
+  "build": {
+    "env": {
+      "NODE_API_URL": "@node_api_url",
+      "NEXT_PUBLIC_API_BASE_URL": "@next_public_api_base_url",
+      "ADMIN_COOKIE_NAME": "@admin_cookie_name"
+    }
+  }
+}
