@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  devIndicators: false,
   // Allow `next/image` to load images served by the backend (local + deployed).
   images: {
     remotePatterns: [

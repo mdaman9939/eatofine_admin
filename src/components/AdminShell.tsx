@@ -59,12 +59,16 @@ export function AdminShell({
   fullName,
   role,
   email = "admin@admin.com",
+  brandName,
+  tagline,
   children,
 }: {
   nav: NavGroup[];
   fullName: string;
   role: string;
   email?: string;
+  brandName?: string;
+  tagline?: string;
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -136,11 +140,11 @@ export function AdminShell({
           {/* Brand block */}
           <div className="px-5 pt-6 pb-5 border-b border-white/10 flex items-center gap-3 shrink-0">
             <div className="w-11 h-11 rounded-xl bg-white/10 backdrop-blur-md ring-1 ring-white/20 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.4)] flex items-center justify-center text-white font-bold text-lg shrink-0">
-              E
+              {(brandName ?? "E").charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <div className="text-[15px] font-semibold tracking-tight text-white leading-tight truncate">Eatofine</div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-white/55 font-medium mt-0.5">Admin Panel</div>
+              <div className="text-[15px] font-semibold tracking-tight text-white leading-tight truncate">{brandName ?? "Eatofine"}</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-white/55 font-medium mt-0.5">{tagline ?? "Admin Panel"}</div>
             </div>
           </div>
 

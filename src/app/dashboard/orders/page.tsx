@@ -18,7 +18,21 @@ interface OrdersResponse {
   }>;
 }
 
-const FILTERS = ["", "pending", "confirmed", "accepted", "processing", "handover", "picked_up", "delivered", "canceled"];
+const FILTERS = [
+  "",
+  "scheduled",
+  "pending",
+  "confirmed",
+  "accepted",
+  "processing",
+  "handover",
+  "picked_up",
+  "delivered",
+  "canceled",
+  "refunded",
+  "offline_payment",
+  "payment_failed",
+];
 
 const STATUS_PILL: Record<string, { tone: string; dot: string; label: string }> = {
   pending:    { tone: "bg-amber-50 text-amber-700 border-amber-200",      dot: "bg-amber-500",     label: "Pending" },
@@ -30,6 +44,10 @@ const STATUS_PILL: Record<string, { tone: string; dot: string; label: string }> 
   delivered:  { tone: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]", label: "Delivered" },
   canceled:   { tone: "bg-rose-50 text-rose-700 border-rose-200",         dot: "bg-rose-500",      label: "Canceled" },
   failed:     { tone: "bg-rose-50 text-rose-700 border-rose-200",         dot: "bg-rose-500",      label: "Failed" },
+  scheduled:  { tone: "bg-purple-50 text-purple-700 border-purple-200",   dot: "bg-purple-500",    label: "Scheduled" },
+  refunded:   { tone: "bg-orange-50 text-orange-700 border-orange-200",   dot: "bg-orange-500",    label: "Refunded" },
+  offline_payment: { tone: "bg-slate-100 text-slate-700 border-slate-300", dot: "bg-slate-500",    label: "Offline pay" },
+  payment_failed:  { tone: "bg-rose-50 text-rose-700 border-rose-200",   dot: "bg-rose-500",       label: "Payment failed" },
 };
 
 export default async function OrdersPage({

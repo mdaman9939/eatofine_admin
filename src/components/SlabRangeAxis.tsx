@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Slab {
   id: number;
@@ -32,11 +32,36 @@ const SLAB_COLORS: Array<{ bar: string; hex: string }> = [
 
 export function SlabRangeAxis({ slabs }: { slabs: Slab[] }) {
   const [hoverId, setHoverId] = useState<number | null>(null);
+  // Render only after mount. Number formatting (toLocaleString("en-IN"))
+  // can differ between Node and the browser when ICU data is partial,
+  // which trips React's hydration check. Server renders the skeleton;
+  // client swaps to the real chart after first paint.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const active = slabs.filter((s) => s.status).sort((a, b) => a.min_order_value - b.min_order_value);
 
   if (active.length === 0) {
     return null;
+  }
+
+  if (!mounted) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100">
+          <div className="h-5 w-32 bg-slate-100 rounded animate-pulse" />
+          <div className="h-3 w-64 bg-slate-100 rounded animate-pulse mt-2" />
+        </div>
+        <div className="px-6 py-6">
+          <div className="h-10 bg-slate-100 rounded-full animate-pulse" />
+          <div className="flex justify-between mt-3">
+            <div className="h-3 w-12 bg-slate-100 rounded animate-pulse" />
+            <div className="h-3 w-12 bg-slate-100 rounded animate-pulse" />
+            <div className="h-3 w-12 bg-slate-100 rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const minVal = Math.min(...active.map((s) => s.min_order_value));

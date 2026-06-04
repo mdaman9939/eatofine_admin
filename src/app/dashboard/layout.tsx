@@ -1,18 +1,104 @@
 import { redirect } from "next/navigation";
-import { getAdminToken } from "../../lib/api";
+import { getAdminToken, adminFetch } from "../../lib/api";
 import { AdminShell, type NavGroup } from "../../components/AdminShell";
+
+/** Read theme/addon/flag settings and surface them as:
+ *   - `theme`: { primary_color, secondary_color, … } for CSS variables
+ *   - `disabledAddons`: a Set of addon keys whose `.enabled` is false → used
+ *      to hide sidebar menu items.
+ *   - `disabledFlags`: same for feature flags. */
+async function loadShellSettings() {
+  try {
+    const [theme, addons, flags, branding] = await Promise.all([
+      adminFetch<{ settings: Array<{ key: string; value: string | null }> }>("/admin/business-settings?prefix=theme."),
+      adminFetch<{ settings: Array<{ key: string; value: string | null }> }>("/admin/business-settings?prefix=addon."),
+      adminFetch<{ settings: Array<{ key: string; value: string | null }> }>("/admin/business-settings?prefix=flag."),
+      adminFetch<{ settings: Array<{ key: string; value: string | null }> }>("/admin/business-settings?prefix=invoice."),
+    ]);
+    const themeMap = new Map(theme.settings.map((s) => [s.key, s.value]));
+    const isTrue = (v: string | null | undefined) => /^(true|1|yes|on)$/i.test((v ?? "").trim());
+
+    const disabledAddons = new Set<string>();
+    for (const s of addons.settings) {
+      const m = s.key.match(/^addon\.([^.]+)\.enabled$/);
+      if (m && !isTrue(s.value)) disabledAddons.add(m[1]);
+    }
+    const disabledFlags = new Set<string>();
+    for (const s of flags.settings) {
+      const m = s.key.match(/^flag\.([^.]+)\.enabled$/);
+      if (m && !isTrue(s.value)) disabledFlags.add(m[1]);
+    }
+    const brandName = new Map(branding.settings.map((s) => [s.key, s.value])).get("invoice.short_name");
+    return {
+      theme: {
+        primary: themeMap.get("theme.primary_color") ?? "#10b981",
+        secondary: themeMap.get("theme.secondary_color") ?? "#0f766e",
+        danger: themeMap.get("theme.danger_color") ?? "#e11d48",
+        appPrimary: themeMap.get("theme.app_primary") ?? "#f97316",
+      },
+      brandName: brandName || themeMap.get("theme.brand_name") || "Eatofine",
+      tagline: themeMap.get("theme.tagline") ?? "Admin Panel",
+      disabledAddons,
+      disabledFlags,
+    };
+  } catch {
+    return {
+      theme: { primary: "#10b981", secondary: "#0f766e", danger: "#e11d48", appPrimary: "#f97316" },
+      brandName: "Eatofine",
+      tagline: "Admin Panel",
+      disabledAddons: new Set<string>(),
+      disabledFlags: new Set<string>(),
+    };
+  }
+}
+
+/** Sidebar items keyed by addon/feature name — when an addon is disabled
+ *  in settings, the corresponding menu entry is removed before rendering. */
+const ADDON_GATED_HREFS: Record<string, string[]> = {
+  subscription: ["/dashboard/subscription-orders", "/dashboard/subscription-packages"],
+  loyalty: ["/dashboard/loyalty-points"],
+  openai: [],
+  multi_currency: ["/dashboard/currencies"],
+  advanced_tax: ["/dashboard/tax-engine"],
+  referral: [],
+  gift_cards: [],
+  tipping: [],
+};
+
+function filterNav(nav: NavGroup[], disabledAddons: Set<string>): NavGroup[] {
+  // Collect every href to hide based on disabled addons.
+  const hiddenHrefs = new Set<string>();
+  for (const addonKey of disabledAddons) {
+    for (const href of ADDON_GATED_HREFS[addonKey] ?? []) hiddenHrefs.add(href);
+  }
+  if (hiddenHrefs.size === 0) return nav;
+
+  return nav.map((g) => ({
+    ...g,
+    items: g.items
+      .filter((i) => !hiddenHrefs.has(i.href))
+      .map((i) => ({
+        ...i,
+        children: i.children?.filter((c) => !hiddenHrefs.has(c.href)),
+      }))
+      .filter((i) => !i.children || i.children.length > 0 || !i.href.startsWith("#")),
+  })).filter((g) => g.items.length > 0);
+}
 
 const NAV: NavGroup[] = [
   {
     section: null,
     items: [
       { href: "/dashboard", label: "Dashboard", icon: "home" },
+      { href: "/dashboard/pos", label: "POS", icon: "cart" },
     ],
   },
   {
     section: "ORDER MANAGEMENT",
     items: [
       { href: "/dashboard/orders", label: "Orders", icon: "orders" },
+      { href: "/dashboard/subscription-orders", label: "Subscription Orders", icon: "calendar" },
+      { href: "/dashboard/dispatch", label: "Dispatch", icon: "compass" },
       { href: "/dashboard/refunds", label: "Order Refunds", icon: "refunds" },
       {
         href: "#order-reasons",
@@ -30,14 +116,34 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/dashboard/zones", label: "Zone Setup", icon: "zone" },
       { href: "/dashboard/cuisines", label: "Cuisine", icon: "cuisine" },
-      { href: "/dashboard/restaurants", label: "Restaurants", icon: "restaurant" },
+      {
+        href: "#restaurants-group",
+        label: "Restaurants",
+        icon: "restaurant",
+        children: [
+          { href: "/dashboard/restaurants", label: "All Restaurants", icon: "restaurant" },
+          { href: "/dashboard/restaurants/add", label: "Add New", icon: "addon" },
+          { href: "/dashboard/restaurants-pending", label: "Joining Requests", icon: "shield" },
+          { href: "/dashboard/restaurants/bulk", label: "Bulk Import / Export", icon: "ledger" },
+        ],
+      },
       { href: "/dashboard/vendors", label: "Vendors", icon: "vendor" },
     ],
   },
   {
     section: "FOOD MANAGEMENT",
     items: [
-      { href: "/dashboard/food", label: "Foods", icon: "food" },
+      {
+        href: "#food-group",
+        label: "Foods",
+        icon: "food",
+        children: [
+          { href: "/dashboard/food", label: "All Foods", icon: "food" },
+          { href: "/dashboard/food/add", label: "Add New", icon: "addon" },
+          { href: "/dashboard/reviews", label: "Reviews", icon: "star" },
+          { href: "/dashboard/food/bulk", label: "Bulk Import / Export", icon: "ledger" },
+        ],
+      },
       { href: "/dashboard/categories", label: "Categories", icon: "category" },
       {
         href: "#addons",
@@ -70,6 +176,7 @@ const NAV: NavGroup[] = [
         icon: "banner",
         children: [
           { href: "/dashboard/banners", label: "Banners", icon: "banner" },
+          { href: "/dashboard/promotional-banners", label: "Promotional Banners", icon: "banner" },
           { href: "/dashboard/advertisements", label: "Advertisements", icon: "ads" },
         ],
       },
@@ -98,6 +205,7 @@ const NAV: NavGroup[] = [
         children: [
           { href: "/dashboard/tax-engine", label: "GST Engine", icon: "tax" },
           { href: "/dashboard/invoices", label: "Tax Invoices", icon: "invoice" },
+          { href: "/dashboard/invoice-setup", label: "Invoice Setup", icon: "settings" },
         ],
       },
       {
@@ -148,8 +256,29 @@ const NAV: NavGroup[] = [
   {
     section: "USER MANAGEMENT",
     items: [
-      { href: "/dashboard/users", label: "Customers", icon: "user" },
-      { href: "/dashboard/delivery-men", label: "Delivery Men", icon: "bike" },
+      {
+        href: "#customers-group",
+        label: "Customers",
+        icon: "user",
+        children: [
+          { href: "/dashboard/users", label: "All Customers", icon: "user" },
+          { href: "/dashboard/customer-wallet-fund", label: "Add Wallet Fund", icon: "wallet" },
+          { href: "/dashboard/newsletter", label: "Newsletter Subscribers", icon: "comment" },
+        ],
+      },
+      {
+        href: "#delivery-men-group",
+        label: "Delivery Men",
+        icon: "bike",
+        children: [
+          { href: "/dashboard/delivery-men", label: "All Delivery Men", icon: "bike" },
+          { href: "/dashboard/delivery-men/add", label: "Add New", icon: "addon" },
+          { href: "/dashboard/delivery-men-pending", label: "Joining Requests", icon: "shield" },
+          { href: "/dashboard/dm-bonuses", label: "Bonuses", icon: "star" },
+          { href: "/dashboard/dm-incentives", label: "Incentives", icon: "currency" },
+          { href: "/dashboard/dm-reviews", label: "Reviews", icon: "star" },
+        ],
+      },
       {
         href: "#staff",
         label: "Staff",
@@ -171,6 +300,7 @@ const NAV: NavGroup[] = [
         children: [
           { href: "/dashboard/account-transactions", label: "Account Transactions", icon: "transactions" },
           { href: "/dashboard/wallet-transactions", label: "Wallet Ledger", icon: "ledger" },
+          { href: "/dashboard/wallet-ledger", label: "Refund Wallet Audit", icon: "ledger" },
         ],
       },
       {
@@ -219,19 +349,56 @@ const NAV: NavGroup[] = [
     ],
   },
   {
-    section: "SYSTEM",
+    section: "CONTENT",
     items: [
-      { href: "/dashboard/reports", label: "Reports", icon: "chart" },
-      { href: "/dashboard/business-settings", label: "Business Settings", icon: "settings" },
-      { href: "/dashboard/subscription-packages", label: "Subscription Packages", icon: "package" },
+      { href: "/dashboard/pages", label: "Pages (T&C, Privacy…)", icon: "comment" },
+      { href: "/dashboard/landing-page", label: "Landing Page", icon: "home" },
+      { href: "/dashboard/email-templates", label: "Email Templates", icon: "comment" },
       {
-        href: "#sys-content",
-        label: "Content",
-        icon: "comment",
+        href: "#cms-misc",
+        label: "Marketing",
+        icon: "share",
         children: [
           { href: "/dashboard/faqs", label: "FAQs", icon: "faq" },
           { href: "/dashboard/page-seo", label: "Page SEO", icon: "seo" },
           { href: "/dashboard/social-media", label: "Social Media", icon: "share" },
+        ],
+      },
+    ],
+  },
+  {
+    section: "SYSTEM",
+    items: [
+      {
+        href: "#reports-group",
+        label: "Reports",
+        icon: "chart",
+        children: [
+          { href: "/dashboard/reports", label: "Overview", icon: "chart" },
+          { href: "/dashboard/reports/transaction", label: "Transaction", icon: "transactions" },
+          { href: "/dashboard/reports/expense", label: "Expense", icon: "currency" },
+          { href: "/dashboard/reports/disbursement", label: "Disbursement", icon: "bank" },
+          { href: "/dashboard/reports/food", label: "Food", icon: "food" },
+          { href: "/dashboard/reports/order", label: "Order", icon: "orders" },
+          { href: "/dashboard/reports/restaurant", label: "Restaurant", icon: "restaurant" },
+          { href: "/dashboard/reports/customer", label: "Customer", icon: "user" },
+          { href: "/dashboard/reports/tax", label: "Tax", icon: "tax" },
+          { href: "/dashboard/reports/admin-earning", label: "Admin Earning", icon: "currency" },
+          { href: "/dashboard/reports/restaurant-earning", label: "Restaurant Earning", icon: "currency" },
+          { href: "/dashboard/reports/deliveryman-earning", label: "Deliveryman Earning", icon: "currency" },
+        ],
+      },
+      { href: "/dashboard/business-settings", label: "Business Settings", icon: "settings" },
+      { href: "/dashboard/theme-settings", label: "Theme Settings", icon: "settings" },
+      { href: "/dashboard/login-setup", label: "Login Setup", icon: "shield" },
+      { href: "/dashboard/app-settings", label: "App & Web Settings", icon: "settings" },
+      {
+        href: "#sys-notifications",
+        label: "Notifications",
+        icon: "bell",
+        children: [
+          { href: "/dashboard/notification-channels", label: "Channels", icon: "bell" },
+          { href: "/dashboard/notification-messages", label: "Messages", icon: "comment" },
         ],
       },
       {
@@ -243,6 +410,20 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/translations", label: "Translations", icon: "translate" },
         ],
       },
+      {
+        href: "#sys-integrations",
+        label: "Integrations",
+        icon: "settings",
+        children: [
+          { href: "/dashboard/payment-gateways", label: "Payment Gateways", icon: "card" },
+          { href: "/dashboard/gallery", label: "Gallery / Files", icon: "settings" },
+        ],
+      },
+      { href: "/dashboard/subscription-packages", label: "Subscription Packages", icon: "package" },
+      { href: "/dashboard/system-addons", label: "System Addons", icon: "settings" },
+      { href: "/dashboard/addon-activation", label: "Addon Activation", icon: "settings" },
+      { href: "/dashboard/activity-log", label: "Activity Log", icon: "history" },
+      { href: "/dashboard/clean-database", label: "Clean Database", icon: "cancel" },
     ],
   },
 ];
@@ -251,9 +432,33 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const token = await getAdminToken();
   if (!token) redirect("/login");
 
+  // Pull theme + addon gating from settings — applied on every nav render.
+  const settings = await loadShellSettings();
+  const filteredNav = filterNav(NAV, settings.disabledAddons);
+
+  // Inject as inline CSS variables so existing utility classes pick them up.
+  // The classes `bg-emerald-X` etc. already point at these vars via tailwind
+  // theme; this overrides per-instance for the dashboard scope.
+  const themeStyle = `:root {
+    --color-primary: ${settings.theme.primary};
+    --color-secondary: ${settings.theme.secondary};
+    --color-danger: ${settings.theme.danger};
+    --color-app-primary: ${settings.theme.appPrimary};
+  }`;
+
   return (
-    <AdminShell nav={NAV} fullName="Super Admin" role="Administrator" email="admin@admin.com">
-      {children}
-    </AdminShell>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: themeStyle }} />
+      <AdminShell
+        nav={filteredNav}
+        fullName="Super Admin"
+        role="Administrator"
+        email="admin@admin.com"
+        brandName={settings.brandName}
+        tagline={settings.tagline}
+      >
+        {children}
+      </AdminShell>
+    </>
   );
 }

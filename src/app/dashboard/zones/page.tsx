@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
-import { ToggleStatusButton } from "../../../components/ActionButton";
+import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { CreateForm } from "../../../components/CreateForm";
 
 interface Zone {
   id: number;
@@ -63,6 +64,20 @@ export default async function ZonesPage() {
               <div className="text-lg font-bold tabular-nums">{zones.length} {zones.length === 1 ? "zone" : "zones"}</div>
               <div className="text-[11px] text-white/70">{totalRestaurants} restaurants on platform</div>
             </div>
+            <CreateForm
+              path="/zones"
+              title="New zone"
+              fields={[
+                { name: "name", label: "Zone name", type: "text", required: true, placeholder: "e.g. Bengaluru / Whitefield" },
+                { name: "display_name", label: "Display name (optional)", type: "text", placeholder: "Customer-facing label" },
+                { name: "minimum_shipping_charge", label: "Min ship ₹", type: "number", required: true, defaultValue: 20 },
+                { name: "per_km_shipping_charge", label: "Per-km charge ₹", type: "number", required: true, defaultValue: 6 },
+                { name: "maximum_shipping_charge", label: "Max ship cap ₹", type: "number", required: true, defaultValue: 200 },
+                { name: "minimum_delivery_time", label: "Min ETA (minutes)", type: "number", required: true, defaultValue: 30 },
+                { name: "max_cod_order_amount", label: "Max COD order ₹", type: "number", defaultValue: 5000 },
+                { name: "is_default", label: "Set as default zone", type: "checkbox" },
+              ]}
+            />
           </div>
         </div>
       </div>
@@ -198,7 +213,10 @@ export default async function ZonesPage() {
                       <StatusPill active={z.status} />
                     </td>
                     <td className="px-4 py-4 text-right">
-                      <ToggleStatusButton basePath="/zones" id={z.id} currentStatus={z.status} />
+                      <span className="inline-flex gap-2">
+                        <ToggleStatusButton basePath="/zones" id={z.id} currentStatus={z.status} />
+                        {!z.is_default && <DeleteButton basePath="/zones" id={z.id} />}
+                      </span>
                     </td>
                   </tr>
                 );

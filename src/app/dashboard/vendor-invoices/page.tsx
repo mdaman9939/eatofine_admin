@@ -108,7 +108,11 @@ export default async function VendorInvoicesPage() {
     return (
       <tr key={r.id} className="hover:bg-emerald-50/40 transition-colors align-top">
         <td className="px-4 py-4 font-mono text-xs text-slate-400 w-14">#{r.id}</td>
-        <td className="px-4 py-4 font-mono text-[13px] text-slate-800 font-semibold">{r.invoice_number}</td>
+        <td className="px-4 py-4 font-mono text-[13px] text-slate-800 font-semibold">
+          <a href={`/dashboard/vendor-invoices/${r.id}`} className="text-emerald-700 hover:underline">
+            {r.invoice_number}
+          </a>
+        </td>
         <td className="px-4 py-4">
           <div className="font-semibold text-slate-900 truncate max-w-[16rem]">
             {r.vendor_name?.trim() || `Vendor #${r.vendor_id}`}

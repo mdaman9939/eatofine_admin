@@ -14,7 +14,18 @@ interface Slab {
   gst_rate: number;
   gst_on_extra: boolean;
   effective_from: string | null;
+  created_at: string | null;
   status: boolean;
+}
+
+/** Show a money amount without trailing zeros — whole numbers stay clean
+ *  (₹500, not ₹500.00) while fractional amounts keep their decimals
+ *  (₹102.45 stays ₹102.45). Avoids losing precision when the admin enters
+ *  a slab boundary like 102.45 / 452.45. */
+function money(n: number): string {
+  if (!Number.isFinite(n)) return "0";
+  // %1 === 0 → integer. Use 0 decimals; otherwise up to 2 decimals.
+  return n % 1 === 0 ? n.toFixed(0) : n.toFixed(2);
 }
 
 export default async function BusinessPlansPage() {
@@ -127,7 +138,7 @@ export default async function BusinessPlansPage() {
                 <th className="px-6 py-3 font-semibold">#</th>
                 <th className="px-4 py-3 font-semibold w-[28%]">Range</th>
                 <th className="px-4 py-3 font-semibold text-right">Fixed</th>
-                <th className="px-4 py-3 font-semibold text-right">Extra</th>
+                <th className="px-4 py-3 font-semibold text-right">Extra %</th>
                 <th className="px-4 py-3 font-semibold text-right">GST</th>
                 <th className="px-4 py-3 font-semibold">GST basis</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
@@ -139,23 +150,35 @@ export default async function BusinessPlansPage() {
                 <tr key={s.id} className="hover:bg-emerald-50/40 transition-colors align-top">
                   <td className="px-6 py-4">
                     <div className="font-mono text-xs text-slate-400">#{s.id}</div>
-                    {s.effective_from && (
+                    {/* Show effective date if explicitly set, otherwise fall
+                        back to created_at so every row has a "From …" label
+                        for visual consistency. */}
+                    {(s.effective_from || s.created_at) && (
                       <div className="text-[10px] text-slate-400 mt-1">
-                        From {new Date(s.effective_from).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        From {new Date(s.effective_from ?? s.created_at!).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                       </div>
                     )}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-2 text-slate-700 text-sm">
-                      <span className="font-semibold">₹{s.min_order_value.toFixed(0)}</span>
+                      <span className="font-semibold">₹{money(s.min_order_value)}</span>
                       <span className="text-slate-400">–</span>
-                      <span className="font-semibold">₹{s.max_order_value.toFixed(0)}</span>
+                      <span className="font-semibold">₹{money(s.max_order_value)}</span>
                     </div>
                     <MiniRangeBar min={s.min_order_value} max={s.max_order_value} globalMax={globalMax} active={s.status} />
                   </td>
                   <td className="px-4 py-4 text-right font-semibold text-slate-900">₹{s.fixed_charge.toFixed(2)}</td>
                   <td className="px-4 py-4 text-right text-slate-700">
-                    {s.extra_charge > 0 ? `₹${s.extra_charge.toFixed(2)}` : <span className="text-slate-300">—</span>}
+                    {s.extra_charge > 0 && s.max_order_value > 0 ? (
+                      <div>
+                        <span className="inline-flex items-center text-xs font-semibold text-slate-700 bg-slate-100 rounded-md px-2 py-0.5">
+                          {((s.extra_charge / s.max_order_value) * 100).toFixed(2)}%
+                        </span>
+                        <div className="text-[10px] text-slate-400 mt-0.5">₹{s.extra_charge.toFixed(2)}</div>
+                      </div>
+                    ) : (
+                      <span className="text-slate-300">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-4 text-right">
                     <span className="inline-flex items-center text-xs font-semibold text-slate-700 bg-slate-100 rounded-md px-2 py-0.5">

@@ -55,8 +55,21 @@ export function CreateForm({
         }
         continue;
       }
-      if (f.type === "number") body[f.name] = typeof v === "number" ? v : parseFloat(String(v));
-      else body[f.name] = v;
+      if (f.type === "number") {
+        const num = typeof v === "number" ? v : parseFloat(String(v));
+        // Reject negatives — charges/quantities/percentages are all ≥ 0.
+        // The browser's native `min=0` blocks arrow keys but a user can
+        // still paste/type "-5", so we re-check here on submit.
+        if (!Number.isFinite(num)) {
+          setError(`${f.label} must be a valid number`);
+          return;
+        }
+        if (num < 0) {
+          setError(`${f.label} cannot be negative — enter 0 or a positive value`);
+          return;
+        }
+        body[f.name] = num;
+      } else body[f.name] = v;
     }
     startTransition(async () => {
       const res = await fetch(`/api/admin${path}`, {
@@ -217,6 +230,15 @@ function Field({
         className={cls}
         value={String(value ?? "")}
         placeholder={spec.placeholder}
+        // Number-input guardrails: `min=0` blocks the browser's arrow-down
+        // past zero; `step=any` keeps decimals (₹102.45 still valid);
+        // `onKeyDown` swallows the `-` key so typing a leading minus does
+        // nothing. Pasted negatives are caught by the submit check.
+        min={spec.type === "number" ? 0 : undefined}
+        step={spec.type === "number" ? "any" : undefined}
+        onKeyDown={spec.type === "number" ? (e) => {
+          if (e.key === "-" || e.key === "e" || e.key === "E") e.preventDefault();
+        } : undefined}
         onChange={(e) => onChange(spec.type === "number" ? (e.target.value === "" ? "" : parseFloat(e.target.value)) : e.target.value)}
       />
     </label>

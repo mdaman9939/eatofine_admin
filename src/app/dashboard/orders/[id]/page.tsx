@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { adminFetch } from "../../../../lib/api";
 import { ActionButton } from "../../../../components/ActionButton";
+import { RefundPanel } from "./RefundPanel";
 
 interface OrderDetail {
   order: {
@@ -104,6 +105,10 @@ export default async function OrderDetailPage({
           ))}
         </div>
       )}
+
+      <RefundPanel orderId={o.id} orderStatus={o.order_status} />
+
+      <RefundHistory orderId={o.id} />
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-5">
@@ -247,6 +252,46 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between">
       <span className="text-zinc-600 dark:text-zinc-300">{label}</span>
       <span>{value}</span>
+    </div>
+  );
+}
+
+interface RefundDecision {
+  mysql_id: number;
+  scenario: string;
+  remarks: string;
+  applied_at: string;
+  effects: {
+    refund_amount: number;
+    penalty: { target: string | null; amount: number };
+    final_order_status: string;
+  };
+}
+
+async function RefundHistory({ orderId }: { orderId: number }) {
+  const data = await adminFetch<{ decisions: RefundDecision[] }>(
+    `/admin/refund-engine/${orderId}/history`,
+  ).catch(() => ({ decisions: [] as RefundDecision[] }));
+  if (!data.decisions || data.decisions.length === 0) return null;
+  return (
+    <div className="mt-4 bg-white dark:bg-zinc-800 rounded-2xl border border-slate-200 dark:border-zinc-700 shadow-sm p-5">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-3">Refund decisions applied</h2>
+      <ol className="text-sm space-y-2">
+        {data.decisions.map((d) => (
+          <li key={d.mysql_id} className="border-l-2 border-rose-400 pl-3 py-1">
+            <div className="text-xs text-slate-500">{new Date(d.applied_at).toLocaleString()}</div>
+            <div className="font-mono text-[11px] text-slate-700">{d.scenario}</div>
+            <div className="text-xs text-slate-600 mt-0.5">
+              Refund: ₹{Number(d.effects?.refund_amount ?? 0).toFixed(2)}
+              {d.effects?.penalty?.target && (
+                <> · Penalty: <span className="text-rose-700 font-semibold">{d.effects.penalty.target}</span> ₹{Number(d.effects.penalty.amount).toFixed(2)}</>
+              )}
+              {" · "}Final: {d.effects?.final_order_status}
+            </div>
+            <div className="text-xs text-slate-500 mt-1 italic">&ldquo;{d.remarks}&rdquo;</div>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
