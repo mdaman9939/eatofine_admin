@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
+import { ReportFilterBar } from "../../../../components/ReportFilterBar";
 
 interface Sales {
   days: number;
@@ -10,18 +11,38 @@ interface Sales {
 
 function inr(n: number) { return `₹${Math.round(n).toLocaleString("en-IN")}`; }
 
-export default async function TransactionReportPage() {
-  const sales = await adminFetch<Sales>("/admin/reports/sales-summary?days=30");
+export default async function TransactionReportPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const sp = await searchParams;
+  const qs = new URLSearchParams();
+  if (sp.from) qs.set("from", sp.from);
+  if (sp.to) qs.set("to", sp.to);
+  if (sp.days) qs.set("days", sp.days);
+  if (!sp.from && !sp.days) qs.set("days", "30");
+  if (sp.zone_id) qs.set("zone_id", sp.zone_id);
+  if (sp.restaurant_id) qs.set("restaurant_id", sp.restaurant_id);
+
+  const [sales, zonesRes, restaurantsRes] = await Promise.all([
+    adminFetch<Sales>(`/admin/reports/sales-summary?${qs.toString()}`),
+    adminFetch<{ zones: Array<{ id: number; name: string | null }> }>("/admin/zones").catch(() => ({ zones: [] })),
+    adminFetch<{ restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> }>("/admin/restaurants?limit=200").catch(() => ({} as { restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> })),
+  ]);
   const totalTax = sales.series.reduce((s, r) => s + r.tax, 0);
   const totalDelivery = sales.series.reduce((s, r) => s + r.delivery, 0);
+  const zoneOptions = zonesRes.zones.map((z) => ({ value: String(z.id), label: z.name ?? `Zone ${z.id}` }));
+  const restOptions = (restaurantsRes.restaurants ?? restaurantsRes.items ?? []).map((r) => ({ value: String(r.id), label: r.name ?? `#${r.id}` }));
 
   return (
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Transaction Report"
-      description="Day-wise transactions across the platform — gross sales, tax collected, delivery charges, order count. Used for daily reconciliation."
+      description="Day-wise transactions — gross sales, tax, delivery charges, order count. Filter by date range, zone or restaurant; export to CSV."
+      filterBar={<ReportFilterBar zones={zoneOptions} restaurants={restOptions} showZone showRestaurant />}
       stats={[
-        { label: "Period", value: `${sales.days} days`, accent: "slate" },
+        { label: "Days in range", value: sales.series.length.toString(), accent: "slate" },
         { label: "Total revenue", value: inr(sales.total_revenue), accent: "emerald" },
         { label: "Total orders", value: sales.total_orders.toString(), accent: "blue" },
         { label: "Tax + delivery", value: inr(totalTax + totalDelivery), accent: "amber" },

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Field, type FieldSpec } from "./CreateForm";
+import { Field, type FieldSpec, type FieldValue } from "./CreateForm";
 
 /**
  * Full-page edit form. Mirrors {@link CreateForm} but is always rendered
@@ -24,7 +24,7 @@ export function EditForm({
   /** API path appended to `/api/admin`, e.g. `/restaurants/12`. */
   path: string;
   fields: FieldSpec[];
-  initialValues: Record<string, string | number | boolean | null | undefined>;
+  initialValues: Record<string, FieldValue | null | undefined>;
   submitLabel?: string;
   /** Where to send the user after a successful save. */
   redirectTo?: string;
@@ -33,11 +33,13 @@ export function EditForm({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const [values, setValues] = useState<Record<string, string | number | boolean>>(() => {
-    const init: Record<string, string | number | boolean> = {};
+  const [values, setValues] = useState<Record<string, FieldValue>>(() => {
+    const init: Record<string, FieldValue> = {};
     for (const f of fields) {
       const v = initialValues[f.name];
-      if (v === null || v === undefined) {
+      if (f.type === "multiselect") init[f.name] = Array.isArray(v) ? (v as number[]) : [];
+      else if (f.type === "documents") init[f.name] = Array.isArray(v) ? (v as string[]) : [];
+      else if (v === null || v === undefined) {
         init[f.name] = f.type === "checkbox" ? false : "";
       } else {
         init[f.name] = v;
@@ -55,6 +57,16 @@ export function EditForm({
       const v = values[f.name];
       if (f.type === "checkbox") {
         body[f.name] = !!v;
+        continue;
+      }
+      if (f.type === "latlng") {
+        const [latStr, lngStr] = String(v ?? "").split(",");
+        if (latStr?.trim()) body.latitude = latStr.trim();
+        if (lngStr?.trim()) body.longitude = lngStr.trim();
+        continue;
+      }
+      if (f.type === "multiselect" || f.type === "documents") {
+        body[f.name] = Array.isArray(v) ? v : [];
         continue;
       }
       if (v === "" || v === null || v === undefined) {
@@ -103,7 +115,7 @@ export function EditForm({
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3.5">
         {fields.map((f) => (
-          <div key={f.name} className={f.type === "textarea" ? "sm:col-span-2" : ""}>
+          <div key={f.name} className={["textarea", "multiselect", "image", "latlng", "documents"].includes(f.type ?? "") ? "sm:col-span-2" : ""}>
             <Field
               spec={f}
               value={values[f.name]}

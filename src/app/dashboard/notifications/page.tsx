@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { TablePage, fmtDate } from "../../../components/TablePage";
 import { DeleteButton } from "../../../components/ActionButton";
@@ -13,7 +14,11 @@ interface Notification {
 }
 
 export default async function NotificationsPage() {
-  const data = await adminFetch<{ total: number; items: Notification[] }>("/admin/notifications");
+  const [data, zonesRes] = await Promise.all([
+    adminFetch<{ total: number; items: Notification[] }>("/admin/notifications"),
+    adminFetch<{ zones: Array<{ id: number; name: string | null }> }>("/admin/zones").catch(() => ({ zones: [] })),
+  ]);
+  const zoneOptions = zonesRes.zones.map((z) => ({ value: String(z.id), label: z.name ?? `Zone ${z.id}` }));
   return (
     <>
       <div className="px-8 pt-8">
@@ -25,15 +30,17 @@ export default async function NotificationsPage() {
             { name: "description", label: "Message", type: "textarea" },
             {
               name: "tergat",
-              label: "Target",
+              label: "Send to",
               type: "select",
+              defaultValue: "customer",
               options: [
-                { value: "customer", label: "customer" },
-                { value: "deliveryman", label: "deliveryman" },
-                { value: "restaurant", label: "restaurant" },
+                { value: "customer", label: "Customers" },
+                { value: "deliveryman", label: "Delivery men" },
+                { value: "restaurant", label: "Restaurants" },
               ],
             },
-            { name: "zone_id", label: "Zone ID (optional)", type: "number" },
+            { name: "image", label: "Banner image", type: "image", imageDir: "notification" },
+            { name: "zone_id", label: "Zone (optional)", type: "select", options: zoneOptions },
           ]}
         />
       </div>
@@ -49,7 +56,15 @@ export default async function NotificationsPage() {
           { header: "Target", cell: (r) => r.tergat ?? "—" },
           { header: "Zone", cell: (r) => r.zone_id ?? "—" },
           { header: "Created", cell: (r) => <span className="text-xs text-zinc-500">{fmtDate(r.created_at)}</span> },
-          { header: "Actions", cell: (r) => <DeleteButton basePath="/notifications" id={r.id} /> },
+          {
+            header: "Actions",
+            cell: (r) => (
+              <span className="flex gap-2">
+                <Link href={`/dashboard/notifications/${r.id}/edit`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">Edit</Link>
+                <DeleteButton basePath="/notifications" id={r.id} />
+              </span>
+            ),
+          },
         ]}
       />
     </>

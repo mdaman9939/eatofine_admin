@@ -1,4 +1,5 @@
 import React from "react";
+import { CsvExportButton } from "./CsvExportButton";
 
 interface ReportTemplateProps {
   badge?: string;
@@ -11,6 +12,8 @@ interface ReportTemplateProps {
   rows?: Array<Record<string, string | number | null | undefined>>;
   /** Optional CSV download href */
   csvHref?: string;
+  /** Optional filter bar rendered under the hero (date range / zone / etc.) */
+  filterBar?: React.ReactNode;
 }
 
 const PALETTE: Record<string, string> = {
@@ -24,7 +27,7 @@ const PALETTE: Record<string, string> = {
 /** Consistent layout for the 11 sub-report pages — same hero + stats + table
  *  shape, no copy-pasted boilerplate per page. Each report passes its
  *  own KPIs, columns, and rows. */
-export function ReportTemplate({ badge, title, description, stats, columns, rows, csvHref }: ReportTemplateProps) {
+export function ReportTemplate({ badge, title, description, stats, columns, rows, csvHref, filterBar }: ReportTemplateProps) {
   return (
     <div className="relative p-8 space-y-6">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.06),transparent_60%)]" />
@@ -39,7 +42,7 @@ export function ReportTemplate({ badge, title, description, stats, columns, rows
             <h1 className="mt-2 text-3xl font-bold tracking-tight">{title}</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">{description}</p>
           </div>
-          {csvHref && (
+          {csvHref ? (
             <a
               href={csvHref}
               download
@@ -47,9 +50,13 @@ export function ReportTemplate({ badge, title, description, stats, columns, rows
             >
               ⬇ Export CSV
             </a>
-          )}
+          ) : columns && rows ? (
+            <CsvExportButton columns={columns} rows={rows} filename={title.toLowerCase().replace(/\s+/g, "-")} />
+          ) : null}
         </div>
       </div>
+
+      {filterBar}
 
       {stats && stats.length > 0 && (
         <div className={`grid grid-cols-2 md:grid-cols-${Math.min(4, stats.length)} gap-4`}>

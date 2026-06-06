@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { adminFetch } from "../../../../lib/api";
 import { ActionButton } from "../../../../components/ActionButton";
+import { RestaurantDetailTabs, type RestaurantTabData } from "../../../../components/RestaurantDetailTabs";
 
 interface RestaurantDetail {
   restaurant: {
@@ -49,7 +50,10 @@ export default async function RestaurantDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const data = await adminFetch<RestaurantDetail>(`/admin/restaurants/${id}`);
+  const [data, tabs] = await Promise.all([
+    adminFetch<RestaurantDetail>(`/admin/restaurants/${id}`),
+    adminFetch<RestaurantTabData>(`/admin/restaurants/${id}/tabs`).catch(() => null),
+  ]);
   const r = data.restaurant;
 
   return (
@@ -137,6 +141,12 @@ export default async function RestaurantDetailPage({
           <Flag label="Cutlery option" value={r.cutlery} />
         </Card>
       </div>
+
+      {tabs && (
+        <div className="mt-6">
+          <RestaurantDetailTabs data={tabs} />
+        </div>
+      )}
     </div>
   );
 }

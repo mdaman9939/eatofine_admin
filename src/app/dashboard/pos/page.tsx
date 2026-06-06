@@ -13,10 +13,8 @@ interface Restaurant {
 }
 
 export default async function POSPage() {
-  // We list active restaurants so admin can pick one to start a POS order.
-  // The actual order-flow UI is left as a stub (placing an order needs a
-  // cart builder, customer lookup, etc.) — but the entry point + restaurant
-  // selector is live and uses real data.
+  // List active restaurants so admin can pick one to open the POS terminal
+  // (full cart + checkout) at /dashboard/pos/[id].
   // The /admin/restaurants endpoint returns { total, restaurants: [...] };
   // older versions may return { items }. Handle both shapes safely.
   const data = await adminFetch<{ total: number; restaurants?: Restaurant[]; items?: Restaurant[] }>("/admin/restaurants?limit=100");
@@ -61,7 +59,7 @@ export default async function POSPage() {
           ) : active.map((r) => (
             <Link
               key={r.id}
-              href={`/dashboard/restaurants/${r.id}`}
+              href={`/dashboard/pos/${r.id}`}
               className="bg-slate-50 hover:bg-emerald-50 rounded-xl border border-slate-200 hover:border-emerald-300 p-4 transition-all group"
             >
               <div className="flex items-start justify-between">
@@ -86,17 +84,6 @@ export default async function POSPage() {
         </div>
       </div>
 
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-        <svg className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div className="text-xs text-amber-900">
-          <p className="font-semibold">POS flow scope</p>
-          <p className="mt-1 leading-relaxed">
-            Restaurant selection + menu navigation are live. Full POS cart-building + payment flow is wired against the existing order endpoint — start from the restaurant page to use it.
-          </p>
-        </div>
-      </div>
     </div>
   );
 }

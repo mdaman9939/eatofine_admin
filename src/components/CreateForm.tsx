@@ -3,11 +3,17 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ImageUpload } from "./ImageUpload";
+import { MapPicker } from "./MapPicker";
+import { MultiLangInput } from "./MultiLangInput";
+
+export type FieldValue = string | number | boolean | number[] | string[];
 
 export interface FieldSpec {
   name: string;
   label: string;
-  type?: "text" | "password" | "number" | "date" | "textarea" | "select" | "checkbox" | "image";
+  type?: "text" | "password" | "number" | "date" | "textarea" | "select" | "multiselect" | "checkbox" | "image" | "documents" | "latlng" | "multilang";
+  /** For type=multilang: which translation key this field edits (e.g. "name"). */
+  langKey?: string;
   required?: boolean;
   options?: Array<{ value: string; label: string }>;
   placeholder?: string;
@@ -21,20 +27,27 @@ export function CreateForm({
   fields,
   title,
   submitLabel = "Create",
+  embedded = false,
+  redirectTo,
 }: {
   path: string;
   fields: FieldSpec[];
   title?: string;
   submitLabel?: string;
+  /** Render as a full-width, always-open page form (no popover toggle). */
+  embedded?: boolean;
+  /** Where to navigate after a successful create (embedded mode). */
+  redirectTo?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
-  const [values, setValues] = useState<Record<string, string | number | boolean>>(() => {
-    const init: Record<string, string | number | boolean> = {};
+  const [open, setOpen] = useState(embedded);
+  const [values, setValues] = useState<Record<string, FieldValue>>(() => {
+    const init: Record<string, FieldValue> = {};
     for (const f of fields) {
-      if (f.defaultValue !== undefined) init[f.name] = f.defaultValue;
+      if (f.type === "multiselect" || f.type === "documents") init[f.name] = [];
+      else if (f.defaultValue !== undefined) init[f.name] = f.defaultValue;
       else if (f.type === "checkbox") init[f.name] = false;
       else if (f.type === "number") init[f.name] = "";
       else init[f.name] = "";
@@ -48,6 +61,33 @@ export function CreateForm({
     const body: Record<string, unknown> = {};
     for (const f of fields) {
       const v = values[f.name];
+      if (f.type === "multiselect" || f.type === "documents") {
+        const arr = Array.isArray(v) ? v : [];
+        if (arr.length === 0) {
+          if (f.required) {
+            setError(`${f.label} is required`);
+            return;
+          }
+          continue;
+        }
+        body[f.name] = arr;
+        continue;
+      }
+      if (f.type === "latlng") {
+        // Stored as "lat,lng" — split into the two body keys the API expects.
+        const [latStr, lngStr] = String(v ?? "").split(",");
+        if (latStr?.trim()) body.latitude = latStr.trim();
+        if (lngStr?.trim()) body.longitude = lngStr.trim();
+        continue;
+      }
+      if (f.type === "multilang") {
+        // Value is a JSON string of [{ locale, key, value }] translations.
+        try {
+          const arr = JSON.parse(String(v || "[]"));
+          if (Array.isArray(arr) && arr.length) body[f.name] = arr;
+        } catch { /* ignore malformed */ }
+        continue;
+      }
       if (v === "" || v === null || v === undefined) {
         if (f.required) {
           setError(`${f.label} is required`);
@@ -82,7 +122,11 @@ export function CreateForm({
         setError(text.slice(0, 200));
         return;
       }
-      setOpen(false);
+      if (embedded && redirectTo) {
+        router.push(redirectTo);
+      } else if (!embedded) {
+        setOpen(false);
+      }
       router.refresh();
     });
   }
@@ -105,38 +149,41 @@ export function CreateForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="bg-white rounded-2xl border border-slate-200 shadow-lg shadow-slate-200/60 w-full md:w-96 overflow-hidden"
+      className={`bg-white rounded-2xl border border-slate-200 shadow-lg shadow-slate-200/60 overflow-hidden ${embedded ? "w-full" : "w-full md:w-96"}`}
     >
       <div className="px-5 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white flex items-center justify-between">
         <h3 className="text-sm font-semibold tracking-wide">{title ?? "Create"}</h3>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="cursor-pointer text-white/70 hover:text-white transition-colors"
-          aria-label="Close"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        {!embedded && (
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="cursor-pointer text-white/70 hover:text-white transition-colors"
+            aria-label="Close"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
-      <div className="px-5 py-4 space-y-3.5">
+      <div className={embedded ? "px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3.5" : "px-5 py-4 space-y-3.5"}>
         {fields.map((f) => (
-          <Field
-            key={f.name}
-            spec={f}
-            value={values[f.name]}
-            onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))}
-          />
+          <div key={f.name} className={embedded && ["textarea", "multiselect", "image", "latlng", "documents"].includes(f.type ?? "") ? "sm:col-span-2" : ""}>
+            <Field
+              spec={f}
+              value={values[f.name]}
+              onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))}
+            />
+          </div>
         ))}
         {error && (
-          <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded px-2 py-1.5">{error}</p>
+          <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded px-2 py-1.5 sm:col-span-2">{error}</p>
         )}
       </div>
       <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex gap-2 justify-end">
         <button
           type="button"
-          onClick={() => setOpen(false)}
+          onClick={() => (embedded ? router.back() : setOpen(false))}
           className="cursor-pointer rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-200 transition-colors"
         >
           Cancel
@@ -159,8 +206,8 @@ export function Field({
   onChange,
 }: {
   spec: FieldSpec;
-  value: string | number | boolean | undefined;
-  onChange: (v: string | number | boolean) => void;
+  value: FieldValue | undefined;
+  onChange: (v: FieldValue) => void;
 }) {
   const labelEl = (
     <span className="text-xs font-semibold text-slate-700 tracking-wide uppercase">
@@ -168,6 +215,69 @@ export function Field({
       {spec.required && <span className="text-rose-500 ml-0.5">*</span>}
     </span>
   );
+
+  if (spec.type === "latlng") {
+    return <MapPicker value={typeof value === "string" ? value : ""} onChange={(v) => onChange(v)} label={spec.label} />;
+  }
+
+  if (spec.type === "multilang") {
+    return <MultiLangInput value={typeof value === "string" ? value : ""} onChange={(v) => onChange(v)} label={spec.label} fieldKey={spec.langKey ?? "name"} />;
+  }
+
+  if (spec.type === "documents") {
+    const files = Array.isArray(value) ? (value as string[]) : [];
+    return (
+      <div className="space-y-2">
+        <span className="text-xs font-semibold text-slate-700 tracking-wide uppercase">{spec.label}</span>
+        <div className="flex flex-wrap gap-2">
+          {files.map((fn, i) => (
+            <span key={fn + i} className="inline-flex items-center gap-1 text-xs bg-slate-100 border border-slate-200 rounded px-2 py-1">
+              {fn.slice(0, 24)}
+              <button type="button" onClick={() => onChange(files.filter((_, j) => j !== i))} className="text-rose-600 hover:text-rose-700">×</button>
+            </span>
+          ))}
+        </div>
+        <ImageUpload
+          dir={spec.imageDir ?? "restaurant"}
+          value={null}
+          onChange={(fn) => { if (fn) onChange([...files, fn]); }}
+          label="Add document"
+        />
+      </div>
+    );
+  }
+
+  if (spec.type === "multiselect") {
+    const selected = Array.isArray(value) ? (value as number[]) : [];
+    const toggle = (val: number) =>
+      onChange(selected.includes(val) ? selected.filter((x) => x !== val) : [...selected, val]);
+    return (
+      <label className="block">
+        {labelEl}
+        <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-slate-300 bg-white p-2 grid grid-cols-2 gap-1">
+          {spec.options?.length ? (
+            spec.options.map((o) => {
+              const val = Number(o.value);
+              const on = selected.includes(val);
+              return (
+                <button
+                  type="button"
+                  key={o.value}
+                  onClick={() => toggle(val)}
+                  className={`text-left text-xs rounded px-2 py-1 transition-colors ${on ? "bg-emerald-600 text-white" : "bg-slate-50 text-slate-700 hover:bg-slate-100"}`}
+                >
+                  {on ? "✓ " : ""}{o.label}
+                </button>
+              );
+            })
+          ) : (
+            <span className="text-xs text-slate-400 col-span-2 px-1">No options</span>
+          )}
+        </div>
+      </label>
+    );
+  }
+
   const cls =
     "block w-full mt-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 transition-all";
 

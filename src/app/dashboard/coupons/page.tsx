@@ -1,7 +1,10 @@
+import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge, fmtDate, fmtMoney } from "../../../components/TablePage";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
+
+const editLinkCls = "cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200";
 
 interface Coupon {
   id: number;
@@ -20,7 +23,13 @@ interface Coupon {
 }
 
 export default async function CouponsPage() {
-  const data = await adminFetch<{ coupons: Coupon[] }>("/admin/coupons");
+  const [data, zonesRes, restaurantsRes] = await Promise.all([
+    adminFetch<{ coupons: Coupon[] }>("/admin/coupons"),
+    adminFetch<{ zones: Array<{ id: number; name: string | null }> }>("/admin/zones").catch(() => ({ zones: [] })),
+    adminFetch<{ restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> }>("/admin/restaurants?limit=200").catch(() => ({} as { restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> })),
+  ]);
+  const zoneOptions = zonesRes.zones.map((z) => ({ value: String(z.id), label: z.name ?? `Zone ${z.id}` }));
+  const restOptions = (restaurantsRes.restaurants ?? restaurantsRes.items ?? []).map((r) => ({ value: String(r.id), label: r.name ?? `#${r.id}` }));
   return (
     <>
       <div className="px-8 pt-8">
@@ -30,10 +39,19 @@ export default async function CouponsPage() {
           fields={[
             { name: "title", label: "Title", required: true },
             { name: "code", label: "Code", required: true, placeholder: "WELCOME10" },
+            { name: "coupon_type", label: "Coupon type", type: "select", defaultValue: "default", options: [
+              { value: "default", label: "Default (all orders)" },
+              { value: "first_order", label: "First order" },
+              { value: "free_delivery", label: "Free delivery" },
+              { value: "restaurant_wise", label: "Restaurant-wise" },
+              { value: "zone_wise", label: "Zone-wise" },
+            ] },
             { name: "discount", label: "Discount", type: "number", required: true },
             { name: "discount_type", label: "Discount type", type: "select", options: [{ value: "percentage", label: "%" }, { value: "amount", label: "Flat ₹" }], defaultValue: "percentage" },
             { name: "min_purchase", label: "Minimum purchase", type: "number" },
             { name: "max_discount", label: "Max discount", type: "number" },
+            { name: "restaurant_id", label: "Restaurant (for restaurant-wise)", type: "select", options: restOptions },
+            { name: "zone_id", label: "Zone (for zone-wise)", type: "select", options: zoneOptions },
             { name: "start_date", label: "Starts", type: "date" },
             { name: "expire_date", label: "Expires", type: "date" },
             { name: "limit", label: "Per-customer limit", type: "number" },
@@ -58,6 +76,7 @@ export default async function CouponsPage() {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
+                <Link href={`/dashboard/coupons/${r.id}/edit`} className={editLinkCls}>Edit</Link>
                 <ToggleStatusButton basePath="/coupons" id={r.id} currentStatus={r.status} />
                 <DeleteButton basePath="/coupons" id={r.id} />
               </span>

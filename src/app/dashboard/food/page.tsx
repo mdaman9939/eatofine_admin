@@ -180,6 +180,12 @@ export default async function FoodPage() {
               </td>
               <td className="px-6 py-3 text-right">
                 <div className="inline-flex gap-1.5 flex-wrap justify-end">
+                  <Link
+                    href={`/dashboard/food/${f.id}/edit`}
+                    className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 border border-slate-200 shadow-sm transition-all duration-200"
+                  >
+                    Edit
+                  </Link>
                   <ToggleStatusButton basePath="/food" id={f.id} currentStatus={f.status} />
                   <ActionButton path={`/food/${f.id}/recommended`} method="PATCH" body={{ recommended: !f.recommended }} label={f.recommended ? "Unmark" : "Recommend"} variant="subtle" />
                 </div>
