@@ -153,7 +153,7 @@ export function CreateForm({
   );
 }
 
-function Field({
+export function Field({
   spec,
   value,
   onChange,

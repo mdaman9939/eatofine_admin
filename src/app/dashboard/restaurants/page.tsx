@@ -178,13 +178,21 @@ export default async function RestaurantsPage() {
                   </div>
                 </td>
                 <td className="px-6 py-3 text-right">
-                  <ActionButton
-                    path={`/restaurants/${r.id}`}
-                    method="PATCH"
-                    body={{ status: !r.status }}
-                    label={r.status ? "Disable" : "Enable"}
-                    variant={r.status ? "subtle" : "primary"}
-                  />
+                  <div className="inline-flex items-center gap-2">
+                    <Link
+                      href={`/dashboard/restaurants/${r.id}/edit`}
+                      className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 border border-slate-200 shadow-sm transition-all duration-200"
+                    >
+                      Edit
+                    </Link>
+                    <ActionButton
+                      path={`/restaurants/${r.id}`}
+                      method="PATCH"
+                      body={{ status: !r.status }}
+                      label={r.status ? "Disable" : "Enable"}
+                      variant={r.status ? "subtle" : "primary"}
+                    />
+                  </div>
                 </td>
               </tr>
             );
