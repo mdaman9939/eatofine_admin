@@ -7,7 +7,7 @@ import { ImageUpload } from "./ImageUpload";
 export interface FieldSpec {
   name: string;
   label: string;
-  type?: "text" | "number" | "date" | "textarea" | "select" | "checkbox" | "image";
+  type?: "text" | "password" | "number" | "date" | "textarea" | "select" | "checkbox" | "image";
   required?: boolean;
   options?: Array<{ value: string; label: string }>;
   placeholder?: string;
@@ -227,6 +227,7 @@ export function Field({
       {labelEl}
       <input
         type={spec.type ?? "text"}
+        autoComplete={spec.type === "password" ? "new-password" : undefined}
         className={cls}
         value={String(value ?? "")}
         placeholder={spec.placeholder}

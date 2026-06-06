@@ -13,7 +13,10 @@ interface RestaurantDetail {
     active: boolean;
     minimum_order: number;
     comission: number | null;
+    latitude: string | number | null;
+    longitude: string | number | null;
   };
+  vendor: { id: number; email: string | null } | null;
 }
 
 export default async function EditRestaurantPage({
@@ -65,6 +68,9 @@ export default async function EditRestaurantPage({
             address: r.address,
             comission: r.comission,
             minimum_order: r.minimum_order,
+            latitude: r.latitude,
+            longitude: r.longitude,
+            password: "",
             status: r.status,
             active: r.active,
           }}
@@ -75,6 +81,9 @@ export default async function EditRestaurantPage({
             { name: "address", label: "Address", type: "textarea", placeholder: "Street, city, pincode" },
             { name: "comission", label: "Commission %", type: "number", placeholder: "e.g. 10" },
             { name: "minimum_order", label: "Minimum order ₹", type: "number", placeholder: "e.g. 100" },
+            { name: "latitude", label: "Latitude", type: "text", placeholder: "e.g. 26.9124" },
+            { name: "longitude", label: "Longitude", type: "text", placeholder: "e.g. 75.7873" },
+            { name: "password", label: "Vendor password (leave blank to keep current)", type: "password", placeholder: "Set a new login password" },
             { name: "status", label: "Active (approved & visible)", type: "checkbox" },
             { name: "active", label: "Open now (accepting orders)", type: "checkbox" },
           ]}
