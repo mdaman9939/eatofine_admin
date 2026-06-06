@@ -4,12 +4,13 @@ import { ActionButton } from "../../../components/ActionButton";
 
 interface Advertisement {
   id: number;
-  add_type: string;
+  add_type: string | null;
   title: string | null;
   start_date: string;
   end_date: string;
   status: string;
-  restaurant_id: number;
+  restaurant_id: number | null;
+  restaurant_name: string | null;
   is_paid: boolean;
   priority: number | null;
 }
@@ -27,8 +28,8 @@ export default async function AdvertisementsPage() {
       columns={[
         { header: "#", cell: (r) => r.id, className: "font-mono" },
         { header: "Title", cell: (r) => r.title ?? "—" },
-        { header: "Type", cell: (r) => r.add_type },
-        { header: "Restaurant", cell: (r) => `#${r.restaurant_id}` },
+        { header: "Type", cell: (r) => r.add_type ?? "—" },
+        { header: "Restaurant", cell: (r) => r.restaurant_name ?? (r.restaurant_id ? `#${r.restaurant_id}` : "—") },
         { header: "Window", cell: (r) => <span className="text-xs">{fmtDate(r.start_date)} – {fmtDate(r.end_date)}</span> },
         { header: "Paid", cell: (r) => (r.is_paid ? "yes" : "no") },
         { header: "Status", cell: (r) => <span className="text-xs uppercase">{r.status}</span> },

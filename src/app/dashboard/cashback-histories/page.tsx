@@ -6,6 +6,7 @@ interface H {
   cash_back_id: number | null;
   order_id: number | null;
   user_id: number | null;
+  user_name: string | null;
   cashback_type: string;
   cashback_amount: number;
   calculated_amount: number;
@@ -25,9 +26,9 @@ export default async function CashbackHistoriesPage() {
       columns={[
         { header: "#", cell: (r) => r.id, className: "font-mono" },
         { header: "Order", cell: (r) => r.order_id ? `#${r.order_id}` : "—" },
-        { header: "Customer", cell: (r) => r.user_id ? `#${r.user_id}` : "—" },
-        { header: "Type", cell: (r) => r.cashback_type },
-        { header: "Cashback", cell: (r) => `₹${r.cashback_amount}` },
+        { header: "Customer", cell: (r) => r.user_name ?? (r.user_id ? `#${r.user_id}` : "—") },
+        { header: "Type", cell: (r) => r.cashback_type ?? "—" },
+        { header: "Cashback", cell: (r) => `₹${r.cashback_amount ?? 0}` },
         { header: "Calculated", cell: (r) => `₹${r.calculated_amount}` },
         { header: "When", cell: (r) => <span className="text-xs text-zinc-500">{fmtDate(r.created_at)}</span> },
       ]}

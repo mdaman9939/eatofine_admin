@@ -4,6 +4,7 @@ import { TablePage, fmtDate } from "../../../components/TablePage";
 interface LP {
   id: number;
   user_id: number | null;
+  user_name: string | null;
   transaction_id: string;
   credit: number;
   debit: number;
@@ -24,7 +25,7 @@ export default async function LoyaltyPointsPage() {
       rowKey={(r) => r.id}
       columns={[
         { header: "Tx", cell: (r) => <span className="font-mono text-xs">{r.transaction_id.slice(0, 8)}</span> },
-        { header: "User", cell: (r) => r.user_id ? `#${r.user_id}` : "—" },
+        { header: "User", cell: (r) => r.user_name ?? (r.user_id ? `#${r.user_id}` : "—") },
         { header: "Type", cell: (r) => r.transaction_type ?? "—" },
         { header: "Credit", cell: (r) => r.credit },
         { header: "Debit", cell: (r) => r.debit },

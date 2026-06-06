@@ -3,8 +3,8 @@ import { ReportTemplate } from "../../../../components/ReportTemplate";
 
 interface Disbursement {
   id: number;
-  recipient_name: string | null;
-  recipient_type: string | null;
+  recipient: string | null;
+  type: string | null;
   amount: number;
   status: string;
   created_at: string | null;
@@ -24,8 +24,8 @@ export default async function DisbursementReportPage() {
     rows = data.items ?? [];
   } catch { /* empty */ }
 
-  const total = rows.reduce((s, r) => s + r.amount, 0);
-  const completed = rows.filter((r) => r.status === "completed").length;
+  const total = rows.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const completed = rows.filter((r) => r.status === "completed" || r.status === "disbursed").length;
   const pending = rows.filter((r) => r.status === "pending").length;
 
   return (
@@ -49,9 +49,9 @@ export default async function DisbursementReportPage() {
       ]}
       rows={rows.map((r) => ({
         id: r.id,
-        recipient: r.recipient_name ?? "—",
-        type: r.recipient_type ?? "—",
-        amount: inr(r.amount),
+        recipient: r.recipient ?? "—",
+        type: r.type ?? "—",
+        amount: inr(Number(r.amount) || 0),
         status: r.status,
         date: fmtDate(r.created_at),
       }))}

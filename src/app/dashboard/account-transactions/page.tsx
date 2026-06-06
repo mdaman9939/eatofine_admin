@@ -3,13 +3,13 @@ import { TablePage, fmtMoney, fmtDate } from "../../../components/TablePage";
 
 interface AccountTx {
   id: number;
-  from_type: string;
-  from_id: number;
-  current_balance: number;
+  from_type: string | null;
+  from_id: number | null;
+  current_balance: number | null;
   amount: number;
-  method: string;
+  method: string | null;
   ref: string | null;
-  type: string;
+  type: string | null;
   created_by: string;
   created_at: string | null;
 }
@@ -24,11 +24,11 @@ export default async function AccountTransactionsPage() {
       rowKey={(r) => r.id}
       columns={[
         { header: "#", cell: (r) => r.id, className: "font-mono" },
-        { header: "From", cell: (r) => `${r.from_type} #${r.from_id}` },
+        { header: "From", cell: (r) => (r.from_type ? `${r.from_type} #${r.from_id ?? 0}` : "—") },
         { header: "Amount", cell: (r) => fmtMoney(r.amount) },
-        { header: "Balance", cell: (r) => fmtMoney(r.current_balance) },
-        { header: "Method", cell: (r) => r.method },
-        { header: "Type", cell: (r) => <span className="text-xs uppercase">{r.type}</span> },
+        { header: "Balance", cell: (r) => (r.current_balance ? fmtMoney(r.current_balance) : "—") },
+        { header: "Method", cell: (r) => r.method ?? "—" },
+        { header: "Type", cell: (r) => <span className="text-xs uppercase">{r.type ?? "—"}</span> },
         { header: "Ref", cell: (r) => <span className="text-xs">{r.ref ?? "—"}</span> },
         { header: "When", cell: (r) => <span className="text-xs text-zinc-500">{fmtDate(r.created_at)}</span> },
       ]}

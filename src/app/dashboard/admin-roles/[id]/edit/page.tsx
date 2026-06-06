@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { adminFetch } from "../../../../../lib/api";
-import { RolePermissionForm, parseModules } from "../../../../../components/RolePermissionForm";
+import { RolePermissionForm } from "../../../../../components/RolePermissionForm";
+import { parseModules } from "../../../../../lib/roleModules";
 
 interface R { id: number; name: string; modules: string | null; status: boolean }
 

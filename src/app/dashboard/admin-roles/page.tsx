@@ -2,7 +2,8 @@ import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge } from "../../../components/TablePage";
 import { DeleteButton } from "../../../components/ActionButton";
-import { RolePermissionForm, parseModules } from "../../../components/RolePermissionForm";
+import { RolePermissionForm } from "../../../components/RolePermissionForm";
+import { parseModules } from "../../../lib/roleModules";
 
 interface R {
   id: number;

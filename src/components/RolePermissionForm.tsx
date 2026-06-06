@@ -197,15 +197,3 @@ export function RolePermissionForm({
     </form>
   );
 }
-
-/** Parse the stored `modules` field (JSON array string or comma list) into keys. */
-export function parseModules(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed.map(String);
-  } catch {
-    return raw.split(",").map((s) => s.trim()).filter(Boolean);
-  }
-  return [];
-}
