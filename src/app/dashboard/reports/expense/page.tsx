@@ -1,5 +1,7 @@
 import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
+import { ReportFilterBar } from "../../../../components/ReportFilterBar";
+import { reportQuery, reportFilterOptions } from "../../../../lib/reportFilters";
 
 interface AdminEarning {
   delivered_orders: number;
@@ -12,8 +14,17 @@ interface AdminEarning {
 
 function inr(n: number) { return `₹${Math.round(n).toLocaleString("en-IN")}`; }
 
-export default async function ExpenseReportPage() {
-  const data = await adminFetch<AdminEarning>("/admin/reports/admin-earnings?days=30");
+export default async function ExpenseReportPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const sp = await searchParams;
+  const qs = reportQuery(sp);
+  const [data, { zones, restaurants }] = await Promise.all([
+    adminFetch<AdminEarning>(`/admin/reports/admin-earnings?${qs.toString()}`),
+    reportFilterOptions(),
+  ]);
 
   // Admin's outgoing payments = what we paid to restaurants + delivery + tax remitted.
   const restaurantPayout = data.restaurant_take;
@@ -26,13 +37,15 @@ export default async function ExpenseReportPage() {
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Expense Report"
-      description="Admin's outgoing payments — what the platform pays to restaurants, delivery men, and the government. Subtract from gross to get net revenue."
+      description="Admin's outgoing payments — what the platform pays to restaurants, delivery men, and the government. Subtract from gross to get net revenue. Filter by date range, zone or restaurant."
+      filterBar={<ReportFilterBar zones={zones} restaurants={restaurants} showZone showRestaurant />}
       stats={[
         { label: "Gross sales", value: inr(data.gross_sales), accent: "blue" },
         { label: "Total outgoing", value: inr(totalOutgoing), accent: "rose", hint: "What admin pays" },
         { label: "Net revenue", value: inr(netRevenue), accent: "emerald", hint: "Platform's keep" },
         { label: "Outgoing %", value: data.gross_sales ? `${(totalOutgoing / data.gross_sales * 100).toFixed(1)}%` : "—", accent: "amber" },
       ]}
+      detailsTitle="Expense breakdown"
       columns={[
         { key: "type", label: "Expense type" },
         { key: "amount", label: "Amount", align: "right" },

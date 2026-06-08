@@ -1,5 +1,12 @@
 import { adminFetch } from "../../../lib/api";
 import { SettingsForm, type FieldGroup } from "../../../components/SettingsForm";
+import { CreateNotificationTemplate } from "../../../components/CreateNotificationTemplate";
+
+// Built-in template slugs — anything else under notif_msg.* is a custom template.
+const BUILTIN_SLUGS = [
+  "order_placed", "order_accepted", "order_picked_up", "order_delivered",
+  "refund_processed", "otp", "vendor_new_order", "dm_new_order",
+];
 
 const GROUPS: FieldGroup[] = [
   {
@@ -67,6 +74,27 @@ export default async function NotificationMessagesPage() {
     "/admin/business-settings?prefix=notif_msg.",
   );
 
+  // Discover custom templates created via "Create notification template":
+  // keys look like notif_msg.<slug>.<field>. Anything not built-in is custom.
+  const valueByKey = new Map(data.settings.map((s) => [s.key, s.value]));
+  const customSlugs = Array.from(
+    new Set(
+      data.settings
+        .map((s) => s.key.split(".")[1])
+        .filter((slug): slug is string => !!slug && !BUILTIN_SLUGS.includes(slug)),
+    ),
+  );
+  const customGroups: FieldGroup[] = customSlugs.map((slug) => ({
+    title: (valueByKey.get(`notif_msg.${slug}._name`) as string) || slug,
+    description: "Custom template.",
+    fields: [
+      { key: `notif_msg.${slug}.title`, label: "Push title", type: "text" },
+      { key: `notif_msg.${slug}.body`, label: "Push body", type: "textarea" },
+      { key: `notif_msg.${slug}.sms`, label: "SMS template", type: "textarea" },
+    ],
+  }));
+  const allGroups = [...GROUPS, ...customGroups];
+
   return (
     <div className="relative p-8 space-y-6 max-w-5xl">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.06),transparent_60%)]" />
@@ -82,7 +110,8 @@ export default async function NotificationMessagesPage() {
           </p>
         </div>
       </div>
-      <SettingsForm initial={data.settings} groups={GROUPS} />
+      <CreateNotificationTemplate existingSlugs={[...BUILTIN_SLUGS, ...customSlugs]} />
+      <SettingsForm initial={data.settings} groups={allGroups} />
     </div>
   );
 }

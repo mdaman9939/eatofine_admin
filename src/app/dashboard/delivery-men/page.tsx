@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { ActionButton, ToggleStatusButton } from "../../../components/ActionButton";
 import { PaginatedTable } from "../../../components/PaginatedTable";
@@ -159,6 +160,7 @@ export default async function DeliveryMenPage() {
                 </td>
                 <td className="px-6 py-3 text-right">
                   <div className="inline-flex gap-1.5 flex-wrap justify-end">
+                    <Link href={`/dashboard/delivery-men/${r.id}/edit`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">Edit</Link>
                     <ToggleStatusButton basePath="/delivery-men" id={r.id} currentStatus={!!r.status} />
                     {(r.application_status ?? "").toLowerCase() !== "approved" && (
                       <ActionButton path={`/delivery-men/${r.id}/approval`} method="PATCH" body={{ approval: "approved" }} label="Approve" variant="primary" />

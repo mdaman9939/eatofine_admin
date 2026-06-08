@@ -1,5 +1,7 @@
 import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
+import { ReportFilterBar } from "../../../../components/ReportFilterBar";
+import { reportQuery, reportFilterOptions } from "../../../../lib/reportFilters";
 
 interface TopRestaurants {
   top_earners: Array<{
@@ -14,8 +16,18 @@ interface TopRestaurants {
 
 function inr(n: number) { return `₹${Math.round(n).toLocaleString("en-IN")}`; }
 
-export default async function RestaurantReportPage() {
-  const data = await adminFetch<TopRestaurants>("/admin/reports/restaurant-earnings?limit=50");
+export default async function RestaurantReportPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const sp = await searchParams;
+  const qs = reportQuery(sp);
+  qs.set("limit", "50");
+  const [data, { zones, restaurants }] = await Promise.all([
+    adminFetch<TopRestaurants>(`/admin/reports/restaurant-earnings?${qs.toString()}`),
+    reportFilterOptions(),
+  ]);
   const totalOrders = data.top_earners.reduce((s, r) => s + r.orders, 0);
   const totalRevenue = data.top_earners.reduce((s, r) => s + r.revenue, 0);
   const avgAov = totalOrders ? totalRevenue / totalOrders : 0;
@@ -24,13 +36,15 @@ export default async function RestaurantReportPage() {
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Restaurant Report"
-      description="Per-restaurant performance — orders, revenue, average ticket size, market share."
+      description="Per-restaurant performance — orders, revenue, average ticket size, market share. Filter by date range, zone or restaurant."
+      filterBar={<ReportFilterBar zones={zones} restaurants={restaurants} showZone showRestaurant />}
       stats={[
         { label: "Restaurants", value: data.top_earners.length.toString(), accent: "blue" },
         { label: "Total orders", value: totalOrders.toString(), accent: "emerald" },
         { label: "Total revenue", value: inr(totalRevenue), accent: "amber" },
         { label: "Avg AOV", value: inr(avgAov), accent: "slate" },
       ]}
+      detailsTitle="Restaurant performance details"
       columns={[
         { key: "rank", label: "#" },
         { key: "name", label: "Restaurant" },

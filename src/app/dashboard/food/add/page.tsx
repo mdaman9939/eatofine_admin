@@ -56,8 +56,10 @@ export function buildFoodFields(
   addons: Addon[],
 ): FieldSpec[] {
   return [
-    { name: "name", label: "Food name", type: "text", required: true, placeholder: "e.g. Margherita Pizza" },
-    { name: "description", label: "Description", type: "textarea", placeholder: "Tomato sauce, mozzarella, basil" },
+    { name: "name", label: "Food name (default)", type: "text", required: true, placeholder: "e.g. Margherita Pizza" },
+    { name: "translations", label: "Name in other languages", type: "multilang", langKey: "name" },
+    { name: "description", label: "Description (default)", type: "textarea", placeholder: "Tomato sauce, mozzarella, basil" },
+    { name: "description_translations", label: "Description in other languages", type: "multilang", langKey: "description" },
     { name: "image", label: "Food image", type: "image", imageDir: "product" },
     { name: "restaurant_id", label: "Restaurant", type: "select", required: true, options: restaurants.map((r) => ({ value: String(r.id), label: r.name })) },
     { name: "category_id", label: "Category", type: "select", options: categories.map((c) => ({ value: String(c.id), label: c.name })) },
@@ -83,7 +85,14 @@ export function buildFoodFields(
 
     { name: "addon_ids", label: "Add-ons", type: "multiselect", options: addons.map((a) => ({ value: String(a.id), label: a.name })) },
 
-    { name: "veg", label: "Vegetarian", type: "checkbox", defaultValue: true },
+    // Variations — Half / Full / Small / Medium / Large with per-option prices.
+    { name: "variations", label: "Food variations", type: "variations" },
+
+    // Veg / Non-veg (explicit option, like StackFood).
+    { name: "veg", label: "Food type", type: "select", defaultValue: "1", options: [
+      { value: "1", label: "Veg" },
+      { value: "0", label: "Non-veg" },
+    ] },
     { name: "is_halal", label: "Halal", type: "checkbox", defaultValue: false },
     { name: "recommended", label: "Recommended", type: "checkbox", defaultValue: false },
 

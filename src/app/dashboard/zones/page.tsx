@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
-import { CreateForm } from "../../../components/CreateForm";
 
 interface Zone {
   id: number;
@@ -27,8 +27,15 @@ function avg(values: Array<number | null | undefined>): number | null {
   return nums.reduce((s, v) => s + v, 0) / nums.length;
 }
 
-export default async function ZonesPage() {
-  const data = await adminFetch<{ zones: Zone[] }>("/admin/zones");
+export default async function ZonesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ for?: string }>;
+}) {
+  const sp = await searchParams;
+  const zoneFor = sp.for === "deliveryman" ? "deliveryman" : "restaurant";
+  const isDm = zoneFor === "deliveryman";
+  const data = await adminFetch<{ zones: Zone[] }>(`/admin/zones?zone_for=${zoneFor}`);
   const zones = data.zones;
 
   const activeCount = zones.filter((z) => z.status).length;
@@ -50,12 +57,13 @@ export default async function ZonesPage() {
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/70 font-semibold">
               <span className="inline-block w-1 h-1 rounded-full bg-white/70" />
-              Restaurant management · Geo coverage
+              {isDm ? "Deliverymen management · Zone Setup" : "Restaurant management · Zone Setup"}
             </div>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight">Delivery zones</h1>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">{isDm ? "Deliveryman Zone Setup" : "Restaurant Zone Setup"}</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Zones gate which restaurants are visible to which customers and set the base shipping math —
-              minimum order ship fee, per-km add-on, and the ETA shown at checkout.
+              {isDm
+                ? "Delivery-man service zones — draw each rider coverage area on the map. Riders are matched to orders within their zone."
+                : "Restaurant service zones — draw each coverage area on the map. Each zone gates which restaurants are visible to customers and sets the base shipping math."}
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -64,20 +72,15 @@ export default async function ZonesPage() {
               <div className="text-lg font-bold tabular-nums">{zones.length} {zones.length === 1 ? "zone" : "zones"}</div>
               <div className="text-[11px] text-white/70">{totalRestaurants} restaurants on platform</div>
             </div>
-            <CreateForm
-              path="/zones"
-              title="New zone"
-              fields={[
-                { name: "name", label: "Zone name", type: "text", required: true, placeholder: "e.g. Bengaluru / Whitefield" },
-                { name: "display_name", label: "Display name (optional)", type: "text", placeholder: "Customer-facing label" },
-                { name: "minimum_shipping_charge", label: "Min ship ₹", type: "number", required: true, defaultValue: 20 },
-                { name: "per_km_shipping_charge", label: "Per-km charge ₹", type: "number", required: true, defaultValue: 6 },
-                { name: "maximum_shipping_charge", label: "Max ship cap ₹", type: "number", required: true, defaultValue: 200 },
-                { name: "minimum_delivery_time", label: "Min ETA (minutes)", type: "number", required: true, defaultValue: 30 },
-                { name: "max_cod_order_amount", label: "Max COD order ₹", type: "number", defaultValue: 5000 },
-                { name: "is_default", label: "Set as default zone", type: "checkbox" },
-              ]}
-            />
+            <Link
+              href={`/dashboard/zones/add?for=${zoneFor}`}
+              className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-white text-emerald-700 text-sm font-semibold px-4 py-2.5 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" />
+              </svg>
+              New zone (map)
+            </Link>
           </div>
         </div>
       </div>
@@ -229,7 +232,7 @@ export default async function ZonesPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      <p className="text-sm font-medium">No delivery zones configured</p>
+                      <p className="text-sm font-medium">No zones configured</p>
                       <p className="text-xs">Create at least one zone — restaurants must belong to a zone to appear in the apps.</p>
                     </div>
                   </td>

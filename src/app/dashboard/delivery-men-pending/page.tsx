@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { ApproveRejectButtons } from "../../../components/ApproveRejectButtons";
 
@@ -51,6 +52,7 @@ export default async function DmPendingPage() {
         <StatTile label="Pending review" value={rows.length.toString()} hint="Awaiting verification" accent="amber" />
         <StatTile
           label="Submitted last 7 days"
+          // eslint-disable-next-line react-hooks/purity
           value={rows.filter((r) => r.submitted_at && Date.now() - new Date(r.submitted_at).getTime() < 7 * 86_400_000).length.toString()}
           accent="blue"
         />
@@ -104,7 +106,10 @@ export default async function DmPendingPage() {
                     <div className="text-slate-400">{daysSince(r.submitted_at)}</div>
                   </td>
                   <td className="px-4 py-4 text-right">
-                    <ApproveRejectButtons basePath="delivery-men" id={r.id} />
+                    <span className="inline-flex gap-1.5 flex-wrap justify-end">
+                      <Link href={`/dashboard/delivery-men/${r.id}`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200">👁 View</Link>
+                      <ApproveRejectButtons basePath="delivery-men" id={r.id} />
+                    </span>
                   </td>
                 </tr>
               ))}

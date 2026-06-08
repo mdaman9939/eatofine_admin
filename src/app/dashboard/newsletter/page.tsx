@@ -1,32 +1,15 @@
 import { adminFetch } from "../../../lib/api";
-import { DeleteButton } from "../../../components/ActionButton";
-
-interface Subscriber {
-  id: number;
-  email: string;
-  source: string;
-  status: string;
-  created_at: string | null;
-}
-
-function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString("en-IN", {
-      day: "2-digit", month: "short", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
-    });
-  } catch {
-    return "—";
-  }
-}
+import { NewsletterSubscribersTable, type Subscriber } from "../../../components/NewsletterSubscribersTable";
 
 export default async function NewsletterPage() {
   const data = await adminFetch<{ total: number; items: Subscriber[] }>("/admin/newsletter?limit=200");
   const subscribers = data.items;
+  // Server component runs per request, so `now` is stable for this render.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
   const recent30d = subscribers.filter((s) => {
     if (!s.created_at) return false;
-    return Date.now() - new Date(s.created_at).getTime() < 30 * 86_400_000;
+    return now - new Date(s.created_at).getTime() < 30 * 86_400_000;
   }).length;
 
   // Top sources for the stats card
@@ -81,61 +64,8 @@ export default async function NewsletterPage() {
         />
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">Subscribers</h2>
-            <p className="text-xs text-slate-500 mt-0.5">{data.total} total · sorted by most recent</p>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Email</th>
-                <th className="px-4 py-3 font-semibold">Source</th>
-                <th className="px-4 py-3 font-semibold">Subscribed at</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {subscribers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                    <div className="inline-flex flex-col items-center gap-2">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-sm font-medium">No subscribers yet</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                subscribers.map((s) => (
-                  <tr key={s.id} className="hover:bg-emerald-50/40 transition-colors">
-                    <td className="px-6 py-3 font-mono text-xs text-slate-400">#{s.id}</td>
-                    <td className="px-4 py-3 text-slate-900 font-medium">{s.email}</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">{s.source}</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs">{fmtDate(s.created_at)}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        {s.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <DeleteButton basePath="/newsletter" id={s.id} />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Searchable / filterable subscriber list */}
+      <NewsletterSubscribersTable subscribers={subscribers} />
     </div>
   );
 }

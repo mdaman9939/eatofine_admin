@@ -1,5 +1,7 @@
 import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
+import { ReportFilterBar } from "../../../../components/ReportFilterBar";
+import { reportQuery, reportFilterOptions } from "../../../../lib/reportFilters";
 
 interface AdminEarning {
   delivered_orders: number;
@@ -12,20 +14,31 @@ interface AdminEarning {
 
 function inr(n: number) { return `₹${Math.round(n).toLocaleString("en-IN")}`; }
 
-export default async function AdminEarningReportPage() {
-  const data = await adminFetch<AdminEarning>("/admin/reports/admin-earnings?days=30");
+export default async function AdminEarningReportPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const sp = await searchParams;
+  const qs = reportQuery(sp);
+  const [data, { zones, restaurants }] = await Promise.all([
+    adminFetch<AdminEarning>(`/admin/reports/admin-earnings?${qs.toString()}`),
+    reportFilterOptions(),
+  ]);
 
   return (
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Admin Earning Report"
-      description="Platform-level earnings — commission income, tax collected, delivery margin. Last 30 days."
+      description="Platform-level earnings — commission income, tax collected, delivery margin. Filter by date range, zone or restaurant."
+      filterBar={<ReportFilterBar zones={zones} restaurants={restaurants} showZone showRestaurant />}
       stats={[
         { label: "Delivered orders", value: data.delivered_orders.toString(), accent: "blue" },
         { label: "Admin commission", value: inr(data.admin_commission), accent: "emerald", hint: "Platform revenue" },
         { label: "Tax collected", value: inr(data.total_tax), accent: "amber", hint: "Passthrough to gov" },
         { label: "Delivery charges", value: inr(data.total_delivery_charges), accent: "slate" },
       ]}
+      detailsTitle="Admin earning breakdown"
       columns={[
         { key: "metric", label: "Metric" },
         { key: "amount", label: "Amount", align: "right" },

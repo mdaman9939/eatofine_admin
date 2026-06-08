@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { ImageUpload } from "./ImageUpload";
 import { MapPicker } from "./MapPicker";
 import { MultiLangInput } from "./MultiLangInput";
+import { ZonePolygonPicker } from "./ZonePolygonPicker";
+import { VariationsInput } from "./VariationsInput";
 
 export type FieldValue = string | number | boolean | number[] | string[];
 
 export interface FieldSpec {
   name: string;
   label: string;
-  type?: "text" | "password" | "number" | "date" | "textarea" | "select" | "multiselect" | "checkbox" | "image" | "documents" | "latlng" | "multilang";
+  type?: "text" | "password" | "number" | "date" | "textarea" | "select" | "multiselect" | "checkbox" | "image" | "documents" | "latlng" | "multilang" | "polygon" | "heading" | "variations";
   /** For type=multilang: which translation key this field edits (e.g. "name"). */
   langKey?: string;
   required?: boolean;
@@ -20,6 +22,8 @@ export interface FieldSpec {
   defaultValue?: string | number | boolean;
   /** For type=image: which storage subdir to upload to (banner / restaurant / category / etc.) */
   imageDir?: string;
+  /** For type=text: show a "Generate" button that fills a random code. */
+  generate?: boolean;
 }
 
 export function CreateForm({
@@ -58,8 +62,19 @@ export function CreateForm({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    // Cross-field: a confirm-password field must match the password field.
+    if (
+      values.password !== undefined && values.confirm_password !== undefined &&
+      String(values.password) !== String(values.confirm_password)
+    ) {
+      setError("Passwords do not match");
+      return;
+    }
     const body: Record<string, unknown> = {};
     for (const f of fields) {
+      // confirm_password is a UI-only check — never sent to the API.
+      if (f.name === "confirm_password") continue;
+      if (f.type === "heading") continue; // section label, no value
       const v = values[f.name];
       if (f.type === "multiselect" || f.type === "documents") {
         const arr = Array.isArray(v) ? v : [];
@@ -86,6 +101,14 @@ export function CreateForm({
           const arr = JSON.parse(String(v || "[]"));
           if (Array.isArray(arr) && arr.length) body[f.name] = arr;
         } catch { /* ignore malformed */ }
+        continue;
+      }
+      if (f.type === "polygon" || f.type === "variations") {
+        // Value is a JSON string of an array (polygon points / variation groups).
+        try {
+          const arr = JSON.parse(String(v || "[]"));
+          body[f.name] = Array.isArray(arr) ? arr : [];
+        } catch { body[f.name] = []; }
         continue;
       }
       if (v === "" || v === null || v === undefined) {
@@ -168,7 +191,7 @@ export function CreateForm({
       </div>
       <div className={embedded ? "px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3.5" : "px-5 py-4 space-y-3.5"}>
         {fields.map((f) => (
-          <div key={f.name} className={embedded && ["textarea", "multiselect", "image", "latlng", "documents"].includes(f.type ?? "") ? "sm:col-span-2" : ""}>
+          <div key={f.name} className={embedded && ["textarea", "multiselect", "image", "latlng", "documents", "polygon", "heading", "variations", "multilang"].includes(f.type ?? "") ? "sm:col-span-2" : ""}>
             <Field
               spec={f}
               value={values[f.name]}
@@ -222,6 +245,22 @@ export function Field({
 
   if (spec.type === "multilang") {
     return <MultiLangInput value={typeof value === "string" ? value : ""} onChange={(v) => onChange(v)} label={spec.label} fieldKey={spec.langKey ?? "name"} />;
+  }
+
+  if (spec.type === "polygon") {
+    return <ZonePolygonPicker value={typeof value === "string" ? value : ""} onChange={(v) => onChange(v)} label={spec.label} />;
+  }
+
+  if (spec.type === "heading") {
+    return (
+      <div className="pt-2 pb-1 border-b border-slate-200">
+        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wide">{spec.label}</h3>
+      </div>
+    );
+  }
+
+  if (spec.type === "variations") {
+    return <VariationsInput value={typeof value === "string" ? value : ""} onChange={(v) => onChange(v)} label={spec.label} />;
   }
 
   if (spec.type === "documents") {
@@ -335,23 +374,42 @@ export function Field({
   return (
     <label className="block">
       {labelEl}
-      <input
-        type={spec.type ?? "text"}
-        autoComplete={spec.type === "password" ? "new-password" : undefined}
-        className={cls}
-        value={String(value ?? "")}
-        placeholder={spec.placeholder}
-        // Number-input guardrails: `min=0` blocks the browser's arrow-down
-        // past zero; `step=any` keeps decimals (₹102.45 still valid);
-        // `onKeyDown` swallows the `-` key so typing a leading minus does
-        // nothing. Pasted negatives are caught by the submit check.
-        min={spec.type === "number" ? 0 : undefined}
-        step={spec.type === "number" ? "any" : undefined}
-        onKeyDown={spec.type === "number" ? (e) => {
-          if (e.key === "-" || e.key === "e" || e.key === "E") e.preventDefault();
-        } : undefined}
-        onChange={(e) => onChange(spec.type === "number" ? (e.target.value === "" ? "" : parseFloat(e.target.value)) : e.target.value)}
-      />
+      <div className={spec.generate ? "mt-1 flex gap-2" : ""}>
+        <input
+          type={spec.type ?? "text"}
+          autoComplete={spec.type === "password" ? "new-password" : undefined}
+          className={spec.generate ? cls.replace("mt-1", "") + " flex-1" : cls}
+          value={String(value ?? "")}
+          placeholder={spec.placeholder}
+          // Number-input guardrails: `min=0` blocks the browser's arrow-down
+          // past zero; `step=any` keeps decimals (₹102.45 still valid);
+          // `onKeyDown` swallows the `-` key so typing a leading minus does
+          // nothing. Pasted negatives are caught by the submit check.
+          min={spec.type === "number" ? 0 : undefined}
+          step={spec.type === "number" ? "any" : undefined}
+          onKeyDown={spec.type === "number" ? (e) => {
+            if (e.key === "-" || e.key === "e" || e.key === "E") e.preventDefault();
+          } : undefined}
+          onChange={(e) => onChange(spec.type === "number" ? (e.target.value === "" ? "" : parseFloat(e.target.value)) : e.target.value)}
+        />
+        {spec.generate && (
+          <button
+            type="button"
+            onClick={() => onChange(generateCode())}
+            className="shrink-0 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-semibold px-3 border border-amber-200"
+          >
+            ✨ Generate
+          </button>
+        )}
+      </div>
     </label>
   );
+}
+
+/** Random uppercase coupon code, e.g. "SAVEK7Q9X". */
+function generateCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let s = "";
+  for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return `SAVE${s}`;
 }

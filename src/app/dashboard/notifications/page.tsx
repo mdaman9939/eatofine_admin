@@ -10,8 +10,15 @@ interface Notification {
   description: string | null;
   tergat: string | null;
   zone_id: number | null;
+  image: string | null;
   created_at: string | null;
 }
+
+// Storage base derived from the API env, the same way ImageUpload does it, so
+// banner thumbnails resolve in both dev and the deployed app.
+const STORAGE_BASE =
+  ((process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/api\/v1\/?$/, "") || "http://127.0.0.1:3000") +
+  "/storage/notification/";
 
 export default async function NotificationsPage() {
   const [data, zonesRes] = await Promise.all([
@@ -39,8 +46,8 @@ export default async function NotificationsPage() {
                 { value: "restaurant", label: "Restaurants" },
               ],
             },
-            { name: "image", label: "Banner image", type: "image", imageDir: "notification" },
-            { name: "zone_id", label: "Zone (optional)", type: "select", options: zoneOptions },
+            { name: "image", label: "Notification banner", type: "image", imageDir: "notification" },
+            { name: "zone_id", label: "Zone (blank = All)", type: "select", options: zoneOptions },
           ]}
         />
       </div>
@@ -51,6 +58,16 @@ export default async function NotificationsPage() {
         rowKey={(r) => r.id}
         columns={[
           { header: "#", cell: (r) => r.id, className: "font-mono" },
+          {
+            header: "Banner",
+            cell: (r) =>
+              r.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={`${STORAGE_BASE}${r.image}`} alt="banner" className="w-12 h-9 rounded object-cover ring-1 ring-slate-200" />
+              ) : (
+                <span className="text-slate-300 text-xs">—</span>
+              ),
+          },
           { header: "Title", cell: (r) => r.title ?? "—" },
           { header: "Message", cell: (r) => <span className="text-zinc-600 dark:text-zinc-300">{r.description ?? ""}</span> },
           { header: "Target", cell: (r) => r.tergat ?? "—" },

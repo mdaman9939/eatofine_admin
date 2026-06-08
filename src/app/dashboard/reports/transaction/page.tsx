@@ -47,6 +47,7 @@ export default async function TransactionReportPage({
         { label: "Total orders", value: sales.total_orders.toString(), accent: "blue" },
         { label: "Tax + delivery", value: inr(totalTax + totalDelivery), accent: "amber" },
       ]}
+      detailsTitle="Transaction details — day-wise"
       columns={[
         { key: "day", label: "Date" },
         { key: "orders", label: "Orders", align: "right" },

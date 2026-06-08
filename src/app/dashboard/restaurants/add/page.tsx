@@ -4,6 +4,14 @@ import { adminFetch } from "../../../../lib/api";
 interface ZonesResponse { zones: Array<{ id: number; name: string | null }> }
 interface CuisinesResponse { cuisines: Array<{ id: number; name: string | null }> }
 
+// State dropdown for the "Additional data" section (GST state).
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Assam", "Bihar", "Chhattisgarh", "Delhi", "Goa", "Gujarat",
+  "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
+  "Maharashtra", "Odisha", "Punjab", "Rajasthan", "Tamil Nadu", "Telangana",
+  "Uttar Pradesh", "Uttarakhand", "West Bengal",
+];
+
 export default async function AddRestaurantPage() {
   // Populate the Zone select + Cuisine multiselect from live data, the same
   // way Laravel's Add Restaurant form seeds its dropdowns.
@@ -15,24 +23,21 @@ export default async function AddRestaurantPage() {
   const cuisineOptions = cuisinesRes.cuisines.map((c) => ({ value: String(c.id), label: c.name ?? `Cuisine ${c.id}` }));
 
   const fields: FieldSpec[] = [
-    // ── Owner / vendor account ──────────────────────────────────────
-    { name: "f_name", label: "Owner first name", type: "text", required: true, placeholder: "e.g. Rakesh" },
-    { name: "l_name", label: "Owner last name", type: "text", placeholder: "e.g. Sharma" },
-    { name: "email", label: "Owner email", type: "text", required: true, placeholder: "owner@restaurant.com" },
-    { name: "phone", label: "Contact phone", type: "text", required: true, placeholder: "+91-9876543210" },
-    { name: "password", label: "Login password", type: "password", required: true, placeholder: "Min 8 characters" },
-
-    // ── Restaurant info ─────────────────────────────────────────────
-    { name: "name", label: "Restaurant name", type: "text", required: true, placeholder: "e.g. Spice Garden" },
+    // ── Restaurant info (multi-language, like StackFood) ────────────
+    { name: "_h_info", label: "Restaurant information", type: "heading" },
+    { name: "name", label: "Restaurant name (default)", type: "text", required: true, placeholder: "e.g. Spice Garden" },
     { name: "translations", label: "Name in other languages", type: "multilang", langKey: "name" },
-    { name: "address", label: "Address", type: "textarea", required: true, placeholder: "Street, city, pincode" },
-    { name: "zone_id", label: "Zone", type: "select", required: true, options: zoneOptions },
+    { name: "address", label: "Restaurant address (default)", type: "textarea", required: true, placeholder: "Street, city, pincode" },
+    { name: "address_translations", label: "Address in other languages", type: "multilang", langKey: "address" },
     { name: "cuisine_ids", label: "Cuisines", type: "multiselect", options: cuisineOptions },
+    { name: "zone_id", label: "Zone", type: "select", required: true, options: zoneOptions },
 
-    // ── Location (map pin) ──────────────────────────────────────────
-    { name: "coordinates", label: "Map location", type: "latlng" },
+    // ── Location (set on map) ───────────────────────────────────────
+    { name: "_h_loc", label: "Set location on map", type: "heading" },
+    { name: "coordinates", label: "Set location on map", type: "latlng" },
 
-    // ── Logistics ───────────────────────────────────────────────────
+    // ── Logistics / general settings ────────────────────────────────
+    { name: "_h_general", label: "General settings", type: "heading" },
     { name: "minimum_order", label: "Minimum order ₹", type: "number", defaultValue: 100 },
     { name: "minimum_delivery_time", label: "Min delivery time (min)", type: "number", defaultValue: 10 },
     { name: "maximum_delivery_time", label: "Max delivery time (min)", type: "number", defaultValue: 30 },
@@ -40,9 +45,24 @@ export default async function AddRestaurantPage() {
     { name: "comission", label: "Commission %", type: "number", placeholder: "Leave blank for default" },
 
     // ── Branding ────────────────────────────────────────────────────
-    { name: "logo", label: "Logo", type: "image", imageDir: "restaurant" },
-    { name: "cover_photo", label: "Cover photo", type: "image", imageDir: "restaurant/cover" },
-    { name: "documents", label: "Documents (license, GST, etc.)", type: "documents", imageDir: "restaurant" },
+    { name: "_h_brand", label: "Logo & cover", type: "heading" },
+    { name: "logo", label: "Restaurant logo (1:1)", type: "image", imageDir: "restaurant" },
+    { name: "cover_photo", label: "Restaurant cover", type: "image", imageDir: "restaurant/cover" },
+
+    // ── Additional data ─────────────────────────────────────────────
+    { name: "_h_additional", label: "Additional data", type: "heading" },
+    { name: "identity_number", label: "Owner ID / GSTIN number", type: "text", placeholder: "Enter your ID number" },
+    { name: "state", label: "State", type: "select", options: INDIAN_STATES.map((s) => ({ value: s, label: s })) },
+    { name: "license_document", label: "License document", type: "image", imageDir: "restaurant" },
+
+    // ── Account information (owner / vendor login) ──────────────────
+    { name: "_h_account", label: "Account information", type: "heading" },
+    { name: "f_name", label: "Owner first name", type: "text", required: true, placeholder: "e.g. Rakesh" },
+    { name: "l_name", label: "Owner last name", type: "text", placeholder: "e.g. Sharma" },
+    { name: "email", label: "Email", type: "text", required: true, placeholder: "owner@restaurant.com" },
+    { name: "phone", label: "Phone", type: "text", required: true, placeholder: "+91-9876543210" },
+    { name: "password", label: "Password", type: "password", required: true, placeholder: "Min 8 characters" },
+    { name: "confirm_password", label: "Confirm password", type: "password", required: true, placeholder: "Re-enter password" },
 
     // ── Capabilities ────────────────────────────────────────────────
     { name: "delivery", label: "Delivery enabled", type: "checkbox", defaultValue: true },

@@ -188,6 +188,12 @@ export default async function RefundsPage() {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <span className="inline-flex flex-wrap gap-1.5 justify-end">
+                      <Link
+                        href={`/dashboard/refunds/${r.id}`}
+                        className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+                      >
+                        View
+                      </Link>
                       {NEXT_STATES.filter((s) => s !== r.refund_status).map((s) => (
                         <ActionButton
                           key={s}

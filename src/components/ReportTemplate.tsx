@@ -14,6 +14,8 @@ interface ReportTemplateProps {
   csvHref?: string;
   /** Optional filter bar rendered under the hero (date range / zone / etc.) */
   filterBar?: React.ReactNode;
+  /** Descriptive title for the detail table (defaults to "Details"). */
+  detailsTitle?: string;
 }
 
 const PALETTE: Record<string, string> = {
@@ -27,7 +29,7 @@ const PALETTE: Record<string, string> = {
 /** Consistent layout for the 11 sub-report pages — same hero + stats + table
  *  shape, no copy-pasted boilerplate per page. Each report passes its
  *  own KPIs, columns, and rows. */
-export function ReportTemplate({ badge, title, description, stats, columns, rows, csvHref, filterBar }: ReportTemplateProps) {
+export function ReportTemplate({ badge, title, description, stats, columns, rows, csvHref, filterBar, detailsTitle }: ReportTemplateProps) {
   return (
     <div className="relative p-8 space-y-6">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.06),transparent_60%)]" />
@@ -74,7 +76,7 @@ export function ReportTemplate({ badge, title, description, stats, columns, rows
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Details</h2>
+              <h2 className="text-base font-semibold text-slate-900">{detailsTitle ?? "Details"}</h2>
               <p className="text-xs text-slate-500 mt-0.5">{rows.length} row{rows.length === 1 ? "" : "s"}.</p>
             </div>
           </div>

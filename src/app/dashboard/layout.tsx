@@ -114,7 +114,7 @@ const NAV: NavGroup[] = [
   {
     section: "RESTAURANT MANAGEMENT",
     items: [
-      { href: "/dashboard/zones", label: "Zone Setup", icon: "zone" },
+      { href: "/dashboard/zones?for=restaurant", label: "Zone Setup", icon: "zone" },
       { href: "/dashboard/cuisines", label: "Cuisine", icon: "cuisine" },
       {
         href: "#restaurants-group",
@@ -128,6 +128,16 @@ const NAV: NavGroup[] = [
         ],
       },
       { href: "/dashboard/vendors", label: "Vendors", icon: "vendor" },
+      {
+        href: "#restaurant-finance",
+        label: "Disbursement & Payouts",
+        icon: "bank",
+        children: [
+          { href: "/dashboard/disbursements?type=restaurant", label: "Restaurant Disbursement", icon: "bank" },
+          { href: "/dashboard/withdraw-requests?type=restaurant", label: "Withdraw Requests", icon: "cash" },
+          { href: "/dashboard/withdrawal-methods", label: "Withdrawal Methods", icon: "bank" },
+        ],
+      },
     ],
   },
   {
@@ -274,9 +284,15 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/delivery-men", label: "All Delivery Men", icon: "bike" },
           { href: "/dashboard/delivery-men/add", label: "Add New", icon: "addon" },
           { href: "/dashboard/delivery-men-pending", label: "Joining Requests", icon: "shield" },
+          { href: "/dashboard/zones?for=deliveryman", label: "Zone Setup", icon: "zone" },
+          { href: "/dashboard/vehicles", label: "Vehicle Category Setup", icon: "car" },
+          { href: "/dashboard/shifts", label: "Shift Setup", icon: "clock" },
           { href: "/dashboard/dm-bonuses", label: "Bonuses", icon: "star" },
           { href: "/dashboard/dm-incentives", label: "Incentives", icon: "currency" },
           { href: "/dashboard/dm-reviews", label: "Reviews", icon: "star" },
+          { href: "/dashboard/disbursements?type=deliveryman", label: "DM Disbursement", icon: "bank" },
+          { href: "/dashboard/dm-earnings", label: "DM Earnings", icon: "currency" },
+          { href: "/dashboard/withdraw-requests?type=deliveryman", label: "DM Withdraw Requests", icon: "cash" },
         ],
       },
       {
@@ -312,25 +328,7 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/cashback-histories", label: "Cashback History", icon: "history" },
         ],
       },
-      {
-        href: "#fin-payouts",
-        label: "Payouts",
-        icon: "bank",
-        children: [
-          { href: "/dashboard/withdraw-requests", label: "Withdraw Requests", icon: "cash" },
-          { href: "/dashboard/withdrawal-methods", label: "Withdrawal Methods", icon: "bank" },
-          { href: "/dashboard/disbursements", label: "Disbursements", icon: "bank" },
-          { href: "/dashboard/dm-earnings", label: "DM Earnings", icon: "currency" },
-        ],
-      },
       { href: "/dashboard/offline-payment-methods", label: "Offline Payments", icon: "card" },
-    ],
-  },
-  {
-    section: "LOGISTICS",
-    items: [
-      { href: "/dashboard/shifts", label: "Shifts", icon: "clock" },
-      { href: "/dashboard/vehicles", label: "Vehicles", icon: "car" },
     ],
   },
   {
@@ -388,7 +386,15 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/reports/deliveryman-earning", label: "Deliveryman Earning", icon: "currency" },
         ],
       },
-      { href: "/dashboard/business-settings", label: "Business Settings", icon: "settings" },
+      {
+        href: "#sys-business",
+        label: "Business Settings",
+        icon: "settings",
+        children: [
+          { href: "/dashboard/business-settings", label: "Business Setup", icon: "settings" },
+          { href: "/dashboard/currencies", label: "Currency", icon: "currency" },
+        ],
+      },
       { href: "/dashboard/theme-settings", label: "Theme Settings", icon: "settings" },
       { href: "/dashboard/login-setup", label: "Login Setup", icon: "shield" },
       { href: "/dashboard/app-settings", label: "App & Web Settings", icon: "settings" },
@@ -401,25 +407,32 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/notification-messages", label: "Messages", icon: "comment" },
         ],
       },
+      { href: "/dashboard/translations", label: "Translations", icon: "translate" },
       {
-        href: "#sys-locale",
-        label: "Localization",
-        icon: "globe",
-        children: [
-          { href: "/dashboard/currencies", label: "Currencies", icon: "currency" },
-          { href: "/dashboard/translations", label: "Translations", icon: "translate" },
-        ],
-      },
-      {
-        href: "#sys-integrations",
-        label: "Integrations",
+        href: "#sys-thirdparty",
+        label: "3rd Party & Configurations",
         icon: "settings",
         children: [
+          { href: "/dashboard/third-party-config", label: "3rd Party", icon: "settings" },
           { href: "/dashboard/payment-gateways", label: "Payment Gateways", icon: "card" },
-          { href: "/dashboard/gallery", label: "Gallery / Files", icon: "settings" },
+          { href: "/dashboard/firebase-notification", label: "Firebase Notification", icon: "bell" },
+          { href: "/dashboard/offline-payment-methods", label: "Offline Payment Setup", icon: "card" },
+          { href: "/dashboard/join-us-setup", label: "Join Us Page Setup", icon: "comment" },
+          { href: "/dashboard/analytics-script", label: "Analytics Script", icon: "history" },
+          { href: "/dashboard/ai-setup", label: "AI Setup", icon: "settings" },
         ],
       },
-      { href: "/dashboard/subscription-packages", label: "Subscription Packages", icon: "package" },
+      {
+        href: "#sys-subscription",
+        label: "Subscription Management",
+        icon: "package",
+        children: [
+          { href: "/dashboard/subscription-packages", label: "Subscription Packages", icon: "package" },
+          { href: "/dashboard/subscription-orders", label: "Subscriber List", icon: "calendar" },
+          { href: "/dashboard/subscription-settings", label: "Settings", icon: "settings" },
+        ],
+      },
+      { href: "/dashboard/gallery", label: "Gallery / Files", icon: "settings" },
       { href: "/dashboard/system-addons", label: "System Addons", icon: "settings" },
       { href: "/dashboard/addon-activation", label: "Addon Activation", icon: "settings" },
       { href: "/dashboard/activity-log", label: "Activity Log", icon: "history" },

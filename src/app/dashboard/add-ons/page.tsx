@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge, fmtMoney } from "../../../components/TablePage";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
@@ -48,6 +49,7 @@ export default async function AddOnsPage() {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
+                <Link href={`/dashboard/add-ons/${r.id}/edit`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">Edit</Link>
                 <ToggleStatusButton basePath="/add-ons" id={r.id} currentStatus={r.status} />
                 <DeleteButton basePath="/add-ons" id={r.id} />
               </span>

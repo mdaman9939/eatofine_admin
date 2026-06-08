@@ -13,21 +13,27 @@ interface Category {
   created_at: string | null;
 }
 
-interface Response {
-  categories: Category[];
-}
-
 export default async function CategoriesPage() {
-  const data = await adminFetch<Response>("/admin/categories?parent_id=0");
+  // All categories for the list (so sub-categories show too) + top-level for
+  // the "Parent category" dropdown that turns a new category into a sub-category.
+  const [all, parents] = await Promise.all([
+    adminFetch<{ categories: Category[] }>("/admin/categories"),
+    adminFetch<{ categories: Category[] }>("/admin/categories?parent_id=0"),
+  ]);
+  const parentNameById = new Map(parents.categories.map((c) => [c.id, c.name]));
+  const parentOptions = parents.categories.map((c) => ({ value: String(c.id), label: c.name }));
 
   return (
     <>
       <div className="px-8 pt-8">
         <CreateForm
           path="/categories"
-          title="New category"
+          title="New category / sub-category"
           fields={[
-            { name: "name", label: "Name", required: true },
+            { name: "name", label: "Name (default)", required: true },
+            { name: "translations", label: "Name in other languages", type: "multilang", langKey: "name" },
+            // Leave blank for a top-level category; pick a parent to make it a sub-category.
+            { name: "parent_id", label: "Parent category (leave blank = top-level)", type: "select", options: parentOptions },
             { name: "image", label: "Image", type: "image", imageDir: "category" },
             { name: "position", label: "Position", type: "number" },
             { name: "priority", label: "Priority", type: "number" },
@@ -36,12 +42,29 @@ export default async function CategoriesPage() {
       </div>
       <TablePage
         title="Categories"
-        subtitle={`${data.categories.length} top-level categories`}
-        rows={data.categories}
+        subtitle={`${all.categories.length} categories (incl. sub-categories)`}
+        rows={all.categories}
         rowKey={(r) => r.id}
         columns={[
           { header: "#", cell: (r) => r.id, className: "font-mono" },
-          { header: "Name", cell: (r) => r.name },
+          {
+            header: "Name",
+            cell: (r) =>
+              r.parent_id ? (
+                <span className="pl-4 text-slate-600">↳ {r.name}</span>
+              ) : (
+                <span className="font-semibold">{r.name}</span>
+              ),
+          },
+          {
+            header: "Type",
+            cell: (r) =>
+              r.parent_id ? (
+                <span className="text-xs text-slate-500">Sub of <span className="font-medium">{parentNameById.get(r.parent_id) ?? `#${r.parent_id}`}</span></span>
+              ) : (
+                <span className="text-xs font-semibold text-emerald-700">Top-level</span>
+              ),
+          },
           { header: "Priority", cell: (r) => r.priority },
           { header: "Status", cell: (r) => <StatusBadge value={r.status} /> },
           { header: "Created", cell: (r) => <span className="text-xs text-zinc-500">{fmtDate(r.created_at)}</span> },

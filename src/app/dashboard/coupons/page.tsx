@@ -23,13 +23,18 @@ interface Coupon {
 }
 
 export default async function CouponsPage() {
-  const [data, zonesRes, restaurantsRes] = await Promise.all([
+  const [data, zonesRes, restaurantsRes, usersRes] = await Promise.all([
     adminFetch<{ coupons: Coupon[] }>("/admin/coupons"),
     adminFetch<{ zones: Array<{ id: number; name: string | null }> }>("/admin/zones").catch(() => ({ zones: [] })),
     adminFetch<{ restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> }>("/admin/restaurants?limit=200").catch(() => ({} as { restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> })),
+    adminFetch<{ users?: Array<{ id: number; f_name: string | null; l_name: string | null; phone: string | null }> }>("/admin/users?limit=200").catch(() => ({} as { users?: Array<{ id: number; f_name: string | null; l_name: string | null; phone: string | null }> })),
   ]);
   const zoneOptions = zonesRes.zones.map((z) => ({ value: String(z.id), label: z.name ?? `Zone ${z.id}` }));
   const restOptions = (restaurantsRes.restaurants ?? restaurantsRes.items ?? []).map((r) => ({ value: String(r.id), label: r.name ?? `#${r.id}` }));
+  const customerOptions = (usersRes.users ?? []).map((u) => ({
+    value: String(u.id),
+    label: `${u.f_name ?? ""} ${u.l_name ?? ""}`.trim() || u.phone || `#${u.id}`,
+  }));
   return (
     <>
       <div className="px-8 pt-8">
@@ -38,7 +43,7 @@ export default async function CouponsPage() {
           title="New coupon"
           fields={[
             { name: "title", label: "Title", required: true },
-            { name: "code", label: "Code", required: true, placeholder: "WELCOME10" },
+            { name: "code", label: "Code", required: true, placeholder: "WELCOME10", generate: true },
             { name: "coupon_type", label: "Coupon type", type: "select", defaultValue: "default", options: [
               { value: "default", label: "Default (all orders)" },
               { value: "first_order", label: "First order" },
@@ -46,12 +51,13 @@ export default async function CouponsPage() {
               { value: "restaurant_wise", label: "Restaurant-wise" },
               { value: "zone_wise", label: "Zone-wise" },
             ] },
+            { name: "restaurant_id", label: "Restaurant (for restaurant-wise)", type: "select", options: restOptions },
+            { name: "zone_id", label: "Zone (for zone-wise)", type: "select", options: zoneOptions },
+            { name: "customer_id", label: "Customer (blank = all)", type: "select", options: customerOptions },
             { name: "discount", label: "Discount", type: "number", required: true },
             { name: "discount_type", label: "Discount type", type: "select", options: [{ value: "percentage", label: "%" }, { value: "amount", label: "Flat ₹" }], defaultValue: "percentage" },
             { name: "min_purchase", label: "Minimum purchase", type: "number" },
             { name: "max_discount", label: "Max discount", type: "number" },
-            { name: "restaurant_id", label: "Restaurant (for restaurant-wise)", type: "select", options: restOptions },
-            { name: "zone_id", label: "Zone (for zone-wise)", type: "select", options: zoneOptions },
             { name: "start_date", label: "Starts", type: "date" },
             { name: "expire_date", label: "Expires", type: "date" },
             { name: "limit", label: "Per-customer limit", type: "number" },

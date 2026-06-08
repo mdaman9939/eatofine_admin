@@ -29,8 +29,10 @@ interface FoodDetail {
     available_time_ends: string | null;
     add_ons?: number[] | null;
     addon_ids?: number[] | null;
+    variations?: unknown[] | null;
     meta_title?: string | null;
     meta_description?: string | null;
+    translations?: Array<{ locale?: string; key?: string; value?: string }> | null;
   };
 }
 
@@ -47,6 +49,9 @@ export default async function EditFoodPage({ params }: { params: Promise<{ id: s
   const catList: Category[] = categories.items ?? categories.categories ?? [];
   const addonList: Addon[] = addons.items ?? addons.add_ons ?? [];
   const selectedAddons = (f.add_ons ?? f.addon_ids ?? []).map(Number);
+  const allTr = Array.isArray(f.translations) ? f.translations : [];
+  const nameTr = JSON.stringify(allTr.filter((t) => t.key === "name"));
+  const descTr = JSON.stringify(allTr.filter((t) => t.key === "description"));
 
   return (
     <div className="relative p-8 space-y-6 max-w-3xl">
@@ -78,7 +83,9 @@ export default async function EditFoodPage({ params }: { params: Promise<{ id: s
           fields={buildFoodFields(restList, catList, addonList)}
           initialValues={{
             name: f.name,
+            translations: nameTr,
             description: f.description,
+            description_translations: descTr,
             image: f.image,
             restaurant_id: f.restaurant_id,
             category_id: f.category_id,
@@ -92,7 +99,8 @@ export default async function EditFoodPage({ params }: { params: Promise<{ id: s
             available_time_starts: f.available_time_starts,
             available_time_ends: f.available_time_ends,
             addon_ids: selectedAddons,
-            veg: f.veg,
+            variations: JSON.stringify(f.variations ?? []),
+            veg: f.veg ? "1" : "0",
             is_halal: f.is_halal,
             recommended: f.recommended,
             meta_title: f.meta_title ?? "",

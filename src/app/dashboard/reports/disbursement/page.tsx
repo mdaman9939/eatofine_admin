@@ -39,6 +39,7 @@ export default async function DisbursementReportPage() {
         { label: "Completed", value: completed.toString(), accent: "amber" },
         { label: "Pending", value: pending.toString(), accent: "rose" },
       ]}
+      detailsTitle="Disbursement details"
       columns={[
         { key: "id", label: "#" },
         { key: "recipient", label: "Recipient" },

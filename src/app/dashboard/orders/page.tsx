@@ -53,11 +53,12 @@ const STATUS_PILL: Record<string, { tone: string; dot: string; label: string }> 
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; type?: string }>;
 }) {
   const sp = await searchParams;
   const status = sp.status ?? "";
-  const path = `/admin/orders?limit=100${status ? `&status=${status}` : ""}`;
+  const orderType = sp.type ?? "";
+  const path = `/admin/orders?limit=100${status ? `&status=${status}` : ""}${orderType ? `&order_type=${orderType}` : ""}`;
   const data = await adminFetch<OrdersResponse>(path);
 
   // Compute summary buckets across the rendered set.
@@ -127,7 +128,7 @@ export default async function OrdersPage({
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-2 flex-wrap">
         <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold mr-2">Filter</span>
         {FILTERS.map((f) => {
-          const isActive = status === f;
+          const isActive = status === f && !orderType;
           const cfg = f ? STATUS_PILL[f] : null;
           return (
             <Link
@@ -144,6 +145,19 @@ export default async function OrdersPage({
             </Link>
           );
         })}
+        {/* Dine-in is an order TYPE (not a status) — its own chip. */}
+        <span className="mx-1 h-5 w-px bg-slate-200" />
+        <Link
+          href="/dashboard/orders?type=dine_in"
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            orderType === "dine_in"
+              ? "bg-gradient-to-b from-teal-600 to-teal-700 text-white shadow-sm shadow-teal-500/25"
+              : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+          }`}
+        >
+          {orderType !== "dine_in" && <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />}
+          Dine in
+        </Link>
       </div>
 
       {/* ── Orders table ───────────────────────────────────────── */}

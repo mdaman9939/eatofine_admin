@@ -52,8 +52,17 @@ export function EditForm({
     e.preventDefault();
     setError(null);
     setSaved(false);
+    // Cross-field: confirm-password must match password when both are filled.
+    if (
+      values.password !== undefined && values.confirm_password !== undefined &&
+      String(values.password) !== String(values.confirm_password)
+    ) {
+      setError("Passwords do not match");
+      return;
+    }
     const body: Record<string, unknown> = {};
     for (const f of fields) {
+      if (f.name === "confirm_password") continue; // UI-only
       const v = values[f.name];
       if (f.type === "checkbox") {
         body[f.name] = !!v;
@@ -69,6 +78,18 @@ export function EditForm({
         body[f.name] = Array.isArray(v) ? v : [];
         continue;
       }
+      if (f.type === "variations" || f.type === "polygon") {
+        try { body[f.name] = JSON.parse(String(v || "[]")); }
+        catch { body[f.name] = []; }
+        continue;
+      }
+      if (f.type === "multilang") {
+        // Value is a JSON string of [{ locale, key, value }] translations.
+        try { body[f.name] = JSON.parse(String(v || "[]")); }
+        catch { body[f.name] = []; }
+        continue;
+      }
+      if (f.type === "heading") continue;
       if (v === "" || v === null || v === undefined) {
         if (f.required) {
           setError(`${f.label} is required`);
@@ -115,7 +136,7 @@ export function EditForm({
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3.5">
         {fields.map((f) => (
-          <div key={f.name} className={["textarea", "multiselect", "image", "latlng", "documents"].includes(f.type ?? "") ? "sm:col-span-2" : ""}>
+          <div key={f.name} className={["textarea", "multiselect", "image", "latlng", "documents", "polygon", "heading", "variations", "multilang"].includes(f.type ?? "") ? "sm:col-span-2" : ""}>
             <Field
               spec={f}
               value={values[f.name]}

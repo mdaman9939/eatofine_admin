@@ -13,11 +13,18 @@ interface WR {
   created_at: string | null;
 }
 
-export default async function WithdrawRequestsPage() {
-  const data = await adminFetch<{ total: number; items: WR[] }>("/admin/withdraw-requests?limit=200");
+export default async function WithdrawRequestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
+  const sp = await searchParams;
+  const type = sp.type ?? "";
+  const data = await adminFetch<{ total: number; items: WR[] }>(`/admin/withdraw-requests?limit=200${type ? `&type=${type}` : ""}`);
+  const heading = type === "deliveryman" ? "Deliveryman withdraw requests" : type === "restaurant" ? "Restaurant withdraw requests" : "Withdraw requests";
   return (
     <TablePage
-      title="Withdraw requests"
+      title={heading}
       subtitle={`${data.items.length} of ${data.total}`}
       rows={data.items}
       rowKey={(r) => r.id}

@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { loadLeaflet, type LeafletMap, type LeafletMarker } from "../lib/leaflet";
 
 /**
- * Dependency-free location picker. Stores the value as a `"lat,lng"` string.
- * Shows a live OpenStreetMap preview with a marker, lets the admin type exact
- * coordinates, drop a pin via "Use my location", and open the full OSM map to
- * pick a spot. (A draggable Leaflet pin would need an extra map library; this
- * gives the same lat/long capture with zero new dependencies.)
+ * Location picker with a REAL draggable Leaflet pin (OpenStreetMap tiles — no
+ * paid Google Maps API). Click the map or drag the marker to set the spot; the
+ * lat/long inputs stay in sync. Stores the value as a `"lat,lng"` string.
  */
 export function MapPicker({
   value,
@@ -18,84 +17,81 @@ export function MapPicker({
   onChange: (v: string) => void;
   label?: string;
 }) {
-  const [busy, setBusy] = useState(false);
   const [lat, lng] = parseLatLng(value);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markerRef = useRef<LeafletMarker | null>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
 
-  function setLat(v: string) {
-    onChange(`${v},${lng ?? ""}`);
-  }
-  function setLng(v: string) {
-    onChange(`${lat ?? ""},${v}`);
-  }
+  function setLat(v: string) { onChange(`${v},${lng ?? ""}`); }
+  function setLng(v: string) { onChange(`${lat ?? ""},${v}`); }
+
+  // Init map once.
+  useEffect(() => {
+    let cancelled = false;
+    loadLeaflet()
+      .then((L) => {
+        if (cancelled || !containerRef.current) return;
+        const start: [number, number] = lat !== null && lng !== null ? [lat, lng] : [20.5937, 78.9629];
+        const map = L.map(containerRef.current).setView(start, lat !== null ? 15 : 5);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap", maxZoom: 19 }).addTo(map);
+        const marker = L.marker(start, { draggable: true }).addTo(map);
+        marker.on("dragend", (e) => {
+          const ll = e.target.getLatLng();
+          onChangeRef.current(`${ll.lat.toFixed(6)},${ll.lng.toFixed(6)}`);
+        });
+        map.on("click", (e) => {
+          marker.setLatLng([e.latlng.lat, e.latlng.lng]);
+          onChangeRef.current(`${e.latlng.lat.toFixed(6)},${e.latlng.lng.toFixed(6)}`);
+        });
+        mapRef.current = map;
+        markerRef.current = marker;
+        setStatus("ready");
+        setTimeout(() => map.invalidateSize(), 100);
+      })
+      .catch(() => setStatus("error"));
+    return () => { cancelled = true; mapRef.current?.remove(); mapRef.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep the marker in sync when lat/long typed manually.
+  useEffect(() => {
+    if (mapRef.current && markerRef.current && lat !== null && lng !== null && Number.isFinite(lat) && Number.isFinite(lng)) {
+      markerRef.current.setLatLng([lat, lng]);
+      mapRef.current.setView([lat, lng], 15);
+    }
+  }, [lat, lng]);
 
   function locate() {
     if (!navigator.geolocation) return;
-    setBusy(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        onChange(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`);
-        setBusy(false);
-      },
-      () => setBusy(false),
+      (pos) => onChange(`${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`),
+      () => {},
       { enableHighAccuracy: true, timeout: 8000 },
     );
   }
 
-  const hasPoint = lat !== null && lng !== null && Number.isFinite(lat) && Number.isFinite(lng);
-  // Small bounding box around the point for the embed.
-  const d = 0.01;
-  const bbox = hasPoint ? `${lng! - d},${lat! - d},${lng! + d},${lat! + d}` : "-0.1,-0.1,0.1,0.1";
-  const embed = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik${hasPoint ? `&marker=${lat},${lng}` : ""}`;
-
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-700 tracking-wide uppercase">{label}</span>
-        <button
-          type="button"
-          onClick={locate}
-          disabled={busy}
-          className="cursor-pointer text-xs font-semibold text-emerald-700 hover:underline disabled:opacity-50"
-        >
-          {busy ? "Locating…" : "📍 Use my location"}
-        </button>
+        <span className="text-xs font-semibold text-slate-700 tracking-wide uppercase">{label} <span className="text-slate-400 normal-case font-normal">· drag the pin or click the map</span></span>
+        <button type="button" onClick={locate} className="cursor-pointer text-xs font-semibold text-emerald-700 hover:underline">📍 Use my location</button>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <input
-          type="text"
-          inputMode="decimal"
-          value={lat ?? ""}
-          placeholder="Latitude"
-          onChange={(e) => setLat(e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15"
-        />
-        <input
-          type="text"
-          inputMode="decimal"
-          value={lng ?? ""}
-          placeholder="Longitude"
-          onChange={(e) => setLng(e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15"
-        />
+        <input type="text" inputMode="decimal" value={lat ?? ""} placeholder="Latitude" onChange={(e) => setLat(e.target.value)}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15" />
+        <input type="text" inputMode="decimal" value={lng ?? ""} placeholder="Longitude" onChange={(e) => setLng(e.target.value)}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15" />
       </div>
 
-      <div className="rounded-lg overflow-hidden border border-slate-200">
-        <iframe
-          title="map"
-          src={embed}
-          className="w-full h-56"
-          loading="lazy"
-        />
+      <div className="rounded-lg overflow-hidden border border-slate-200 relative">
+        <div ref={containerRef} className="w-full h-56 bg-slate-100" />
+        {status === "loading" && <div className="absolute inset-0 flex items-center justify-center text-sm text-slate-400 pointer-events-none">Loading map…</div>}
+        {status === "error" && <div className="absolute inset-0 flex items-center justify-center text-sm text-rose-500 bg-white/80 p-4 text-center">Map could not load — you can still type the coordinates.</div>}
       </div>
-      <a
-        href={hasPoint ? `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=16/${lat}/${lng}` : "https://www.openstreetmap.org"}
-        target="_blank"
-        rel="noreferrer"
-        className="text-xs text-emerald-700 hover:underline"
-      >
-        Open full map to find exact coordinates ↗
-      </a>
     </div>
   );
 }

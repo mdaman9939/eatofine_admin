@@ -47,6 +47,7 @@ export default async function OrderReportPage({
         { label: "Avg orders/day", value: avgOrders.toFixed(1), accent: "amber" },
         { label: "Avg order value", value: inr(aov), accent: "emerald" },
       ]}
+      detailsTitle="Order details — day-wise"
       columns={[
         { key: "day", label: "Date" },
         { key: "orders", label: "Orders", align: "right" },
