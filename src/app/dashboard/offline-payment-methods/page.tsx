@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { TablePage } from "../../../components/TablePage";
-import { ActionButton } from "../../../components/ActionButton";
+import { ActionButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface M {
@@ -55,6 +55,7 @@ export default async function OfflinePaymentMethodsPage() {
                   label={r.status ? "Disable" : "Enable"}
                   variant={r.status ? "subtle" : "primary"}
                 />
+                <DeleteButton basePath="/offline-payment-methods" id={r.id} />
               </span>
             ),
           },

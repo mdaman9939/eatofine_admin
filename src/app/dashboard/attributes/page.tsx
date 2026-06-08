@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, fmtDate } from "../../../components/TablePage";
 import { DeleteButton } from "../../../components/ActionButton";
+import { InlineEditName } from "../../../components/InlineEditName";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface Attribute {
@@ -25,7 +26,12 @@ export default async function AttributesPage() {
           { header: "#", cell: (r) => r.id, className: "font-mono" },
           { header: "Name", cell: (r) => r.name ?? "—" },
           { header: "Created", cell: (r) => <span className="text-xs text-zinc-500">{fmtDate(r.created_at)}</span> },
-          { header: "Actions", cell: (r) => <DeleteButton basePath="/attributes" id={r.id} /> },
+          { header: "Actions", cell: (r) => (
+            <span className="flex gap-2">
+              <InlineEditName basePath="/attributes" id={r.id} value={r.name ?? ""} />
+              <DeleteButton basePath="/attributes" id={r.id} />
+            </span>
+          ) },
         ]}
       />
     </>

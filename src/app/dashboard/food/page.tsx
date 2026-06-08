@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
-import { ToggleStatusButton, ActionButton } from "../../../components/ActionButton";
+import { ToggleStatusButton, ActionButton, DeleteButton } from "../../../components/ActionButton";
 import { PaginatedTable } from "../../../components/PaginatedTable";
 import { DonutChart, DonutLegend, DONUT_PALETTE } from "../../../components/DonutChart";
 
@@ -188,6 +188,7 @@ export default async function FoodPage() {
                   </Link>
                   <ToggleStatusButton basePath="/food" id={f.id} currentStatus={f.status} />
                   <ActionButton path={`/food/${f.id}/recommended`} method="PATCH" body={{ recommended: !f.recommended }} label={f.recommended ? "Unmark" : "Recommend"} variant="subtle" />
+                  <DeleteButton basePath="/food" id={f.id} />
                 </div>
               </td>
             </tr>

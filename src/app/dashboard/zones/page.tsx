@@ -217,6 +217,7 @@ export default async function ZonesPage({
                     </td>
                     <td className="px-4 py-4 text-right">
                       <span className="inline-flex gap-2">
+                        <Link href={`/dashboard/zones/${z.id}/edit`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">Edit</Link>
                         <ToggleStatusButton basePath="/zones" id={z.id} currentStatus={z.status} />
                         {!z.is_default && <DeleteButton basePath="/zones" id={z.id} />}
                       </span>

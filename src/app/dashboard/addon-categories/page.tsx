@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge, fmtDate } from "../../../components/TablePage";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { InlineEditName } from "../../../components/InlineEditName";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface AddonCategory {
@@ -32,6 +33,7 @@ export default async function AddonCategoriesPage() {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
+                <InlineEditName basePath="/addon-categories" id={r.id} value={r.name} />
                 <ToggleStatusButton basePath="/addon-categories" id={r.id} currentStatus={r.status} />
                 <DeleteButton basePath="/addon-categories" id={r.id} />
               </span>

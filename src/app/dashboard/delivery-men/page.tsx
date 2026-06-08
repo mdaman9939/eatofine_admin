@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
-import { ActionButton, ToggleStatusButton } from "../../../components/ActionButton";
+import { ActionButton, ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { PaginatedTable } from "../../../components/PaginatedTable";
 import { DonutChart, DonutLegend, DONUT_PALETTE } from "../../../components/DonutChart";
 
@@ -168,6 +168,7 @@ export default async function DeliveryMenPage() {
                     {(r.application_status ?? "").toLowerCase() !== "denied" && (
                       <ActionButton path={`/delivery-men/${r.id}/approval`} method="PATCH" body={{ approval: "denied" }} label="Deny" variant="subtle" />
                     )}
+                    <DeleteButton basePath="/delivery-men" id={r.id} />
                   </div>
                 </td>
               </tr>
