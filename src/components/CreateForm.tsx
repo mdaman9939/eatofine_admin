@@ -189,9 +189,9 @@ export function CreateForm({
           </button>
         )}
       </div>
-      <div className={embedded ? "px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3.5" : "px-5 py-4 space-y-3.5"}>
+      <div className={embedded ? "px-5 py-4 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-x-5 gap-y-3.5" : "px-5 py-4 space-y-3.5"}>
         {fields.map((f) => (
-          <div key={f.name} className={embedded && ["textarea", "multiselect", "image", "latlng", "documents", "polygon", "heading", "variations", "multilang"].includes(f.type ?? "") ? "sm:col-span-2" : ""}>
+          <div key={f.name} className={embedded && ["textarea", "multiselect", "image", "latlng", "documents", "polygon", "heading", "variations", "multilang"].includes(f.type ?? "") ? "col-span-full" : ""}>
             <Field
               spec={f}
               value={values[f.name]}
@@ -200,7 +200,7 @@ export function CreateForm({
           </div>
         ))}
         {error && (
-          <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded px-2 py-1.5 sm:col-span-2">{error}</p>
+          <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded px-2 py-1.5 col-span-full">{error}</p>
         )}
       </div>
       <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex gap-2 justify-end">

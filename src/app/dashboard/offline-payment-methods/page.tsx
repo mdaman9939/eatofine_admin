@@ -7,8 +7,16 @@ import { CreateForm } from "../../../components/CreateForm";
 interface M {
   id: number;
   method_name: string;
-  method_fields?: string | null;
+  method_fields?: unknown;
   status: number;
+}
+
+/** method_fields can be a plain string OR a JSON object (depending on how it
+ *  was created) — render it safely so it never crashes React (#31). */
+function fieldsText(v: unknown): string {
+  if (v === null || v === undefined || v === "") return "—";
+  if (typeof v === "string") return v;
+  try { return JSON.stringify(v); } catch { return String(v); }
 }
 
 export default async function OfflinePaymentMethodsPage() {
@@ -34,7 +42,7 @@ export default async function OfflinePaymentMethodsPage() {
         columns={[
           { header: "#", cell: (r) => r.id, className: "font-mono" },
           { header: "Name", cell: (r) => r.method_name },
-          { header: "Details", cell: (r) => <span className="text-xs text-slate-500 line-clamp-1 max-w-xs inline-block">{r.method_fields ?? "—"}</span> },
+          { header: "Details", cell: (r) => <span className="text-xs text-slate-500 line-clamp-1 max-w-xs inline-block">{fieldsText(r.method_fields)}</span> },
           {
             header: "Status",
             cell: (r) => (

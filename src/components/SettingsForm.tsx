@@ -109,16 +109,17 @@ export function SettingsForm({ initial, groups }: { initial: Setting[]; groups: 
         <div className="rounded-lg bg-rose-50 border border-rose-100 text-rose-700 px-4 py-3 text-sm">{error}</div>
       )}
 
-      {/* Sections */}
+      {/* Sections — each group is a full-width card whose fields flow in a
+          responsive grid so the page uses the whole width (no dead space). */}
       {groups.map((group) => (
         <div key={group.title} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="text-base font-semibold text-slate-900">{group.title}</h2>
             {group.description && <p className="text-xs text-slate-500 mt-0.5">{group.description}</p>}
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="p-5 grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-x-6 gap-y-5">
             {group.fields.map((f) => (
-              <FieldRow
+              <FieldCell
                 key={f.key}
                 spec={f}
                 value={currentValue(f.key, f.defaultValue)}
@@ -133,26 +134,24 @@ export function SettingsForm({ initial, groups }: { initial: Setting[]; groups: 
   );
 }
 
-function FieldRow({
+function FieldCell({
   spec, value, isDirty, onChange,
 }: { spec: FieldSpec; value: string; isDirty: boolean; onChange: (v: string) => void }) {
+  // Textareas get the full row so the editor is comfortably wide.
+  const fullWidth = spec.type === "textarea";
   return (
-    <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4 items-start">
-      <div>
-        <label className="block">
-          <span className="font-medium text-sm text-slate-900">{spec.label}</span>
-          {isDirty && (
-            <span className="ml-2 text-[10px] uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
-              Modified
-            </span>
-          )}
-        </label>
-        {spec.description && <p className="text-xs text-slate-500 mt-1 leading-relaxed">{spec.description}</p>}
-        <p className="text-[10px] text-slate-400 font-mono mt-1">{spec.key}</p>
-      </div>
-      <div className="max-w-md">
-        <Input spec={spec} value={value} onChange={onChange} />
-      </div>
+    <div className={fullWidth ? "md:col-span-2 2xl:col-span-3" : ""}>
+      <label className="block">
+        <span className="font-medium text-sm text-slate-900">{spec.label}</span>
+        {isDirty && (
+          <span className="ml-2 text-[10px] uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
+            Modified
+          </span>
+        )}
+      </label>
+      {spec.description && <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{spec.description}</p>}
+      <p className="text-[10px] text-slate-400 font-mono mt-0.5 mb-2">{spec.key}</p>
+      <Input spec={spec} value={value} onChange={onChange} />
     </div>
   );
 }

@@ -6,9 +6,17 @@ import { EditForm } from "../../../../../components/EditForm";
 interface M {
   id: number;
   method_name: string;
-  method_fields?: string | null;
-  method_informations?: string | null;
+  method_fields?: unknown;
+  method_informations?: unknown;
   status: number;
+}
+
+/** method_fields / informations may be a string OR a JSON object — coerce to a
+ *  string so the textarea (and React) never choke on an object value. */
+function asText(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  if (typeof v === "string") return v;
+  try { return JSON.stringify(v); } catch { return String(v); }
 }
 
 export default async function EditOfflineMethodPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,8 +38,8 @@ export default async function EditOfflineMethodPage({ params }: { params: Promis
           redirectTo="/dashboard/offline-payment-methods"
           initialValues={{
             method_name: m.method_name,
-            method_fields: m.method_fields ?? "",
-            method_informations: m.method_informations ?? "",
+            method_fields: asText(m.method_fields),
+            method_informations: asText(m.method_informations),
             status: !!m.status,
           }}
           fields={[
