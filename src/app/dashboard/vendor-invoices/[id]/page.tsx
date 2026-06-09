@@ -47,6 +47,7 @@ interface VendorInvoice {
 const EATOFINE_DEFAULTS = {
   legal_name: "Eatofine Delivery Service Pvt. Ltd.",
   short_name: "EATOFINE",
+  logo_url: "",
   registered_office: ". FF2, Vishnu Palace, Sec 20B, Faridabad NIT, Faridabad, Haryana, India, 121001, India",
   state: "Haryana",
   state_code: "06",
@@ -71,6 +72,7 @@ async function loadEatofineSettings() {
     return {
       legal_name: pick("company_name", EATOFINE_DEFAULTS.legal_name),
       short_name: pick("short_name", EATOFINE_DEFAULTS.short_name),
+      logo_url: pick("logo_url", EATOFINE_DEFAULTS.logo_url),
       registered_office: pick("registered_office", EATOFINE_DEFAULTS.registered_office),
       state: pick("state", EATOFINE_DEFAULTS.state),
       state_code: pick("state_code", EATOFINE_DEFAULTS.state_code),
@@ -166,11 +168,22 @@ export default async function VendorInvoiceDetailPage({ params }: { params: Prom
             <div className="text-2xl font-black tracking-wide text-orange-600">{EATOFINE.short_name}</div>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 18a3 3 0 100-6 3 3 0 000 6zm14 0a3 3 0 100-6 3 3 0 000 6zm-9-3l3-9h5m-5 9l-3-9H6" />
+            {EATOFINE.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={EATOFINE.logo_url} alt={EATOFINE.short_name} className="w-20 h-20 object-contain" />
+            ) : (
+              // Delivery-scooter fallback (matches the PDF artwork closely).
+              <svg className="w-20 h-20" viewBox="0 0 64 64" fill="none">
+                <circle cx="15" cy="48" r="8" stroke="#ea580c" strokeWidth="3" />
+                <circle cx="49" cy="48" r="8" stroke="#ea580c" strokeWidth="3" />
+                <path d="M9 48h6m26 0h0" stroke="#ea580c" strokeWidth="3" strokeLinecap="round" />
+                <path d="M15 48l9-20h9l8 20" stroke="#ea580c" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+                <rect x="33" y="16" width="15" height="14" rx="2" fill="#facc15" stroke="#ea580c" strokeWidth="2" />
+                <path d="M40.5 16v14M33 23h15" stroke="#ea580c" strokeWidth="1.5" />
+                <path d="M24 28l-7-9h-6" stroke="#ea580c" strokeWidth="3" strokeLinecap="round" />
+                <circle cx="30" cy="20" r="5" fill="#ea580c" />
               </svg>
-            </div>
+            )}
             <span className="text-sm font-bold text-slate-900">Original for Recipient</span>
           </div>
         </div>
