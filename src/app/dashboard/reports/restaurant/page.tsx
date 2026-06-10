@@ -2,6 +2,8 @@ import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
 import { ReportFilterBar } from "../../../../components/ReportFilterBar";
 import { reportQuery, reportFilterOptions } from "../../../../lib/reportFilters";
+import { RestaurantReportTable, type RestaurantReportRow } from "../../../../components/RestaurantReportTable";
+import { SubscriptionReportTable, type SubscriptionRow } from "../../../../components/SubscriptionReportTable";
 
 interface TopRestaurants {
   top_earners: Array<{
@@ -24,8 +26,10 @@ export default async function RestaurantReportPage({
   const sp = await searchParams;
   const qs = reportQuery(sp);
   qs.set("limit", "50");
-  const [data, { zones, restaurants }] = await Promise.all([
+  const [data, restRep, subRep, { zones, restaurants }] = await Promise.all([
     adminFetch<TopRestaurants>(`/admin/reports/restaurant-earnings?${qs.toString()}`),
+    adminFetch<{ total: number; rows: RestaurantReportRow[]; yearly: Array<{ year: number; total: number }> }>(`/admin/reports/restaurant-report?${qs.toString()}`).catch(() => ({ total: 0, rows: [] as RestaurantReportRow[], yearly: [] as Array<{ year: number; total: number }> })),
+    adminFetch<{ total: number; rows: SubscriptionRow[] }>(`/admin/reports/subscription-report`).catch(() => ({ total: 0, rows: [] as SubscriptionRow[] })),
     reportFilterOptions(),
   ]);
   const totalOrders = data.top_earners.reduce((s, r) => s + r.orders, 0);
@@ -33,6 +37,7 @@ export default async function RestaurantReportPage({
   const avgAov = totalOrders ? totalRevenue / totalOrders : 0;
 
   return (
+    <>
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Restaurant Report"
@@ -62,5 +67,10 @@ export default async function RestaurantReportPage({
         share: totalRevenue ? `${(r.revenue / totalRevenue * 100).toFixed(1)}%` : "—",
       }))}
     />
+    <div className="px-8 pb-8 -mt-2 space-y-6">
+      <RestaurantReportTable rows={restRep.rows} yearly={restRep.yearly} />
+      <SubscriptionReportTable rows={subRep.rows} />
+    </div>
+    </>
   );
 }
