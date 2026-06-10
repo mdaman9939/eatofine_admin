@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
 import { ReportFilterBar } from "../../../../components/ReportFilterBar";
+import { TransactionDetailsTable, type TxnRow } from "../../../../components/TransactionDetailsTable";
 
 interface Sales {
   days: number;
@@ -25,8 +26,9 @@ export default async function TransactionReportPage({
   if (sp.zone_id) qs.set("zone_id", sp.zone_id);
   if (sp.restaurant_id) qs.set("restaurant_id", sp.restaurant_id);
 
-  const [sales, zonesRes, restaurantsRes] = await Promise.all([
+  const [sales, txn, zonesRes, restaurantsRes] = await Promise.all([
     adminFetch<Sales>(`/admin/reports/sales-summary?${qs.toString()}`),
+    adminFetch<{ total: number; rows: TxnRow[] }>(`/admin/reports/transaction-details?${qs.toString()}`).catch(() => ({ total: 0, rows: [] as TxnRow[] })),
     adminFetch<{ zones: Array<{ id: number; name: string | null }> }>("/admin/zones").catch(() => ({ zones: [] })),
     adminFetch<{ restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> }>("/admin/restaurants?limit=200").catch(() => ({} as { restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> })),
   ]);
@@ -36,6 +38,7 @@ export default async function TransactionReportPage({
   const restOptions = (restaurantsRes.restaurants ?? restaurantsRes.items ?? []).map((r) => ({ value: String(r.id), label: r.name ?? `#${r.id}` }));
 
   return (
+    <>
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Transaction Report"
@@ -63,5 +66,9 @@ export default async function TransactionReportPage({
         delivery: inr(r.delivery),
       }))}
     />
+    <div className="px-8 pb-8 -mt-2">
+      <TransactionDetailsTable rows={txn.rows} />
+    </div>
+    </>
   );
 }
