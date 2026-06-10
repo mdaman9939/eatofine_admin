@@ -2,6 +2,8 @@ import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
 import { ReportFilterBar } from "../../../../components/ReportFilterBar";
 import { reportQuery, reportFilterOptions } from "../../../../lib/reportFilters";
+import { CustomerOverviewTable, type CustomerRow, type CustomerStats } from "../../../../components/CustomerOverviewTable";
+import { CustomerWalletReport, type WalletTxn, type WalletTotals } from "../../../../components/CustomerWalletReport";
 
 interface TopCustomers {
   top_customers: Array<{
@@ -24,8 +26,10 @@ export default async function CustomerReportPage({
   const sp = await searchParams;
   const qs = reportQuery(sp);
   qs.set("limit", "50");
-  const [data, { zones, restaurants }] = await Promise.all([
+  const [data, overview, wallet, { zones, restaurants }] = await Promise.all([
     adminFetch<TopCustomers>(`/admin/reports/top-customers?${qs.toString()}`),
+    adminFetch<{ total: number; rows: CustomerRow[]; stats: CustomerStats }>(`/admin/reports/customer-report`).catch(() => ({ total: 0, rows: [] as CustomerRow[], stats: { total_customers: 0, new_customers: 0, active: 0, inactive: 0, returning: 0 } })),
+    adminFetch<{ total: number; rows: WalletTxn[]; totals: WalletTotals }>(`/admin/reports/customer-wallet-report`).catch(() => ({ total: 0, rows: [] as WalletTxn[], totals: { credit: 0, debit: 0, balance: 0 } })),
     reportFilterOptions(),
   ]);
   const totalSpend = data.top_customers.reduce((s, r) => s + r.total_spend, 0);
@@ -33,6 +37,7 @@ export default async function CustomerReportPage({
   const aov = totalOrders ? totalSpend / totalOrders : 0;
 
   return (
+    <>
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Customer Report"
@@ -62,5 +67,10 @@ export default async function CustomerReportPage({
         spend: inr(c.total_spend),
       }))}
     />
+    <div className="px-8 pb-8 -mt-2 space-y-8">
+      <CustomerOverviewTable rows={overview.rows} stats={overview.stats} />
+      <CustomerWalletReport rows={wallet.rows} totals={wallet.totals} />
+    </div>
+    </>
   );
 }
