@@ -2,6 +2,7 @@ import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
 import { ReportFilterBar } from "../../../../components/ReportFilterBar";
 import { reportQuery, reportFilterOptions } from "../../../../lib/reportFilters";
+import { RestaurantEarningTransactions, type RestaurantEarningTxns } from "../../../../components/RestaurantEarningTransactions";
 
 interface TopRestaurants {
   top_earners: Array<{
@@ -24,14 +25,16 @@ export default async function RestaurantEarningReportPage({
   const sp = await searchParams;
   const qs = reportQuery(sp);
   qs.set("limit", "50");
-  const [data, { zones, restaurants }] = await Promise.all([
+  const [data, txns, { zones, restaurants }] = await Promise.all([
     adminFetch<TopRestaurants>(`/admin/reports/restaurant-earnings?${qs.toString()}`),
+    adminFetch<RestaurantEarningTxns>(`/admin/reports/restaurant-earning-detailed?${qs.toString()}`).catch(() => null),
     reportFilterOptions(),
   ]);
   const totalRevenue = data.top_earners.reduce((s, r) => s + r.revenue, 0);
   const totalTake = data.top_earners.reduce((s, r) => s + r.restaurant_take, 0);
 
   return (
+    <>
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Restaurant Earning Report"
@@ -61,5 +64,11 @@ export default async function RestaurantEarningReportPage({
         take: inr(r.restaurant_take),
       }))}
     />
+    {txns && (
+      <div className="px-8 pb-8 -mt-2">
+        <RestaurantEarningTransactions data={txns} />
+      </div>
+    )}
+    </>
   );
 }
