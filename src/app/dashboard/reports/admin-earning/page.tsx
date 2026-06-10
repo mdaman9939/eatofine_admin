@@ -2,6 +2,7 @@ import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
 import { ReportFilterBar } from "../../../../components/ReportFilterBar";
 import { reportQuery, reportFilterOptions } from "../../../../lib/reportFilters";
+import { AdminEarningDetailed, type AdminEarningData } from "../../../../components/AdminEarningDetailed";
 
 interface AdminEarning {
   delivered_orders: number;
@@ -21,12 +22,14 @@ export default async function AdminEarningReportPage({
 }) {
   const sp = await searchParams;
   const qs = reportQuery(sp);
-  const [data, { zones, restaurants }] = await Promise.all([
+  const [data, detailed, { zones, restaurants }] = await Promise.all([
     adminFetch<AdminEarning>(`/admin/reports/admin-earnings?${qs.toString()}`),
+    adminFetch<AdminEarningData>(`/admin/reports/admin-earning-detailed`).catch(() => null),
     reportFilterOptions(),
   ]);
 
   return (
+    <>
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Admin Earning Report"
@@ -52,5 +55,11 @@ export default async function AdminEarningReportPage({
         { metric: "Delivery charges", amount: inr(data.total_delivery_charges), share: data.gross_sales ? `${(data.total_delivery_charges / data.gross_sales * 100).toFixed(1)}%` : "—" },
       ]}
     />
+    {detailed && (
+      <div className="px-8 pb-8 -mt-2">
+        <AdminEarningDetailed data={detailed} />
+      </div>
+    )}
+    </>
   );
 }
