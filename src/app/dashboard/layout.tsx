@@ -154,7 +154,16 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/food/bulk", label: "Bulk Import / Export", icon: "ledger" },
         ],
       },
-      { href: "/dashboard/categories", label: "Categories", icon: "category" },
+      {
+        href: "#categories-group",
+        label: "Categories",
+        icon: "category",
+        children: [
+          { href: "/dashboard/categories", label: "Category", icon: "category" },
+          { href: "/dashboard/categories/sub", label: "Sub Category", icon: "category" },
+          { href: "/dashboard/categories/bulk", label: "Bulk Import / Export", icon: "ledger" },
+        ],
+      },
       {
         href: "#addons",
         label: "Add-ons",
