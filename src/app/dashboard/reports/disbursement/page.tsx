@@ -1,14 +1,6 @@
 import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
-
-interface Disbursement {
-  id: number;
-  recipient: string | null;
-  type: string | null;
-  amount: number;
-  status: string;
-  created_at: string | null;
-}
+import { DisbursementDetailsTable, type DisbRow } from "../../../../components/DisbursementDetailsTable";
 
 function inr(n: number) { return `₹${Math.round(n).toLocaleString("en-IN")}`; }
 function fmtDate(iso: string | null): string {
@@ -18,17 +10,20 @@ function fmtDate(iso: string | null): string {
 }
 
 export default async function DisbursementReportPage() {
-  let rows: Disbursement[] = [];
-  try {
-    const data = await adminFetch<{ items: Disbursement[] }>("/admin/disbursements?limit=100");
-    rows = data.items ?? [];
-  } catch { /* empty */ }
+  const [restRes, dmRes] = await Promise.all([
+    adminFetch<{ items: DisbRow[] }>("/admin/disbursements?type=restaurant&limit=300").catch(() => ({ items: [] as DisbRow[] })),
+    adminFetch<{ items: DisbRow[] }>("/admin/disbursements?type=deliveryman&limit=300").catch(() => ({ items: [] as DisbRow[] })),
+  ]);
+  const restaurant = restRes.items ?? [];
+  const deliveryman = dmRes.items ?? [];
+  const rows = [...restaurant, ...deliveryman];
 
   const total = rows.reduce((s, r) => s + (Number(r.amount) || 0), 0);
   const completed = rows.filter((r) => r.status === "completed" || r.status === "disbursed").length;
   const pending = rows.filter((r) => r.status === "pending").length;
 
   return (
+    <>
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Disbursement Report"
@@ -57,5 +52,9 @@ export default async function DisbursementReportPage() {
         date: fmtDate(r.created_at),
       }))}
     />
+    <div className="px-8 pb-8 -mt-2">
+      <DisbursementDetailsTable restaurant={restaurant} deliveryman={deliveryman} />
+    </div>
+    </>
   );
 }
