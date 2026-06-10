@@ -2,6 +2,7 @@ import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
 import { ReportFilterBar } from "../../../../components/ReportFilterBar";
 import { reportQuery, reportFilterOptions } from "../../../../lib/reportFilters";
+import { ExpenseDetailsTable, type ExpenseRow } from "../../../../components/ExpenseDetailsTable";
 
 interface AdminEarning {
   delivered_orders: number;
@@ -21,8 +22,9 @@ export default async function ExpenseReportPage({
 }) {
   const sp = await searchParams;
   const qs = reportQuery(sp);
-  const [data, { zones, restaurants }] = await Promise.all([
+  const [data, expense, { zones, restaurants }] = await Promise.all([
     adminFetch<AdminEarning>(`/admin/reports/admin-earnings?${qs.toString()}`),
+    adminFetch<{ total: number; total_amount: number; rows: ExpenseRow[] }>(`/admin/reports/expense-details?${qs.toString()}`).catch(() => ({ total: 0, total_amount: 0, rows: [] as ExpenseRow[] })),
     reportFilterOptions(),
   ]);
 
@@ -34,6 +36,7 @@ export default async function ExpenseReportPage({
   const netRevenue = data.gross_sales - totalOutgoing;
 
   return (
+    <>
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Expense Report"
@@ -59,5 +62,9 @@ export default async function ExpenseReportPage({
         { type: "Total", amount: inr(totalOutgoing), share: data.gross_sales ? `${(totalOutgoing / data.gross_sales * 100).toFixed(1)}%` : "—", note: "" },
       ]}
     />
+    <div className="px-8 pb-8 -mt-2">
+      <ExpenseDetailsTable rows={expense.rows} />
+    </div>
+    </>
   );
 }
