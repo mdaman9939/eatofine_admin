@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
 import { ReportFilterBar } from "../../../../components/ReportFilterBar";
+import { OrderReportTable, type OrderReportRow } from "../../../../components/OrderReportTable";
 
 interface Sales {
   days: number;
@@ -25,8 +26,9 @@ export default async function OrderReportPage({
   if (sp.zone_id) qs.set("zone_id", sp.zone_id);
   if (sp.restaurant_id) qs.set("restaurant_id", sp.restaurant_id);
 
-  const [sales, zonesRes, restaurantsRes] = await Promise.all([
+  const [sales, orderRep, zonesRes, restaurantsRes] = await Promise.all([
     adminFetch<Sales>(`/admin/reports/sales-summary?${qs.toString()}`),
+    adminFetch<{ total: number; rows: OrderReportRow[]; status_counts: Record<string, number> }>(`/admin/reports/order-report?${qs.toString()}`).catch(() => ({ total: 0, rows: [] as OrderReportRow[], status_counts: {} as Record<string, number> })),
     adminFetch<{ zones: Array<{ id: number; name: string | null }> }>("/admin/zones").catch(() => ({ zones: [] })),
     adminFetch<{ restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> }>("/admin/restaurants?limit=200").catch(() => ({} as { restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> })),
   ]);
@@ -36,6 +38,7 @@ export default async function OrderReportPage({
   const restOptions = (restaurantsRes.restaurants ?? restaurantsRes.items ?? []).map((r) => ({ value: String(r.id), label: r.name ?? `#${r.id}` }));
 
   return (
+    <>
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Order Report"
@@ -61,5 +64,9 @@ export default async function OrderReportPage({
         aov: inr(r.orders ? r.revenue / r.orders : 0),
       }))}
     />
+    <div className="px-8 pb-8 -mt-2">
+      <OrderReportTable rows={orderRep.rows} statusCounts={orderRep.status_counts} />
+    </div>
+    </>
   );
 }
