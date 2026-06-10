@@ -103,12 +103,12 @@ export default async function ReportsPage() {
               {sales.series.length} {sales.series.length === 1 ? "day" : "days"}
             </span>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[520px]">
             {sales.series.length === 0 ? (
               <div className="px-6 py-12 text-center text-slate-400 text-sm">No delivered orders in this window.</div>
             ) : (
               <table className="w-full text-sm">
-                <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <thead className="sticky top-0 z-10 bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
                   <tr>
                     <th className="px-4 py-3 font-semibold">Day</th>
                     <th className="px-4 py-3 font-semibold text-right">Orders</th>
