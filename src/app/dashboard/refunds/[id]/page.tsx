@@ -27,7 +27,7 @@ interface OrderDetail {
     payment_method: string | null;
     order_type: string | null;
     order_note: string | null;
-    delivery_address: string | null;
+    delivery_address: string | { address?: string | null; contact_person_name?: string | null } | null;
     created_at: string | null;
   } | null;
   user: { f_name: string | null; l_name: string | null; email: string | null; phone: string | null } | null;
@@ -109,7 +109,7 @@ export default async function RefundDetailPage({ params }: { params: Promise<{ i
             <KV label="Payment" value={`${order.order.payment_method ?? "—"} (${order.order.payment_status})`} />
             <KV label="Type" value={order.order.order_type} />
             <KV label="Placed" value={fmt(order.order.created_at)} />
-            <KV label="Address" value={order.order.delivery_address} />
+            <KV label="Address" value={typeof order.order.delivery_address === "object" && order.order.delivery_address ? (order.order.delivery_address.address ?? order.order.delivery_address.contact_person_name ?? "—") : (order.order.delivery_address ?? "—")} />
             <KV label="Note" value={order.order.order_note} />
           </div>
         </div>

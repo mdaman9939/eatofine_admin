@@ -17,7 +17,7 @@ interface OrderDetail {
     order_type: string;
     coupon_code: string | null;
     order_note: string | null;
-    delivery_address: string | null;
+    delivery_address: string | { address?: string | null; contact_person_name?: string | null; contact_person_number?: string | null } | null;
     cancellation_reason: string | null;
     canceled_by: string | null;
     timeline: Record<string, string | null>;
@@ -124,12 +124,24 @@ export default async function OrderDetailPage({
           ) : (
             <p className="text-sm text-zinc-500">Guest order</p>
           )}
-          {o.delivery_address && (
-            <div className="mt-3">
-              <h3 className="text-xs uppercase text-zinc-500 mb-1">Delivery address</h3>
-              <p className="text-sm whitespace-pre-line">{o.delivery_address}</p>
-            </div>
-          )}
+          {(() => {
+            // delivery_address may be a plain string OR a structured object
+            // ({ contact_person_name, contact_person_number, address }) — never
+            // render the object directly (React error #31).
+            const da = o.delivery_address;
+            if (!da) return null;
+            const name = typeof da === "object" ? da.contact_person_name : null;
+            const phone = typeof da === "object" ? da.contact_person_number : null;
+            const text = typeof da === "string" ? da : da.address ?? "";
+            if (!text && !name) return null;
+            return (
+              <div className="mt-3">
+                <h3 className="text-xs uppercase text-zinc-500 mb-1">Delivery address</h3>
+                {name && <p className="text-sm font-medium">{name}{phone ? ` · ${phone}` : ""}</p>}
+                {text && <p className="text-sm whitespace-pre-line text-zinc-600">{text}</p>}
+              </div>
+            );
+          })()}
         </div>
 
         <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-5">
