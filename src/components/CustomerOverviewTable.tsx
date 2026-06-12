@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 export interface CustomerRow {
@@ -91,11 +92,12 @@ export function CustomerOverviewTable({ rows, stats }: { rows: CustomerRow[]; st
                 <th className="px-4 py-3 font-semibold text-right">AOV</th>
                 <th className="px-4 py-3 font-semibold">Last Purchase</th>
                 <th className="px-4 py-3 font-semibold">Most Used Payment</th>
+                <th className="px-4 py-3 font-semibold text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
-                <tr><td colSpan={8} className="px-6 py-12 text-center text-slate-400 text-sm">No customers found.</td></tr>
+                <tr><td colSpan={9} className="px-6 py-12 text-center text-slate-400 text-sm">No customers found.</td></tr>
               ) : filtered.map((r, i) => (
                 <tr key={r.customer_id} className="hover:bg-emerald-50/40 transition-colors">
                   <td className="px-6 py-3 font-mono text-xs text-slate-400">{i + 1}</td>
@@ -119,6 +121,18 @@ export function CustomerOverviewTable({ rows, stats }: { rows: CustomerRow[]; st
                   <td className="px-4 py-3 text-right tabular-nums text-slate-700">{inr(r.aov)}</td>
                   <td className="px-4 py-3 text-slate-600 text-xs">{r.last_purchase ? fmtDate(r.last_purchase) : "Never Ordered"}</td>
                   <td className="px-4 py-3 text-slate-600 text-xs capitalize">{r.most_used_payment_method ? r.most_used_payment_method.replace(/_/g, " ") : "N/A"}</td>
+                  <td className="px-4 py-3 text-center">
+                    <Link
+                      href={`/dashboard/users/${r.customer_id}`}
+                      title="View all previous activity"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>
