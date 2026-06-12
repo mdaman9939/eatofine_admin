@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
 import { ApproveRejectButtons } from "../../../components/ApproveRejectButtons";
+import { RestaurantViewButton } from "../../../components/RestaurantViewButton";
 
 interface PendingRestaurant {
   id: number;
@@ -106,7 +107,10 @@ export default async function RestaurantsPendingPage() {
                     <div className="text-slate-400">{daysSince(r.submitted_at)}</div>
                   </td>
                   <td className="px-4 py-4 text-right">
-                    <ApproveRejectButtons basePath="restaurants" id={r.id} />
+                    <div className="inline-flex items-center gap-2">
+                      <RestaurantViewButton id={r.id} />
+                      <ApproveRejectButtons basePath="restaurants" id={r.id} />
+                    </div>
                   </td>
                 </tr>
               ))}
