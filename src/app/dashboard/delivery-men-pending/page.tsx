@@ -1,24 +1,5 @@
-import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
-import { ApproveRejectButtons } from "../../../components/ApproveRejectButtons";
-
-interface PendingDm {
-  id: number;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  zone_id: number | null;
-  vehicle_id: number | null;
-  submitted_at: string | null;
-  status: string;
-}
-
-function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
-  } catch { return "—"; }
-}
+import { DmJoiningTabs, type PendingDm, type DeniedDm } from "../../../components/DmJoiningTabs";
 
 function daysSince(iso: string | null): string {
   if (!iso) return "—";
@@ -28,8 +9,12 @@ function daysSince(iso: string | null): string {
 }
 
 export default async function DmPendingPage() {
-  const data = await adminFetch<{ total: number; items: PendingDm[] }>("/admin/delivery-men/pending");
-  const rows = data.items;
+  const [pendingRes, deniedRes] = await Promise.all([
+    adminFetch<{ total: number; items: PendingDm[] }>("/admin/delivery-men/pending"),
+    adminFetch<{ total: number; items: DeniedDm[] }>("/admin/delivery-men/denied").catch(() => ({ total: 0, items: [] as DeniedDm[] })),
+  ]);
+  const pending = pendingRes.items;
+  const denied = deniedRes.items;
 
   return (
     <div className="relative p-8 space-y-6">
@@ -43,80 +28,18 @@ export default async function DmPendingPage() {
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Delivery Man Joining Requests</h1>
           <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">
-            Riders who applied via the public Delivery Man signup. Verify documents (ID, driver&apos;s licence, vehicle papers) and approve to start receiving orders.
+            Riders who applied via the public Delivery Man signup. Verify documents (ID, driver&apos;s licence, vehicle papers) and approve to start receiving orders. Switch to the <strong>Denied Deliveryman</strong> tab to review rejected applications and their profiles.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <StatTile label="Pending review" value={rows.length.toString()} hint="Awaiting verification" accent="amber" />
-        <StatTile
-          label="Submitted last 7 days"
-          // eslint-disable-next-line react-hooks/purity
-          value={rows.filter((r) => r.submitted_at && Date.now() - new Date(r.submitted_at).getTime() < 7 * 86_400_000).length.toString()}
-          accent="blue"
-        />
-        <StatTile label="Oldest pending" value={rows.length > 0 ? daysSince(rows[rows.length - 1].submitted_at) : "—"} accent="rose" />
+        <StatTile label="Pending review" value={pending.length.toString()} hint="Awaiting verification" accent="amber" />
+        <StatTile label="Denied" value={denied.length.toString()} hint="Rejected applications" accent="rose" />
+        <StatTile label="Oldest pending" value={pending.length > 0 ? daysSince(pending[pending.length - 1].submitted_at) : "—"} accent="blue" />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-base font-semibold text-slate-900">Pending applications</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{rows.length} delivery man / men awaiting your decision.</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Name</th>
-                <th className="px-4 py-3 font-semibold">Contact</th>
-                <th className="px-4 py-3 font-semibold">Zone / Vehicle</th>
-                <th className="px-4 py-3 font-semibold">Submitted</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                    <div className="inline-flex flex-col items-center gap-2">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <p className="text-sm font-medium">No pending applications</p>
-                      <p className="text-xs">All riders are processed.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : rows.map((r) => (
-                <tr key={r.id} className="hover:bg-emerald-50/40 align-top">
-                  <td className="px-6 py-4 font-mono text-xs text-slate-400">#{r.id}</td>
-                  <td className="px-4 py-4 font-semibold text-slate-900">{r.name}</td>
-                  <td className="px-4 py-4 text-slate-600 text-xs">
-                    <div>{r.email ?? "—"}</div>
-                    <div className="text-slate-400">{r.phone ?? ""}</div>
-                  </td>
-                  <td className="px-4 py-4 text-slate-600 text-xs">
-                    <div>Zone #{r.zone_id ?? "—"}</div>
-                    <div className="text-slate-400">Vehicle #{r.vehicle_id ?? "—"}</div>
-                  </td>
-                  <td className="px-4 py-4 text-slate-600 text-xs">
-                    <div>{fmtDate(r.submitted_at)}</div>
-                    <div className="text-slate-400">{daysSince(r.submitted_at)}</div>
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <span className="inline-flex gap-1.5 flex-wrap justify-end">
-                      <Link href={`/dashboard/delivery-men/${r.id}`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200">👁 View</Link>
-                      <ApproveRejectButtons basePath="delivery-men" id={r.id} />
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DmJoiningTabs pending={pending} denied={denied} />
     </div>
   );
 }
