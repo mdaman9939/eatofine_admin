@@ -142,7 +142,7 @@ export function RestaurantViewButton({ id }: { id: number }) {
               </span>
             </div>
 
-            <div className="overflow-y-auto px-6 py-4 space-y-6">
+            <div className="overflow-y-auto px-6 py-4 space-y-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {loading && <div className="py-10 text-center text-slate-400 text-sm">Loading details…</div>}
               {error && <div className="py-10 text-center text-rose-500 text-sm">{error}</div>}
 
