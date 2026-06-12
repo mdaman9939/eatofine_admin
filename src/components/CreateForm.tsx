@@ -24,6 +24,11 @@ export interface FieldSpec {
   imageDir?: string;
   /** For type=text: show a "Generate" button that fills a random code. */
   generate?: boolean;
+  /** For a dependent type=select: the field whose value picks this select's
+   *  options (e.g. Sub Category options depend on the chosen Category). */
+  parentField?: string;
+  /** For a dependent select: parent value (as string) → option list. */
+  optionsByParent?: Record<string, Array<{ value: string; label: string }>>;
 }
 
 export function CreateForm({
@@ -190,15 +195,28 @@ export function CreateForm({
         )}
       </div>
       <div className={embedded ? "px-5 py-4 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-x-5 gap-y-3.5" : "px-5 py-4 space-y-3.5"}>
-        {fields.map((f) => (
-          <div key={f.name} className={embedded && ["textarea", "multiselect", "image", "latlng", "documents", "polygon", "heading", "variations", "multilang"].includes(f.type ?? "") ? "col-span-full" : ""}>
-            <Field
-              spec={f}
-              value={values[f.name]}
-              onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))}
-            />
-          </div>
-        ))}
+        {fields.map((f) => {
+          // Dependent select: narrow options to the chosen parent's value.
+          const spec = (f.type === "select" && f.parentField && f.optionsByParent)
+            ? { ...f, options: f.optionsByParent[String(values[f.parentField] ?? "")] ?? [] }
+            : f;
+          return (
+            <div key={f.name} className={embedded && ["textarea", "multiselect", "image", "latlng", "documents", "polygon", "heading", "variations", "multilang"].includes(f.type ?? "") ? "col-span-full" : ""}>
+              <Field
+                spec={spec}
+                value={values[f.name]}
+                onChange={(v) => setValues((s) => {
+                  const next = { ...s, [f.name]: v };
+                  // Reset any select that depends on this field (stale sub-choice).
+                  for (const df of fields) {
+                    if (df.parentField === f.name) next[df.name] = "";
+                  }
+                  return next;
+                })}
+              />
+            </div>
+          );
+        })}
         {error && (
           <p className="text-xs text-rose-600 bg-rose-50 border border-rose-100 rounded px-2 py-1.5 col-span-full">{error}</p>
         )}

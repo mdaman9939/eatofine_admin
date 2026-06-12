@@ -2,7 +2,7 @@ import { adminFetch } from "../../../../lib/api";
 import { CreateForm, type FieldSpec } from "../../../../components/CreateForm";
 
 interface Restaurant { id: number; name: string }
-interface Category { id: number; name: string }
+interface Category { id: number; name: string; parent_id?: number }
 interface Addon { id: number; name: string }
 
 export default async function AddFoodPage() {
@@ -55,6 +55,16 @@ export function buildFoodFields(
   categories: Category[],
   addons: Addon[],
 ): FieldSpec[] {
+  // Split the flat category list into main categories (parent_id 0) and a
+  // per-parent map of sub categories, so the form has two dependent dropdowns.
+  const mainCategories = categories.filter((c) => Number(c.parent_id ?? 0) === 0);
+  const subByParent: Record<string, Array<{ value: string; label: string }>> = {};
+  for (const c of categories) {
+    const parent = Number(c.parent_id ?? 0);
+    if (parent > 0) {
+      (subByParent[String(parent)] ??= []).push({ value: String(c.id), label: c.name });
+    }
+  }
   return [
     { name: "name", label: "Food name (default)", type: "text", required: true, placeholder: "e.g. Margherita Pizza" },
     { name: "translations", label: "Name in other languages", type: "multilang", langKey: "name" },
@@ -62,7 +72,8 @@ export function buildFoodFields(
     { name: "description_translations", label: "Description in other languages", type: "multilang", langKey: "description" },
     { name: "image", label: "Food image", type: "image", imageDir: "product" },
     { name: "restaurant_id", label: "Restaurant", type: "select", required: true, options: restaurants.map((r) => ({ value: String(r.id), label: r.name })) },
-    { name: "category_id", label: "Category", type: "select", options: categories.map((c) => ({ value: String(c.id), label: c.name })) },
+    { name: "category_id", label: "Category", type: "select", options: mainCategories.map((c) => ({ value: String(c.id), label: c.name })) },
+    { name: "sub_category_id", label: "Sub category", type: "select", parentField: "category_id", optionsByParent: subByParent },
 
     { name: "price", label: "Price ₹", type: "number", required: true, defaultValue: 200 },
     { name: "discount", label: "Discount", type: "number", defaultValue: 0 },
