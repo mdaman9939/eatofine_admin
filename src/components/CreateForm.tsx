@@ -37,6 +37,7 @@ export function CreateForm({
   title,
   submitLabel = "Create",
   embedded = false,
+  wide = false,
   redirectTo,
 }: {
   path: string;
@@ -45,6 +46,9 @@ export function CreateForm({
   submitLabel?: string;
   /** Render as a full-width, always-open page form (no popover toggle). */
   embedded?: boolean;
+  /** Keep the collapsible toggle, but render the open form full-width and
+   *  multi-column (instead of the narrow md:w-96 single column). */
+  wide?: boolean;
   /** Where to navigate after a successful create (embedded mode). */
   redirectTo?: string;
 }) {
@@ -177,7 +181,7 @@ export function CreateForm({
   return (
     <form
       onSubmit={onSubmit}
-      className={`bg-white rounded-2xl border border-slate-200 shadow-lg shadow-slate-200/60 overflow-hidden ${embedded ? "w-full" : "w-full md:w-96"}`}
+      className={`bg-white rounded-2xl border border-slate-200 shadow-lg shadow-slate-200/60 overflow-hidden ${embedded || wide ? "w-full" : "w-full md:w-96"}`}
     >
       <div className="px-5 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white flex items-center justify-between">
         <h3 className="text-sm font-semibold tracking-wide">{title ?? "Create"}</h3>
@@ -194,14 +198,14 @@ export function CreateForm({
           </button>
         )}
       </div>
-      <div className={embedded ? "px-5 py-4 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-x-5 gap-y-3.5" : "px-5 py-4 space-y-3.5"}>
+      <div className={embedded || wide ? "px-5 py-4 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-x-5 gap-y-3.5" : "px-5 py-4 space-y-3.5"}>
         {fields.map((f) => {
           // Dependent select: narrow options to the chosen parent's value.
           const spec = (f.type === "select" && f.parentField && f.optionsByParent)
             ? { ...f, options: f.optionsByParent[String(values[f.parentField] ?? "")] ?? [] }
             : f;
           return (
-            <div key={f.name} className={embedded && ["textarea", "multiselect", "image", "latlng", "documents", "polygon", "heading", "variations", "multilang"].includes(f.type ?? "") ? "col-span-full" : ""}>
+            <div key={f.name} className={(embedded || wide) && ["textarea", "multiselect", "image", "latlng", "documents", "polygon", "heading", "variations", "multilang"].includes(f.type ?? "") ? "col-span-full" : ""}>
               <Field
                 spec={spec}
                 value={values[f.name]}

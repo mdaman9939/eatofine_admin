@@ -60,6 +60,7 @@ export default async function CampaignsPage({
         <CreateForm
           path="/campaigns"
           title="New campaign"
+          wide
           fields={[
             { name: "title", label: "Title", required: true },
             // Campaign type — Basic (whole restaurant) or Food (a specific dish).
