@@ -233,7 +233,7 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
                 <input type="number" min={0} value={deliveryFee} onChange={(e) => setDeliveryFee(Math.max(0, Number(e.target.value) || 0))} className="w-24 rounded border border-slate-300 px-2 py-0.5 text-right text-sm" />
               </label>
             )}
-            <Row label={`Vat/tax (${tax}%)`} value={inr(vat)} />
+            <Row label={`Tax (${tax}%)`} value={inr(vat)} />
             <Row label="Service Charge" value={inr(0)} />
             <Row label="Extra Packaging Amount" value={inr(0)} />
             <div className="flex justify-between font-bold text-base pt-1 border-t border-slate-100">
