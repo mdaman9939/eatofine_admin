@@ -21,6 +21,8 @@ interface DeliveryManDetail {
     dob?: string | null;
     identity_type?: string | null;
     identity_number?: string | null;
+    license_image_full_url?: string | null;
+    identity_image_full_urls?: string[];
   };
 }
 
@@ -30,6 +32,18 @@ function KV({ label, value }: { label: string; value: React.ReactNode }) {
       <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">{label}</div>
       <div className="text-sm text-slate-800 mt-0.5 break-words">{value ?? "—"}</div>
     </div>
+  );
+}
+
+function DocThumb({ url, label }: { url: string; label: string }) {
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="group block">
+      <div className="w-28 h-20 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 group-hover:ring-2 group-hover:ring-blue-300 transition">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={url} alt={label} className="w-full h-full object-cover" />
+      </div>
+      <div className="mt-1 text-[11px] text-slate-500 text-center">{label}</div>
+    </a>
   );
 }
 
@@ -151,6 +165,21 @@ export function DeliveryManViewButton({ id }: { id: number }) {
                       <KV label="Identity number" value={d.identity_number ?? "—"} />
                     </div>
                   </section>
+
+                  {/* Submitted documents — what the joining request is verified against */}
+                  {(d.license_image_full_url || (d.identity_image_full_urls?.length ?? 0) > 0) && (
+                    <section>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Submitted documents</h3>
+                      <div className="flex flex-wrap gap-3">
+                        {(d.identity_image_full_urls ?? []).map((url, i) => (
+                          <DocThumb key={`id-${i}`} url={url} label={`ID ${i + 1}`} />
+                        ))}
+                        {d.license_image_full_url ? (
+                          <DocThumb url={d.license_image_full_url} label="Licence" />
+                        ) : null}
+                      </div>
+                    </section>
+                  )}
 
                   {isDenied && d.rejection_reason ? (
                     <section>
