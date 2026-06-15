@@ -158,6 +158,7 @@ const NAV: NavGroup[] = [
         children: [
           { href: "/dashboard/food", label: "All Foods", icon: "food" },
           { href: "/dashboard/food/add", label: "Add New", icon: "addon" },
+          { href: "/dashboard/food-pending", label: "New Food Requests", icon: "shield" },
           { href: "/dashboard/reviews", label: "Reviews", icon: "star" },
           { href: "/dashboard/food/bulk", label: "Bulk Import / Export", icon: "ledger" },
         ],
