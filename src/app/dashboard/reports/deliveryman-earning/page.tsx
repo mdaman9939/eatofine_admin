@@ -12,6 +12,8 @@ interface TopDM {
     deliveries: number;
     total_tips: number;
     total_delivery_charges: number;
+    total_incentive?: number;
+    total_bonus?: number;
   }>;
 }
 
@@ -31,6 +33,9 @@ export default async function DeliverymanEarningReportPage({
   ]);
   const totalCharges = data.top_delivery_men.reduce((s, r) => s + r.total_delivery_charges, 0);
   const totalTips = data.top_delivery_men.reduce((s, r) => s + r.total_tips, 0);
+  const totalIncentive = data.top_delivery_men.reduce((s, r) => s + (r.total_incentive ?? 0), 0);
+  const totalBonus = data.top_delivery_men.reduce((s, r) => s + (r.total_bonus ?? 0), 0);
+  const grandTotal = totalCharges + totalTips + totalIncentive + totalBonus;
 
   return (
     <ReportTemplate
@@ -41,8 +46,8 @@ export default async function DeliverymanEarningReportPage({
       stats={[
         { label: "Active riders", value: data.top_delivery_men.length.toString(), accent: "blue" },
         { label: "Total delivery fees", value: inr(totalCharges), accent: "emerald" },
-        { label: "Total tips", value: inr(totalTips), accent: "amber" },
-        { label: "Avg per rider", value: data.top_delivery_men.length ? inr((totalCharges + totalTips) / data.top_delivery_men.length) : "—", accent: "slate" },
+        { label: "Bonus + Incentive", value: inr(totalBonus + totalIncentive), accent: "amber" },
+        { label: "Total earned", value: inr(grandTotal), accent: "slate" },
       ]}
       detailsTitle="Deliveryman earning details"
       columns={[
@@ -53,6 +58,8 @@ export default async function DeliverymanEarningReportPage({
         { key: "deliveries", label: "Deliveries", align: "right" },
         { key: "charges", label: "Delivery fees", align: "right" },
         { key: "tips", label: "Tips", align: "right" },
+        { key: "bonus", label: "Bonus", align: "right" },
+        { key: "incentive", label: "Incentive", align: "right" },
         { key: "total", label: "Total earned", align: "right" },
       ]}
       rows={data.top_delivery_men.map((r, i) => ({
@@ -63,7 +70,9 @@ export default async function DeliverymanEarningReportPage({
         deliveries: r.deliveries,
         charges: inr(r.total_delivery_charges),
         tips: inr(r.total_tips),
-        total: inr(r.total_delivery_charges + r.total_tips),
+        bonus: inr(r.total_bonus ?? 0),
+        incentive: inr(r.total_incentive ?? 0),
+        total: inr(r.total_delivery_charges + r.total_tips + (r.total_bonus ?? 0) + (r.total_incentive ?? 0)),
       }))}
     />
   );
