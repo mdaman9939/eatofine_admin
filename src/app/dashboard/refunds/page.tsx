@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { ActionButton } from "../../../components/ActionButton";
+import { RefundSettingsPanel } from "../../../components/RefundSettingsPanel";
 
 interface Refund {
   id: number;
@@ -115,6 +116,9 @@ export default async function RefundsPage() {
           </svg>
         } />
       </div>
+
+      {/* ── Refund configuration ───────────────────────────────── */}
+      <RefundSettingsPanel />
 
       {/* ── Refunds table ──────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

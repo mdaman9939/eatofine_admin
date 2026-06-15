@@ -1,4 +1,5 @@
 import { adminFetch } from "../../../lib/api";
+import { ActionButton } from "../../../components/ActionButton";
 
 interface Sub {
   id: number;
@@ -61,11 +62,12 @@ export default async function SubscriptionOrdersPage() {
                 <th className="px-4 py-3 font-semibold">Frequency</th>
                 <th className="px-4 py-3 font-semibold">Started</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400">No subscription orders yet.</td></tr>
+                <tr><td colSpan={8} className="px-6 py-12 text-center text-slate-400">No subscription orders yet.</td></tr>
               ) : rows.map((r) => (
                 <tr key={r.id} className="hover:bg-emerald-50/40">
                   <td className="px-6 py-3 font-mono text-xs text-slate-400">#{r.id}</td>
@@ -86,6 +88,22 @@ export default async function SubscriptionOrdersPage() {
                       }`} />
                       {r.status}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1.5 justify-end flex-wrap">
+                      {r.status === "canceled" ? (
+                        <span className="text-xs text-slate-400">—</span>
+                      ) : (
+                        <>
+                          {r.status === "paused" ? (
+                            <ActionButton path={`/subscription-orders/${r.id}/status`} method="PATCH" body={{ status: "active" }} label="Resume" variant="primary" />
+                          ) : (
+                            <ActionButton path={`/subscription-orders/${r.id}/status`} method="PATCH" body={{ status: "paused" }} label="Pause" variant="subtle" />
+                          )}
+                          <ActionButton path={`/subscription-orders/${r.id}/status`} method="PATCH" body={{ status: "canceled" }} label="Cancel" variant="danger" confirm="Cancel this subscription?" />
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

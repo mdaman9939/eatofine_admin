@@ -90,21 +90,31 @@ export default async function OrderDetailPage({
         </span>
       </div>
 
-      {(NEXT_STATUS[o.order_status] ?? []).length > 0 && (
-        <div className="mt-4 flex gap-2 flex-wrap">
-          {NEXT_STATUS[o.order_status].map((s) => (
-            <ActionButton
-              key={s}
-              path={`/orders/${o.id}/status`}
-              method="PATCH"
-              body={{ status: s }}
-              label={`Mark ${s}`}
-              variant={s === "canceled" ? "danger" : "primary"}
-              confirm={s === "canceled" ? "Cancel this order?" : undefined}
-            />
-          ))}
-        </div>
-      )}
+      <div className="mt-4 flex gap-2 flex-wrap">
+        {(NEXT_STATUS[o.order_status] ?? []).map((s) => (
+          <ActionButton
+            key={s}
+            path={`/orders/${o.id}/status`}
+            method="PATCH"
+            body={{ status: s }}
+            label={`Mark ${s}`}
+            variant={s === "canceled" ? "danger" : "primary"}
+            confirm={s === "canceled" ? "Cancel this order?" : undefined}
+          />
+        ))}
+        {/* Admin authority — cancel ANY order, even after delivery, when the
+            normal flow no longer offers a cancel option. */}
+        {o.order_status !== "canceled" && !(NEXT_STATUS[o.order_status] ?? []).includes("canceled") && (
+          <ActionButton
+            path={`/orders/${o.id}/status`}
+            method="PATCH"
+            body={{ status: "canceled", reason: "Cancelled by admin" }}
+            label="Cancel order (admin)"
+            variant="danger"
+            confirm="Force-cancel this order as admin? This overrides the normal order flow."
+          />
+        )}
+      </div>
 
       <RefundPanel orderId={o.id} orderStatus={o.order_status} />
 
