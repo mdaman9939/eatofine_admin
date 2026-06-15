@@ -8,6 +8,16 @@ export interface PosRestaurant { id: number; name: string; zone_id: number | nul
 export interface PosCategory { id: number; name: string }
 interface Food { id: number; name: string | null; price: number; category_id: number | null; veg?: boolean }
 interface CartLine { food: Food; qty: number }
+/** A configured platform charge (Additional Charges admin page). */
+interface AdditionalCharge {
+  id: number;
+  charge_head: string;
+  charge_type: "fixed" | "percentage";
+  amount: number;
+  gst_applicable: boolean;
+  gst_rate: number;
+  status: boolean;
+}
 
 const inr = (n: number) => `₹${(n || 0).toFixed(2)}`;
 
@@ -22,6 +32,8 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
   const [search, setSearch] = useState("");
   const [foods, setFoods] = useState<Food[]>([]);
   const [tax, setTax] = useState(0);
+  const [extraPackaging, setExtraPackaging] = useState(0);
+  const [charges, setCharges] = useState<AdditionalCharge[]>([]);
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState<Record<number, CartLine>>({});
   const [customerName, setCustomerName] = useState("");
@@ -38,6 +50,21 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
     () => (zoneId ? restaurants.filter((r) => String(r.zone_id) === zoneId) : restaurants),
     [restaurants, zoneId],
   );
+
+  // Load the platform's configured additional charges once (charges plan).
+  useEffect(() => {
+    fetch("/api/admin/additional-charges")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows: AdditionalCharge[]) => {
+        const list = Array.isArray(rows) ? rows : [];
+        setCharges(
+          list
+            .filter((c) => c.status)
+            .map((c) => ({ ...c, amount: Number(c.amount ?? 0), gst_rate: Number(c.gst_rate ?? 0) })),
+        );
+      })
+      .catch(() => setCharges([]));
+  }, []);
 
   // Load the selected restaurant's menu + tax. The synchronous resets here are
   // intentional (clear menu/cart + show a spinner the instant the restaurant
@@ -58,6 +85,9 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
         }));
         setFoods(rows);
         setTax(Number(d?.restaurant?.tax ?? 0));
+        // Restaurant extra-packaging charge (applied to take-away orders).
+        const pkgActive = d?.restaurant?.is_extra_packaging_active ?? d?.restaurant?.extra_packaging_status ?? false;
+        setExtraPackaging(pkgActive ? Number(d?.restaurant?.extra_packaging_amount ?? 0) : 0);
       })
       .finally(() => setLoading(false));
   }, [restaurantId]);
@@ -76,7 +106,27 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
   const subtotal = lines.reduce((s, l) => s + l.food.price * l.qty, 0);
   const taxable = Math.max(0, subtotal - discount);
   const vat = taxable * (tax / 100);
-  const total = taxable + vat + (orderType === "home_delivery" ? deliveryFee : 0);
+
+  // Each configured charge, resolved against this order's subtotal (incl. GST).
+  const chargeRows = useMemo(
+    () =>
+      charges.map((c) => {
+        const base = c.charge_type === "fixed" ? c.amount : (subtotal * c.amount) / 100;
+        const gst = c.gst_applicable ? (base * c.gst_rate) / 100 : 0;
+        return { id: c.id, label: c.charge_head, amount: base + gst };
+      }),
+    [charges, subtotal],
+  );
+  const additionalChargeTotal = chargeRows.reduce((s, r) => s + r.amount, 0);
+  // Extra packaging applies to take-away orders (StackFood behaviour).
+  const packagingAmount = orderType === "take_away" ? extraPackaging : 0;
+
+  const total =
+    taxable +
+    vat +
+    additionalChargeTotal +
+    packagingAmount +
+    (orderType === "home_delivery" ? deliveryFee : 0);
 
   function addItem(food: Food) {
     setCart((c) => ({ ...c, [food.id]: { food, qty: (c[food.id]?.qty ?? 0) + 1 } }));
@@ -106,6 +156,8 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
         discount,
         tax_percent: tax,
         delivery_charge: orderType === "home_delivery" ? deliveryFee : 0,
+        additional_charge: Number(additionalChargeTotal.toFixed(2)),
+        extra_packaging_amount: Number(packagingAmount.toFixed(2)),
       }),
     })
       .then(async (res) => {
@@ -234,8 +286,11 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
               </label>
             )}
             <Row label={`Tax (${tax}%)`} value={inr(vat)} />
-            <Row label="Service Charge" value={inr(0)} />
-            <Row label="Extra Packaging Amount" value={inr(0)} />
+            {/* Configured platform charges (Additional Charges plan). */}
+            {chargeRows.map((c) => (
+              <Row key={c.id} label={c.label} value={inr(c.amount)} />
+            ))}
+            <Row label="Extra Packaging Amount" value={inr(packagingAmount)} />
             <div className="flex justify-between font-bold text-base pt-1 border-t border-slate-100">
               <span>Total</span><span className="tabular-nums">{inr(total)}</span>
             </div>
