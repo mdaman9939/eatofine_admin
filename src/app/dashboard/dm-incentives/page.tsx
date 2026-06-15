@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
 import { ApproveRejectButtons } from "../../../components/ApproveRejectButtons";
+import { BonusIncentiveConfigPanel } from "../../../components/BonusIncentiveConfigPanel";
 
 interface Incentive {
   id: number;
@@ -50,6 +51,9 @@ export default async function DmIncentivesPage() {
         <StatTile label="Rejected (30d)" value={rejected.length.toString()} accent="rose" />
         <StatTile label="Total paid" value={`₹${totalApproved.toLocaleString("en-IN")}`} accent="blue" />
       </div>
+
+      {/* Bonus & incentive rules configuration */}
+      <BonusIncentiveConfigPanel />
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100">
