@@ -79,7 +79,6 @@ export default async function AddRestaurantPage() {
     { name: "minimum_delivery_time", label: "Min delivery time (min)", type: "number", defaultValue: 10 },
     { name: "maximum_delivery_time", label: "Max delivery time (min)", type: "number", defaultValue: 30 },
     { name: "tax", label: "GST %", type: "number", defaultValue: 0 },
-    { name: "comission", label: "Commission %", type: "number", placeholder: "Leave blank for default" },
 
     // ── Branding ────────────────────────────────────────────────────
     { name: "_h_brand", label: "Logo & cover", type: "heading" },
