@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
 import { ActionButton } from "../../../components/ActionButton";
+import { SubscriptionConfigPanel } from "../../../components/SubscriptionConfigPanel";
 
 interface Sub {
   id: number;
@@ -46,6 +47,9 @@ export default async function SubscriptionOrdersPage() {
         <StatTile label="Total subscriptions" value={rows.length.toString()} accent="blue" />
         <StatTile label="Unique customers" value={new Set(rows.map((r) => r.customer)).size.toString()} accent="slate" />
       </div>
+
+      {/* User subscription configuration option */}
+      <SubscriptionConfigPanel />
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100">
