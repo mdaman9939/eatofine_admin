@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
@@ -250,6 +251,7 @@ export default async function AdditionalChargesPage() {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <span className="inline-flex gap-2">
+                      <Link href={`/dashboard/additional-charges/${c.id}/edit`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">Edit</Link>
                       <ToggleStatusButton basePath="/additional-charges" id={c.id} currentStatus={c.status} mode="base-path" />
                       <DeleteButton basePath="/additional-charges" id={c.id} />
                     </span>
