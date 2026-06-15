@@ -351,17 +351,10 @@ const NAV: NavGroup[] = [
     ],
   },
   {
-    section: "REVIEW & CONTACT",
+    section: "CONTACT",
     items: [
-      {
-        href: "#reviews",
-        label: "Reviews",
-        icon: "star",
-        children: [
-          { href: "/dashboard/reviews", label: "Food Reviews", icon: "star" },
-          { href: "/dashboard/dm-reviews", label: "DM Reviews", icon: "star" },
-        ],
-      },
+      // Reviews moved into their own sections: Food → Food Management,
+      // Deliveryman → Delivery Men.
       { href: "/dashboard/contact-messages", label: "Contact Messages", icon: "comment" },
     ],
   },

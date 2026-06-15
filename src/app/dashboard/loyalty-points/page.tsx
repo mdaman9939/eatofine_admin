@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, fmtDate } from "../../../components/TablePage";
+import { LoyaltyConfigPanel } from "../../../components/LoyaltyConfigPanel";
 
 interface LP {
   id: number;
@@ -25,7 +26,10 @@ export default async function LoyaltyPointsPage() {
 
   return (
     <>
-      <div className="px-8 pt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="px-8 pt-8">
+        <LoyaltyConfigPanel />
+      </div>
+      <div className="px-8 pt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <SummaryCard label="Debit" value={totalDebit} accent="rose" />
         <SummaryCard label="Credit" value={totalCredit} accent="emerald" />
         <SummaryCard label="Balance" value={balance} accent="blue" />
