@@ -39,10 +39,15 @@ export default async function AddRestaurantPage() {
 
     // ── Logistics / general settings ────────────────────────────────
     { name: "_h_general", label: "General settings", type: "heading" },
+    { name: "restaurant_model", label: "Business model", type: "select", defaultValue: "pay_per_order", options: [
+      { value: "pay_per_order", label: "Pay Per Order" },
+      { value: "subscription", label: "Subscription" },
+      { value: "commission", label: "Commission" },
+    ] },
     { name: "minimum_order", label: "Minimum order ₹", type: "number", defaultValue: 100 },
     { name: "minimum_delivery_time", label: "Min delivery time (min)", type: "number", defaultValue: 10 },
     { name: "maximum_delivery_time", label: "Max delivery time (min)", type: "number", defaultValue: 30 },
-    { name: "tax", label: "Tax %", type: "number", defaultValue: 0 },
+    { name: "tax", label: "GST %", type: "number", defaultValue: 0 },
     { name: "comission", label: "Commission %", type: "number", placeholder: "Leave blank for default" },
 
     // ── Branding ────────────────────────────────────────────────────
