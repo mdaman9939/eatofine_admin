@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
+import { OrderTypeConfigPanel } from "../../../components/OrderTypeConfigPanel";
 
 interface OrdersResponse {
   total: number;
@@ -123,6 +124,9 @@ export default async function OrdersPage({
           </svg>
         } />
       </div>
+
+      {/* ── Take Away / Dine In / Home Delivery configuration ───── */}
+      <OrderTypeConfigPanel />
 
       {/* ── Filter chips ───────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-2 flex-wrap">

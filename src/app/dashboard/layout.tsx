@@ -96,7 +96,16 @@ const NAV: NavGroup[] = [
   {
     section: "ORDER MANAGEMENT",
     items: [
-      { href: "/dashboard/orders", label: "Orders", icon: "orders" },
+      {
+        href: "#orders-group",
+        label: "Orders",
+        icon: "orders",
+        children: [
+          { href: "/dashboard/orders", label: "All Orders", icon: "orders" },
+          { href: "/dashboard/orders?type=take_away", label: "Take Away", icon: "package" },
+          { href: "/dashboard/orders?type=dine_in", label: "Dine In", icon: "food" },
+        ],
+      },
       { href: "/dashboard/subscription-orders", label: "Subscription Orders", icon: "calendar" },
       { href: "/dashboard/dispatch", label: "Dispatch", icon: "compass" },
       { href: "/dashboard/refunds", label: "Order Refunds", icon: "refunds" },
