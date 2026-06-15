@@ -10,6 +10,8 @@ interface D {
   recipient: string | null;
   type: string | null;
   created_at: string | null;
+  initiated_at: string | null;
+  paid_at: string | null;
 }
 
 const STATUS_TONE: Record<string, string> = {
@@ -48,7 +50,8 @@ export default async function DisbursementsPage({
             </span>
           ),
         },
-        { header: "When", cell: (r) => <span className="text-xs text-zinc-500">{fmtDate(r.created_at)}</span> },
+        { header: "Initiated", cell: (r) => <span className="text-xs text-zinc-500">{r.initiated_at ? fmtDate(r.initiated_at) : "—"}</span> },
+        { header: "Paid", cell: (r) => <span className="text-xs text-zinc-500">{r.paid_at ? fmtDate(r.paid_at) : "—"}</span> },
         {
           header: "Actions",
           cell: (r) => (
