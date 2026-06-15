@@ -13,7 +13,7 @@ export type FieldValue = string | number | boolean | number[] | string[];
 export interface FieldSpec {
   name: string;
   label: string;
-  type?: "text" | "password" | "number" | "date" | "textarea" | "select" | "multiselect" | "checkbox" | "image" | "documents" | "latlng" | "multilang" | "polygon" | "heading" | "variations";
+  type?: "text" | "password" | "number" | "date" | "textarea" | "select" | "multiselect" | "checkbox" | "image" | "documents" | "latlng" | "multilang" | "polygon" | "heading" | "variations" | "hidden";
   /** For type=multilang: which translation key this field edits (e.g. "name"). */
   langKey?: string;
   required?: boolean;
@@ -200,6 +200,8 @@ export function CreateForm({
       </div>
       <div className={embedded || wide ? "px-5 py-4 grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-x-5 gap-y-3.5" : "px-5 py-4 space-y-3.5"}>
         {fields.map((f) => {
+          // Hidden fields seed + submit their value but render nothing.
+          if (f.type === "hidden") return null;
           // Dependent select: narrow options to the chosen parent's value.
           const spec = (f.type === "select" && f.parentField && f.optionsByParent)
             ? { ...f, options: f.optionsByParent[String(values[f.parentField] ?? "")] ?? [] }

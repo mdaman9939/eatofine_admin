@@ -136,6 +136,7 @@ export function EditForm({
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-3.5">
         {fields.map((f) => (
+          f.type === "hidden" ? null : (
           <div key={f.name} className={["textarea", "multiselect", "image", "latlng", "documents", "polygon", "heading", "variations", "multilang"].includes(f.type ?? "") ? "sm:col-span-2" : ""}>
             <Field
               spec={f}
@@ -143,6 +144,7 @@ export function EditForm({
               onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))}
             />
           </div>
+          )
         ))}
       </div>
 

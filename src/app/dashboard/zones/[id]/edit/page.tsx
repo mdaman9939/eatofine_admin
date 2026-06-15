@@ -30,16 +30,14 @@ export default async function EditZonePage({ params }: { params: Promise<{ id: s
     { name: "name", label: "Zone name", type: "text", required: true, placeholder: "e.g. Bengaluru / Whitefield" },
     { name: "display_name", label: "Zone display name", type: "text", placeholder: "Customer-facing label" },
     { name: "coordinates", label: "Zone coverage area", type: "polygon" },
-    { name: "zone_for", label: "Zone for", type: "select", options: [
-      { value: "restaurant", label: "Restaurant" },
-      { value: "deliveryman", label: "Deliveryman" },
-    ] },
-    { name: "minimum_shipping_charge", label: "Min ship ₹", type: "number", required: true },
-    { name: "per_km_shipping_charge", label: "Per-km charge ₹", type: "number", required: true },
-    { name: "maximum_shipping_charge", label: "Max ship cap ₹", type: "number", required: true },
-    { name: "minimum_delivery_time", label: "Min ETA (minutes)", type: "number", required: true },
-    { name: "max_cod_order_amount", label: "Max COD order ₹", type: "number" },
-    { name: "is_default", label: "Set as default zone", type: "checkbox" },
+    // Config below the map is hidden — values are preserved on save.
+    { name: "zone_for", label: "Zone for", type: "hidden" },
+    { name: "minimum_shipping_charge", label: "Min ship", type: "hidden" },
+    { name: "per_km_shipping_charge", label: "Per-km charge", type: "hidden" },
+    { name: "maximum_shipping_charge", label: "Max ship cap", type: "hidden" },
+    { name: "minimum_delivery_time", label: "Min ETA", type: "hidden" },
+    { name: "max_cod_order_amount", label: "Max COD order", type: "hidden" },
+    { name: "is_default", label: "Set as default zone", type: "hidden" },
   ];
 
   return (

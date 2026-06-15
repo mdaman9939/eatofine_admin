@@ -14,17 +14,15 @@ export default async function AddZonePage({
     { name: "display_name", label: "Zone display name", type: "text", placeholder: "Customer-facing label" },
     // The map polygon — draw the coverage area like StackFood's Zone Setup.
     { name: "coordinates", label: "Zone coverage area", type: "polygon" },
-    // Tag the zone as restaurant or deliveryman (hidden value via default).
-    { name: "zone_for", label: "Zone for", type: "select", defaultValue: zoneFor, options: [
-      { value: "restaurant", label: "Restaurant" },
-      { value: "deliveryman", label: "Deliveryman" },
-    ] },
-    { name: "minimum_shipping_charge", label: "Min ship ₹", type: "number", required: true, defaultValue: 20 },
-    { name: "per_km_shipping_charge", label: "Per-km charge ₹", type: "number", required: true, defaultValue: 6 },
-    { name: "maximum_shipping_charge", label: "Max ship cap ₹", type: "number", required: true, defaultValue: 200 },
-    { name: "minimum_delivery_time", label: "Min ETA (minutes)", type: "number", required: true, defaultValue: 30 },
-    { name: "max_cod_order_amount", label: "Max COD order ₹", type: "number", defaultValue: 5000 },
-    { name: "is_default", label: "Set as default zone", type: "checkbox" },
+    // Tag the zone as restaurant or deliveryman — sent silently from the URL.
+    { name: "zone_for", label: "Zone for", type: "hidden", defaultValue: zoneFor },
+    // Shipping math kept as sensible hidden defaults so delivery fee
+    // calculation still works, without cluttering the zone form.
+    { name: "minimum_shipping_charge", label: "Min ship", type: "hidden", defaultValue: 20 },
+    { name: "per_km_shipping_charge", label: "Per-km charge", type: "hidden", defaultValue: 6 },
+    { name: "maximum_shipping_charge", label: "Max ship cap", type: "hidden", defaultValue: 200 },
+    { name: "minimum_delivery_time", label: "Min ETA", type: "hidden", defaultValue: 30 },
+    { name: "max_cod_order_amount", label: "Max COD order", type: "hidden", defaultValue: 5000 },
   ];
 
   return (
