@@ -421,7 +421,11 @@ export function Field({
           onKeyDown={spec.type === "number" ? (e) => {
             if (e.key === "-" || e.key === "e" || e.key === "E") e.preventDefault();
           } : undefined}
-          onChange={(e) => onChange(spec.type === "number" ? (e.target.value === "" ? "" : parseFloat(e.target.value)) : e.target.value)}
+          // Store the RAW string while typing (even for number inputs) so a
+          // mid-typing value like "500." or "500.0" isn't collapsed to "500"
+          // by parseFloat. The submit handler parses number fields to a real
+          // number, so the API still receives a numeric value.
+          onChange={(e) => onChange(e.target.value)}
         />
         {spec.generate && (
           <button
