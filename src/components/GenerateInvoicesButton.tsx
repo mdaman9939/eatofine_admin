@@ -44,10 +44,10 @@ export function GenerateInvoicesButton() {
   }
 
   return (
-    <div className="relative">
+    <>
       <button
         type="button"
-        onClick={() => { setOpen((v) => !v); setError(null); setResult(null); }}
+        onClick={() => { setOpen(true); setError(null); setResult(null); }}
         disabled={pending}
         className="cursor-pointer inline-flex items-center gap-2 rounded-lg bg-white/15 hover:bg-white/25 active:bg-white/30 ring-1 ring-white/25 backdrop-blur-sm px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
       >
@@ -57,59 +57,77 @@ export function GenerateInvoicesButton() {
         {pending ? "Generating…" : "Generate invoices"}
       </button>
 
+      {/* Centered modal — rendered as a fixed overlay so it is never clipped by
+          the hero's `overflow-hidden` (previous bug: popover showed nothing). */}
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-80 rounded-xl bg-white text-slate-800 shadow-2xl ring-1 ring-slate-200 p-4">
-          <div className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Generate invoices</div>
-          <p className="mt-1 text-[11px] text-slate-500 leading-relaxed">
-            Leave both fields blank to generate for the previous month. Otherwise pick an explicit
-            billing period.
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <label className="block">
-              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Period start</span>
-              <input
-                type="date"
-                value={periodStart}
-                onChange={(e) => setPeriodStart(e.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
-              />
-            </label>
-            <label className="block">
-              <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Period end</span>
-              <input
-                type="date"
-                value={periodEnd}
-                onChange={(e) => setPeriodEnd(e.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
-              />
-            </label>
-          </div>
-          {error && <div className="mt-3 text-xs text-rose-600 bg-rose-50 ring-1 ring-rose-100 rounded-md px-2 py-1.5">{error}</div>}
-          <div className="mt-3 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={submit}
-              disabled={pending}
-              className="cursor-pointer rounded-md bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm disabled:opacity-60 disabled:cursor-not-allowed transition"
-            >
-              {pending ? "Generating…" : "Generate"}
-            </button>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+          onClick={() => !pending && setOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white text-slate-800 shadow-2xl ring-1 ring-slate-200 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-6 py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white flex items-center justify-between">
+              <h3 className="text-sm font-semibold tracking-wide">Generate invoices</h3>
+              <button type="button" onClick={() => !pending && setOpen(false)} className="text-white/80 hover:text-white" aria-label="Close">✕</button>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Leave both fields blank to generate for the previous month. Otherwise pick an explicit
+                billing period.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Period start</span>
+                  <input
+                    type="date"
+                    value={periodStart}
+                    onChange={(e) => setPeriodStart(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-slate-200 px-2 py-2 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Period end</span>
+                  <input
+                    type="date"
+                    value={periodEnd}
+                    onChange={(e) => setPeriodEnd(e.target.value)}
+                    className="mt-1 w-full rounded-md border border-slate-200 px-2 py-2 text-sm focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 outline-none"
+                  />
+                </label>
+              </div>
+              {error && <div className="mt-4 text-xs text-rose-600 bg-rose-50 ring-1 ring-rose-100 rounded-md px-3 py-2">{error}</div>}
+            </div>
+            <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                disabled={pending}
+                className="cursor-pointer rounded-md px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 transition disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submit}
+                disabled={pending}
+                className="cursor-pointer rounded-md bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-sm disabled:opacity-60 disabled:cursor-not-allowed transition"
+              >
+                {pending ? "Generating…" : "Generate"}
+              </button>
+            </div>
           </div>
         </div>
       )}
 
+      {/* Success toast — fixed so it is visible regardless of the hero clip. */}
       {result && !open && (
-        <div className="absolute right-0 z-20 mt-2 w-72 rounded-lg bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800 text-xs px-3 py-2 shadow-md">
-          {result}
+        <div className="fixed bottom-6 right-6 z-50 rounded-lg bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800 text-sm px-4 py-3 shadow-lg flex items-center gap-3">
+          <span>{result}</span>
+          <button type="button" onClick={() => setResult(null)} className="text-emerald-600 hover:text-emerald-800">✕</button>
         </div>
       )}
-    </div>
+    </>
   );
 }
