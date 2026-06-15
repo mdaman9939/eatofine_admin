@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
@@ -72,6 +73,11 @@ export default async function SubscriptionPackagesPage() {
               { name: "validity", label: "Validity (days)", type: "number", required: true },
               { name: "max_order", label: "Max orders", placeholder: "unlimited or number" },
               { name: "max_product", label: "Max products", placeholder: "unlimited or number" },
+              { name: "pos", label: "POS access", type: "checkbox", defaultValue: false },
+              { name: "mobile_app", label: "Mobile app access", type: "checkbox", defaultValue: true },
+              { name: "chat", label: "Chat", type: "checkbox", defaultValue: false },
+              { name: "review", label: "Review", type: "checkbox", defaultValue: false },
+              { name: "self_delivery", label: "Self delivery", type: "checkbox", defaultValue: false },
             ]}
           />
         </div>
@@ -216,6 +222,7 @@ export default async function SubscriptionPackagesPage() {
                     </td>
                     <td className="px-4 py-4 text-right">
                       <div className="inline-flex items-center gap-2">
+                        <Link href={`/dashboard/subscription-packages/${p.id}/edit`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">Edit</Link>
                         <ToggleStatusButton basePath="/subscription-packages" id={p.id} currentStatus={p.status} />
                         <DeleteButton basePath="/subscription-packages" id={p.id} />
                       </div>
