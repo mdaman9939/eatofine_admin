@@ -18,6 +18,7 @@ interface Advertisement {
   restaurant_id: number | null;
   restaurant_name: string | null;
   is_paid: boolean;
+  amount?: number | null;
   priority: number | null;
   created_by_type?: string | null;
 }
@@ -98,6 +99,11 @@ export default async function AdvertisementsPage({
             ] },
             { name: "restaurant_id", label: "Restaurant / store", type: "select", options: restOptions },
             { name: "description", label: "Description", type: "textarea", placeholder: "Eye-catching advertisement copy" },
+            { name: "is_paid", label: "Payment", type: "select", defaultValue: "unpaid", options: [
+              { value: "unpaid", label: "Unpaid (free)" },
+              { value: "paid", label: "Paid" },
+            ] },
+            { name: "amount", label: "Ad amount ₹", type: "number", placeholder: "e.g. 500", showWhen: { field: "is_paid", in: ["paid"] } },
             { name: "priority", label: "Priority", type: "number", defaultValue: 0 },
             { name: "image", label: "Advertisement image", type: "image", imageDir: "advertisement" },
             { name: "cover_image", label: "Cover image", type: "image", imageDir: "advertisement" },
@@ -183,7 +189,7 @@ export default async function AdvertisementsPage({
           { header: "Type", cell: (r) => r.add_type ?? "—" },
           { header: "Restaurant", cell: (r) => r.restaurant_name ?? (r.restaurant_id ? `#${r.restaurant_id}` : "—") },
           { header: "Window", cell: (r) => <span className="text-xs">{fmtDate(r.start_date)} – {fmtDate(r.end_date)}</span> },
-          { header: "Paid", cell: (r) => (r.is_paid ? "yes" : "no") },
+          { header: "Paid", cell: (r) => (r.is_paid ? `₹${Number(r.amount ?? 0).toLocaleString("en-IN")}` : "free") },
           { header: "Status", cell: (r) => <span className="text-xs uppercase">{r.status}</span> },
           {
             header: "Actions",

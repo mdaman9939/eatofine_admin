@@ -29,6 +29,9 @@ export interface FieldSpec {
   parentField?: string;
   /** For a dependent select: parent value (as string) → option list. */
   optionsByParent?: Record<string, Array<{ value: string; label: string }>>;
+  /** Show this field only when another field's value is one of `in`
+   *  (e.g. show "Amount" only when "Payment" = "paid"). */
+  showWhen?: { field: string; in: string[] };
 }
 
 export function CreateForm({
@@ -84,6 +87,8 @@ export function CreateForm({
       // confirm_password is a UI-only check — never sent to the API.
       if (f.name === "confirm_password") continue;
       if (f.type === "heading") continue; // section label, no value
+      // Skip conditionally-hidden fields so they don't submit stale values.
+      if (f.showWhen && !f.showWhen.in.includes(String(values[f.showWhen.field] ?? ""))) continue;
       const v = values[f.name];
       if (f.type === "multiselect" || f.type === "documents") {
         const arr = Array.isArray(v) ? v : [];
@@ -202,6 +207,8 @@ export function CreateForm({
         {fields.map((f) => {
           // Hidden fields seed + submit their value but render nothing.
           if (f.type === "hidden") return null;
+          // Conditional fields — only render when their trigger value matches.
+          if (f.showWhen && !f.showWhen.in.includes(String(values[f.showWhen.field] ?? ""))) return null;
           // Dependent select: narrow options to the chosen parent's value.
           const spec = (f.type === "select" && f.parentField && f.optionsByParent)
             ? { ...f, options: f.optionsByParent[String(values[f.parentField] ?? "")] ?? [] }

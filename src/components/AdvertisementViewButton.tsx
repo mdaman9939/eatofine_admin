@@ -15,6 +15,7 @@ export interface AdView {
   end_date: string | null;
   status: string;
   is_paid: boolean;
+  amount?: number | null;
   priority: number | null;
 }
 
@@ -93,7 +94,7 @@ export function AdvertisementViewButton({ ad }: { ad: AdView }) {
                   <KV label="Runs from" value={fmtDate(ad.start_date)} />
                   <KV label="Runs until" value={fmtDate(ad.end_date)} />
                   <KV label="Priority" value={ad.priority ?? "—"} />
-                  <KV label="Paid" value={ad.is_paid ? "Yes" : "No"} />
+                  <KV label="Payment" value={ad.is_paid ? `Paid · ₹${Number(ad.amount ?? 0).toLocaleString("en-IN")}` : "Unpaid (free)"} />
                 </div>
               </section>
 
