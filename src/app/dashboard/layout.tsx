@@ -127,7 +127,6 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/restaurants/bulk", label: "Bulk Import / Export", icon: "ledger" },
         ],
       },
-      { href: "/dashboard/vendors", label: "Vendors", icon: "vendor" },
       {
         href: "#restaurant-finance",
         label: "Disbursement & Payouts",
