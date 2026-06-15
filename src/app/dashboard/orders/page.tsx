@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { OrderTypeConfigPanel } from "../../../components/OrderTypeConfigPanel";
+import { ActionButton } from "../../../components/ActionButton";
 
 interface OrdersResponse {
   total: number;
@@ -186,6 +187,7 @@ export default async function OrdersPage({
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold">Payment</th>
                 <th className="px-4 py-3 font-semibold">Created</th>
+                <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -244,12 +246,27 @@ export default async function OrdersPage({
                         </div>
                       ) : "—"}
                     </td>
+                    <td className="px-4 py-4 text-right">
+                      {/* Admin authority — cancel any order directly from the list. */}
+                      {o.order_status === "canceled" || o.order_status === "refunded" ? (
+                        <span className="text-[11px] text-slate-300">—</span>
+                      ) : (
+                        <ActionButton
+                          path={`/orders/${o.id}/status`}
+                          method="PATCH"
+                          body={{ status: "canceled", reason: "Cancelled by admin" }}
+                          label="Cancel"
+                          variant="danger"
+                          confirm={`Cancel order #${o.id}? This is an admin override.`}
+                        />
+                      )}
+                    </td>
                   </tr>
                 );
               })}
               {data.orders.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
+                  <td colSpan={8} className="px-6 py-12 text-center">
                     <div className="inline-flex flex-col items-center gap-2 text-slate-400">
                       <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
