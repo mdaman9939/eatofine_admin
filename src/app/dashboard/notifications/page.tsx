@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
-import { TablePage, fmtDate } from "../../../components/TablePage";
-import { DeleteButton } from "../../../components/ActionButton";
+import { TablePage, fmtDate, StatusBadge } from "../../../components/TablePage";
+import { DeleteButton, ToggleStatusButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface Notification {
@@ -11,6 +11,7 @@ interface Notification {
   tergat: string | null;
   zone_id: number | null;
   image: string | null;
+  status: boolean;
   created_at: string | null;
 }
 
@@ -73,11 +74,13 @@ export default async function NotificationsPage() {
           { header: "Target", cell: (r) => r.tergat ?? "—" },
           { header: "Zone", cell: (r) => r.zone_id ?? "—" },
           { header: "Created", cell: (r) => <span className="text-xs text-zinc-500">{fmtDate(r.created_at)}</span> },
+          { header: "Status", cell: (r) => <StatusBadge value={r.status} /> },
           {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
                 <Link href={`/dashboard/notifications/${r.id}/edit`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">Edit</Link>
+                <ToggleStatusButton basePath="/notifications" id={r.id} currentStatus={r.status} />
                 <DeleteButton basePath="/notifications" id={r.id} />
               </span>
             ),
