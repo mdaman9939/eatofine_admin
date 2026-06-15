@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
-import { CreateForm } from "../../../components/CreateForm";
 import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface CreditNote {
@@ -69,19 +68,14 @@ export default async function CreditNotesPage() {
               components so GST reconciles correctly.
             </p>
           </div>
-          <CreateForm
-            path="/credit-notes"
-            title="Issue credit note"
-            submitLabel="Issue"
-            fields={[
-              { name: "order_id",          label: "Order ID",          type: "number",   required: true },
-              { name: "refund_amount",     label: "Refund amount (₹)", type: "number",   required: true },
-              { name: "tax_reversed",      label: "GST reversed (₹)",  type: "number" },
-              { name: "delivery_reversed", label: "Delivery reversed (₹)", type: "number" },
-              { name: "reason",            label: "Reason",            type: "text",     placeholder: "e.g. 'Wrong item delivered'" },
-              { name: "notes",             label: "Notes",             type: "textarea" },
-            ]}
-          />
+          {/* Credit notes are auto-issued on every approved/completed refund —
+              no manual issuing needed. */}
+          <div className="inline-flex items-center gap-2 rounded-xl bg-white/10 ring-1 ring-white/20 backdrop-blur-sm px-4 py-2.5 text-sm font-semibold text-white">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Auto-issued on every refund
+          </div>
         </div>
       </div>
 
