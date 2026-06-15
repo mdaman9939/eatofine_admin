@@ -2,11 +2,15 @@ import { adminFetch } from "../../../lib/api";
 import { TablePage, fmtDate } from "../../../components/TablePage";
 import { ActionButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
+import { AdvertisementViewButton } from "../../../components/AdvertisementViewButton";
 
 interface Advertisement {
   id: number;
   add_type: string | null;
   title: string | null;
+  description?: string | null;
+  image_full_url?: string | null;
+  cover_image_full_url?: string | null;
   start_date: string;
   end_date: string;
   status: string;
@@ -122,7 +126,8 @@ export default async function AdvertisementsPage() {
           {
             header: "Actions",
             cell: (r) => (
-              <span className="flex gap-1 flex-wrap">
+              <span className="flex gap-1 flex-wrap items-center">
+                <AdvertisementViewButton ad={r} />
                 {STATUSES.filter((s) => s !== r.status).slice(0, 3).map((s) => (
                   <ActionButton
                     key={s}
