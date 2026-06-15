@@ -22,9 +22,8 @@ export default async function VehiclesPage() {
           title="New vehicle"
           fields={[
             { name: "type", label: "Type", required: true, placeholder: "Bike / Scooter / Car" },
-            { name: "starting_coverage_area", label: "Starting coverage (km)", type: "number", required: true },
-            { name: "maximum_coverage_area", label: "Max coverage (km)", type: "number", required: true },
-            { name: "extra_charges", label: "Extra charge per km", type: "number", required: true },
+            { name: "starting_coverage_area", label: "Starting coverage (km)", type: "number" },
+            { name: "maximum_coverage_area", label: "Max coverage (km)", type: "number" },
           ]}
         />
       </div>
@@ -37,7 +36,6 @@ export default async function VehiclesPage() {
           { header: "#", cell: (r) => r.id, className: "font-mono" },
           { header: "Type", cell: (r) => r.type },
           { header: "Coverage", cell: (r) => `${r.starting_coverage_area} – ${r.maximum_coverage_area} km` },
-          { header: "Extra", cell: (r) => `₹${r.extra_charges}` },
           { header: "Status", cell: (r) => <StatusBadge value={r.status} /> },
           {
             header: "Actions",
