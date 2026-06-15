@@ -38,7 +38,7 @@ export default async function ReportsPage() {
   const moneySplit = [
     { label: "Restaurant take", value: adminEarning.restaurant_take, color: DONUT_PALETTE.emerald },
     { label: "Admin commission", value: adminEarning.admin_commission, color: DONUT_PALETTE.teal },
-    { label: "Tax collected", value: adminEarning.total_tax, color: DONUT_PALETTE.amber },
+    { label: "GST collected", value: adminEarning.total_tax, color: DONUT_PALETTE.amber },
     { label: "Delivery charges", value: adminEarning.total_delivery_charges, color: DONUT_PALETTE.sky },
   ].filter((s) => s.value > 0);
 
@@ -74,7 +74,7 @@ export default async function ReportsPage() {
         <Stat label="Gross sales" value={fmtMoney(adminEarning.gross_sales)} accent="emerald" />
         <Stat label="Admin commission" value={fmtMoney(adminEarning.admin_commission)} accent="teal" />
         <Stat label="Restaurant take" value={fmtMoney(adminEarning.restaurant_take)} accent="emerald" />
-        <Stat label="Tax collected" value={fmtMoney(adminEarning.total_tax)} accent="teal" />
+        <Stat label="GST collected" value={fmtMoney(adminEarning.total_tax)} accent="teal" />
         <Stat label="Delivery charges" value={fmtMoney(adminEarning.total_delivery_charges)} accent="emerald" />
         <Stat label="Delivered orders" value={adminEarning.delivered_orders.toString()} accent="teal" />
         <Stat label="Orders (period)" value={sales.total_orders.toString()} accent="emerald" />
@@ -113,7 +113,7 @@ export default async function ReportsPage() {
                     <th className="px-4 py-3 font-semibold">Day</th>
                     <th className="px-4 py-3 font-semibold text-right">Orders</th>
                     <th className="px-4 py-3 font-semibold text-right">Revenue</th>
-                    <th className="px-4 py-3 font-semibold text-right">Tax</th>
+                    <th className="px-4 py-3 font-semibold text-right">GST</th>
                     <th className="px-4 py-3 font-semibold text-right">Delivery</th>
                   </tr>
                 </thead>

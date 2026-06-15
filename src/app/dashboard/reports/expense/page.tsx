@@ -58,7 +58,7 @@ export default async function ExpenseReportPage({
       rows={[
         { type: "Restaurant payouts", amount: inr(restaurantPayout), share: data.gross_sales ? `${(restaurantPayout / data.gross_sales * 100).toFixed(1)}%` : "—", note: "Net to restaurants after commission" },
         { type: "Delivery charges", amount: inr(deliveryCost), share: data.gross_sales ? `${(deliveryCost / data.gross_sales * 100).toFixed(1)}%` : "—", note: "Passed to delivery men" },
-        { type: "Tax remitted", amount: inr(taxRemitted), share: data.gross_sales ? `${(taxRemitted / data.gross_sales * 100).toFixed(1)}%` : "—", note: "GST passthrough to government" },
+        { type: "GST remitted", amount: inr(taxRemitted), share: data.gross_sales ? `${(taxRemitted / data.gross_sales * 100).toFixed(1)}%` : "—", note: "GST passthrough to government" },
         { type: "Total", amount: inr(totalOutgoing), share: data.gross_sales ? `${(totalOutgoing / data.gross_sales * 100).toFixed(1)}%` : "—", note: "" },
       ]}
     />

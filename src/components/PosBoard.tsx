@@ -285,7 +285,7 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
                 <input type="number" min={0} value={deliveryFee} onChange={(e) => setDeliveryFee(Math.max(0, Number(e.target.value) || 0))} className="w-24 rounded border border-slate-300 px-2 py-0.5 text-right text-sm" />
               </label>
             )}
-            <Row label={`Tax (${tax}%)`} value={inr(vat)} />
+            <Row label={`GST (${tax}%)`} value={inr(vat)} />
             {/* Configured platform charges (Additional Charges plan). */}
             {chargeRows.map((c) => (
               <Row key={c.id} label={c.label} value={inr(c.amount)} />

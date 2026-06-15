@@ -48,14 +48,14 @@ export default async function TransactionReportPage({
         { label: "Days in range", value: sales.series.length.toString(), accent: "slate" },
         { label: "Total revenue", value: inr(sales.total_revenue), accent: "emerald" },
         { label: "Total orders", value: sales.total_orders.toString(), accent: "blue" },
-        { label: "Tax + delivery", value: inr(totalTax + totalDelivery), accent: "amber" },
+        { label: "GST + delivery", value: inr(totalTax + totalDelivery), accent: "amber" },
       ]}
       detailsTitle="Transaction details — day-wise"
       columns={[
         { key: "day", label: "Date" },
         { key: "orders", label: "Orders", align: "right" },
         { key: "revenue", label: "Revenue", align: "right" },
-        { key: "tax", label: "Tax", align: "right" },
+        { key: "tax", label: "GST", align: "right" },
         { key: "delivery", label: "Delivery", align: "right" },
       ]}
       rows={sales.series.map((r) => ({

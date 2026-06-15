@@ -71,7 +71,7 @@ export default async function EditRestaurantPage({ params }: { params: Promise<{
     { name: "minimum_order", label: "Minimum order ₹", type: "number" },
     { name: "minimum_delivery_time", label: "Min delivery time (min)", type: "number" },
     { name: "maximum_delivery_time", label: "Max delivery time (min)", type: "number" },
-    { name: "tax", label: "Tax %", type: "number" },
+    { name: "tax", label: "GST %", type: "number" },
     { name: "comission", label: "Commission %", type: "number" },
 
     { name: "_h_brand", label: "Logo & cover", type: "heading" },

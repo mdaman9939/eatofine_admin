@@ -94,7 +94,7 @@ export function RestaurantReportTable({ rows, yearly }: { rows: RestaurantReport
                 <th className="px-4 py-3 font-semibold text-right">Total Order Amount</th>
                 <th className="px-4 py-3 font-semibold text-right">Total Discount Given</th>
                 <th className="px-4 py-3 font-semibold text-right">Total Admin Commission</th>
-                <th className="px-4 py-3 font-semibold text-right">Total VAT/TAX</th>
+                <th className="px-4 py-3 font-semibold text-right">Total GST</th>
                 <th className="px-4 py-3 font-semibold">Average Ratings</th>
               </tr>
             </thead>

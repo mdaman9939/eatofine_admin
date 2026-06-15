@@ -88,7 +88,7 @@ export function TaxCalculator() {
           </label>
 
           <div>
-            <span className="text-[11px] uppercase tracking-wider text-slate-600 font-semibold">Tax mode</span>
+            <span className="text-[11px] uppercase tracking-wider text-slate-600 font-semibold">GST mode</span>
             <div className="mt-1.5 grid grid-cols-2 gap-2">
               <button
                 type="button"

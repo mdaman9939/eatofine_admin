@@ -176,7 +176,7 @@ export function PosTerminal({
           <div className="text-sm space-y-1 pt-1">
             <Row label="Subtotal" value={inr(subtotal)} />
             {discount > 0 && <Row label="Discount" value={`−${inr(discount)}`} />}
-            <Row label={`Tax (${restaurantTax}%)`} value={inr(taxAmount)} />
+            <Row label={`GST (${restaurantTax}%)`} value={inr(taxAmount)} />
             <div className="flex justify-between font-bold text-base pt-1 border-t border-slate-100">
               <span>Total</span><span className="tabular-nums">{inr(total)}</span>
             </div>

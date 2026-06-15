@@ -30,20 +30,20 @@ export default async function TaxReportPage({
   return (
     <ReportTemplate
       badge="SYSTEM · REPORTS"
-      title="Tax Report"
+      title="GST Report"
       description="GST collected on all orders. CGST + SGST split assumed for intra-state transactions (Haryana → Haryana). Filter by date range, zone or restaurant."
       filterBar={<ReportFilterBar zones={zones} restaurants={restaurants} showZone showRestaurant />}
       stats={[
         { label: "Period", value: `${sales.days} days`, accent: "slate" },
-        { label: "Total tax", value: inr(totalTax), accent: "emerald", hint: "GST collected" },
+        { label: "Total GST", value: inr(totalTax), accent: "emerald", hint: "GST collected" },
         { label: "CGST (2.5%)", value: inr(cgst), accent: "blue" },
         { label: "SGST (2.5%)", value: inr(sgst), accent: "amber" },
       ]}
-      detailsTitle="Tax collected — day-wise details"
+      detailsTitle="GST collected — day-wise details"
       columns={[
         { key: "day", label: "Date" },
         { key: "revenue", label: "Revenue", align: "right" },
-        { key: "tax", label: "Tax", align: "right" },
+        { key: "tax", label: "GST", align: "right" },
         { key: "cgst", label: "CGST", align: "right" },
         { key: "sgst", label: "SGST", align: "right" },
       ]}

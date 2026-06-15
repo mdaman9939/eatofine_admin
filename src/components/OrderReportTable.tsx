@@ -33,7 +33,7 @@ const MONEY: Array<{ key: keyof OrderReportRow; label: string }> = [
   { key: "coupon_discount", label: "Coupon Discount" },
   { key: "referral_discount", label: "Referral Discount" },
   { key: "discounted_amount", label: "Discounted Amount" },
-  { key: "tax", label: "Tax" },
+  { key: "tax", label: "GST" },
   { key: "delivery_charge", label: "Delivery Charge" },
   { key: "service_charge", label: "Service Charge" },
   { key: "order_amount", label: "Order Amount" },

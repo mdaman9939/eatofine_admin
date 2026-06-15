@@ -76,7 +76,7 @@ export default async function CreditNotesPage() {
             fields={[
               { name: "order_id",          label: "Order ID",          type: "number",   required: true },
               { name: "refund_amount",     label: "Refund amount (₹)", type: "number",   required: true },
-              { name: "tax_reversed",      label: "Tax reversed (₹)",  type: "number" },
+              { name: "tax_reversed",      label: "GST reversed (₹)",  type: "number" },
               { name: "delivery_reversed", label: "Delivery reversed (₹)", type: "number" },
               { name: "reason",            label: "Reason",            type: "text",     placeholder: "e.g. 'Wrong item delivered'" },
               { name: "notes",             label: "Notes",             type: "textarea" },

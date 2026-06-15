@@ -104,7 +104,7 @@ export default async function RefundDetailPage({ params }: { params: Promise<{ i
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-3">Order being refunded</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
             <KV label="Order amount" value={inr(order.order.order_amount)} />
-            <KV label="Tax" value={inr(order.order.total_tax_amount)} />
+            <KV label="GST" value={inr(order.order.total_tax_amount)} />
             <KV label="Delivery" value={inr(order.order.delivery_charge)} />
             <KV label="Payment" value={`${order.order.payment_method ?? "—"} (${order.order.payment_status})`} />
             <KV label="Type" value={order.order.order_type} />

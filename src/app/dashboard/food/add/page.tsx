@@ -81,7 +81,7 @@ export function buildFoodFields(
       { value: "percent", label: "Percent (%)" },
       { value: "amount", label: "Amount (₹)" },
     ] },
-    { name: "tax", label: "Tax %", type: "number", defaultValue: 5 },
+    { name: "tax", label: "GST %", type: "number", defaultValue: 5 },
 
     { name: "stock_type", label: "Stock type", type: "select", defaultValue: "unlimited", options: [
       { value: "unlimited", label: "Unlimited" },

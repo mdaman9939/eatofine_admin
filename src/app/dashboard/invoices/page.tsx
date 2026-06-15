@@ -67,7 +67,7 @@ export default async function InvoicesPage() {
               <span className="inline-block w-1 h-1 rounded-full bg-white/70" />
               BRD §5.2 · Enhancements
             </div>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight">Tax Invoices</h1>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">GST Invoices</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
               Auto-generated GST-compliant invoices for every delivered + paid order. Numbering
               follows <code className="text-xs bg-white/10 px-1.5 py-0.5 rounded ring-1 ring-white/20">INV-YYYY-MM-NNNNN</code>.
@@ -96,7 +96,7 @@ export default async function InvoicesPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         } />
-        <StatCard label="Tax collected" value={`₹${formatINR(totalTax)}`} suffix="CGST + SGST + IGST" accent="amber" icon={
+        <StatCard label="GST collected" value={`₹${formatINR(totalTax)}`} suffix="CGST + SGST + IGST" accent="amber" icon={
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m-6 4h6m-6 4h4m2 5l4-4M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2h-2" />
           </svg>

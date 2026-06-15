@@ -191,7 +191,7 @@ export default async function OrderDetailPage({
               <th className="py-2">Food</th>
               <th className="py-2">Qty</th>
               <th className="py-2">Price</th>
-              <th className="py-2">Tax</th>
+              <th className="py-2">GST</th>
               <th className="py-2">Add-ons</th>
               <th className="py-2 text-right">Total</th>
             </tr>
@@ -223,7 +223,7 @@ export default async function OrderDetailPage({
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 mb-3">Summary</h2>
           <dl className="text-sm space-y-1">
             <Row label="Subtotal" value={`₹${subtotal.toFixed(2)}`} />
-            <Row label="Tax" value={`₹${o.total_tax_amount.toFixed(2)}`} />
+            <Row label="GST" value={`₹${o.total_tax_amount.toFixed(2)}`} />
             <Row label="Delivery" value={`₹${o.delivery_charge.toFixed(2)}`} />
             {o.coupon_discount_amount > 0 && (
               <Row label={`Coupon (${o.coupon_code ?? "—"})`} value={`-₹${o.coupon_discount_amount.toFixed(2)}`} />

@@ -226,12 +226,12 @@ const NAV: NavGroup[] = [
       { href: "/dashboard/additional-charges", label: "Additional Charges", badge: "new", icon: "extra" },
       {
         href: "#tax-gst",
-        label: "Tax & GST",
+        label: "GST",
         badge: "new",
         icon: "tax",
         children: [
           { href: "/dashboard/tax-engine", label: "GST Engine", icon: "tax" },
-          { href: "/dashboard/invoices", label: "Tax Invoices", icon: "invoice" },
+          { href: "/dashboard/invoices", label: "GST Invoices", icon: "invoice" },
           { href: "/dashboard/invoice-setup", label: "Invoice Setup", icon: "settings" },
         ],
       },
@@ -399,7 +399,7 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/reports/order/campaign", label: "Campaign Order Report", icon: "orders" },
           { href: "/dashboard/reports/restaurant", label: "Restaurant", icon: "restaurant" },
           { href: "/dashboard/reports/customer", label: "Customer", icon: "user" },
-          { href: "/dashboard/reports/tax", label: "Tax", icon: "tax" },
+          { href: "/dashboard/reports/tax", label: "GST", icon: "tax" },
           { href: "/dashboard/reports/admin-earning", label: "Admin Earning", icon: "currency" },
           { href: "/dashboard/reports/restaurant-earning", label: "Restaurant Earning", icon: "currency" },
           { href: "/dashboard/reports/deliveryman-earning", label: "Deliveryman Earning", icon: "currency" },

@@ -126,7 +126,7 @@ export default async function RestaurantDetailPage({
           <KV label="Commission" value={r.comission !== null ? `${r.comission}%` : null} />
           <KV label="Minimum order" value={`₹${r.minimum_order.toFixed(2)}`} />
           <KV label="Min. shipping charge" value={`₹${r.minimum_shipping_charge.toFixed(2)}`} />
-          <KV label="Tax" value={`${r.tax}%`} />
+          <KV label="GST" value={`${r.tax}%`} />
         </Card>
 
         <Card title="Capabilities">

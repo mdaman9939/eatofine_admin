@@ -202,7 +202,7 @@ export function RestaurantViewButton({ id }: { id: number }) {
                       <KV label="Model" value={r.restaurant_model ?? "—"} />
                       <KV label="Commission" value={r.comission != null ? `${r.comission}%` : "—"} />
                       <KV label="Min order" value={inr(r.minimum_order)} />
-                      <KV label="Tax" value={`${r.tax ?? 0}%`} />
+                      <KV label="GST" value={`${r.tax ?? 0}%`} />
                       <KV label="Delivery fee" value={inr(r.minimum_shipping_charge)} />
                       <KV label="Delivery time" value={r.delivery_time ?? "—"} />
                     </div>

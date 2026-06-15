@@ -38,7 +38,7 @@ export default async function AdminEarningReportPage({
       stats={[
         { label: "Delivered orders", value: data.delivered_orders.toString(), accent: "blue" },
         { label: "Admin commission", value: inr(data.admin_commission), accent: "emerald", hint: "Platform revenue" },
-        { label: "Tax collected", value: inr(data.total_tax), accent: "amber", hint: "Passthrough to gov" },
+        { label: "GST collected", value: inr(data.total_tax), accent: "amber", hint: "Passthrough to gov" },
         { label: "Delivery charges", value: inr(data.total_delivery_charges), accent: "slate" },
       ]}
       detailsTitle="Admin earning breakdown"
@@ -51,7 +51,7 @@ export default async function AdminEarningReportPage({
         { metric: "Gross sales", amount: inr(data.gross_sales), share: "100.0%" },
         { metric: "Admin commission", amount: inr(data.admin_commission), share: data.gross_sales ? `${(data.admin_commission / data.gross_sales * 100).toFixed(1)}%` : "—" },
         { metric: "Restaurant take", amount: inr(data.restaurant_take), share: data.gross_sales ? `${(data.restaurant_take / data.gross_sales * 100).toFixed(1)}%` : "—" },
-        { metric: "Tax collected", amount: inr(data.total_tax), share: data.gross_sales ? `${(data.total_tax / data.gross_sales * 100).toFixed(1)}%` : "—" },
+        { metric: "GST collected", amount: inr(data.total_tax), share: data.gross_sales ? `${(data.total_tax / data.gross_sales * 100).toFixed(1)}%` : "—" },
         { metric: "Delivery charges", amount: inr(data.total_delivery_charges), share: data.gross_sales ? `${(data.total_delivery_charges / data.gross_sales * 100).toFixed(1)}%` : "—" },
       ]}
     />

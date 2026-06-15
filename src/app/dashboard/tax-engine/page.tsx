@@ -46,7 +46,7 @@ export default async function TaxEnginePage() {
               <span className="inline-block w-1 h-1 rounded-full bg-white/70" />
               BRD §5.3 · Enhancements
             </div>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight">Tax / GST Engine</h1>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">GST Engine</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
               Dynamic GST master with CGST/SGST split for intra-state and IGST for inter-state
               orders. Each charge head maps to its own HSN/SAC code so invoices stay GSTN-compliant.
