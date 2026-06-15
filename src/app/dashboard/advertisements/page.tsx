@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { TablePage, fmtDate } from "../../../components/TablePage";
 import { ActionButton, DeleteButton } from "../../../components/ActionButton";
@@ -18,13 +19,36 @@ interface Advertisement {
   restaurant_name: string | null;
   is_paid: boolean;
   priority: number | null;
+  created_by_type?: string | null;
+}
+
+/** An ad is "expired" when its end date has passed (or status says so). */
+function isExpired(a: Advertisement, now: number): boolean {
+  if (a.status === "expired") return true;
+  if (!a.end_date) return false;
+  const end = new Date(a.end_date).getTime() + 86_400_000; // include whole end day
+  return !Number.isNaN(end) && end < now;
+}
+
+/** Who created the ad: admin vs restaurant request. Old ads without an explicit
+ *  created_by_type are treated as admin-created (panel-created historically). */
+function adSource(a: Advertisement): "admin" | "restaurant" {
+  return String(a.created_by_type ?? "").toLowerCase() === "vendor" ? "restaurant" : "admin";
 }
 
 const STATUSES = ["approved", "denied", "pending", "paused", "expired", "running"];
 
-export default async function AdvertisementsPage() {
+export default async function AdvertisementsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string; source?: string }>;
+}) {
+  const sp = await searchParams;
+  const view = sp.view === "expired" || sp.view === "active" ? sp.view : "all"; // all | active | expired
+  const source = sp.source === "admin" || sp.source === "restaurant" ? sp.source : "all";
+
   const [data, restaurantsRes] = await Promise.all([
-    adminFetch<{ total: number; items: Advertisement[] }>("/admin/advertisements?limit=100"),
+    adminFetch<{ total: number; items: Advertisement[] }>("/admin/advertisements?limit=200"),
     adminFetch<{ restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> }>("/admin/restaurants?limit=200").catch(() => ({} as { restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> })),
   ]);
   const restOptions = (restaurantsRes.restaurants ?? restaurantsRes.items ?? []).map((r) => ({ value: String(r.id), label: r.name ?? `#${r.id}` }));
@@ -38,6 +62,26 @@ export default async function AdvertisementsPage() {
     const end = a.end_date ? new Date(a.end_date).getTime() + 86_400_000 : Number.POSITIVE_INFINITY;
     return statusOk && (!Number.isNaN(start)) && start <= now && now <= end;
   });
+
+  // Apply the View (all / active / expired) + Source (admin / restaurant) filters.
+  const filteredItems = data.items.filter((a) => {
+    const exp = isExpired(a, now);
+    if (view === "expired" && !exp) return false;
+    if (view === "active" && exp) return false;
+    if (source !== "all" && adSource(a) !== source) return false;
+    return true;
+  });
+  const expiredCount = data.items.filter((a) => isExpired(a, now)).length;
+  const adminCount = data.items.filter((a) => adSource(a) === "admin").length;
+  const restaurantCount = data.items.filter((a) => adSource(a) === "restaurant").length;
+  const qp = (v: { view?: string; source?: string }) => {
+    const p = new URLSearchParams();
+    const nv = v.view ?? view, ns = v.source ?? source;
+    if (nv !== "all") p.set("view", nv);
+    if (ns !== "all") p.set("source", ns);
+    const s = p.toString();
+    return s ? `/dashboard/advertisements?${s}` : "/dashboard/advertisements";
+  };
 
   return (
     <>
@@ -110,10 +154,28 @@ export default async function AdvertisementsPage() {
         </div>
       </div>
 
+      {/* ── Filters: see old/expired ads + admin vs restaurant-requested ── */}
+      <div className="px-8 pt-6 space-y-3">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold mr-1">Show</span>
+            <Chip href={qp({ view: "all" })} active={view === "all"} label="All" count={data.items.length} />
+            <Chip href={qp({ view: "active" })} active={view === "active"} label="Active" count={data.items.length - expiredCount} accent="emerald" />
+            <Chip href={qp({ view: "expired" })} active={view === "expired"} label="Expired (old)" count={expiredCount} accent="rose" />
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold mr-1">Created by</span>
+            <Chip href={qp({ source: "all" })} active={source === "all"} label="Anyone" count={data.items.length} />
+            <Chip href={qp({ source: "admin" })} active={source === "admin"} label="Admin" count={adminCount} accent="blue" />
+            <Chip href={qp({ source: "restaurant" })} active={source === "restaurant"} label="Restaurant request" count={restaurantCount} accent="amber" />
+          </div>
+        </div>
+      </div>
+
       <TablePage
         title="Advertisements"
-        subtitle={`${data.items.length} of ${data.total}`}
-        rows={data.items}
+        subtitle={`${filteredItems.length} of ${data.total}${view === "expired" ? " · expired" : view === "active" ? " · active" : ""}${source !== "all" ? ` · ${source === "admin" ? "admin-created" : "restaurant-requested"}` : ""}`}
+        rows={filteredItems}
         rowKey={(r) => r.id}
         columns={[
           { header: "#", cell: (r) => r.id, className: "font-mono" },
@@ -145,5 +207,26 @@ export default async function AdvertisementsPage() {
         ]}
       />
     </>
+  );
+}
+
+function Chip({ href, active, label, count, accent }: { href: string; active: boolean; label: string; count: number; accent?: "emerald" | "rose" | "blue" | "amber" }) {
+  const activeTone: Record<string, string> = {
+    emerald: "bg-emerald-600 text-white",
+    rose: "bg-rose-600 text-white",
+    blue: "bg-blue-600 text-white",
+    amber: "bg-amber-500 text-white",
+    default: "bg-slate-800 text-white",
+  };
+  return (
+    <Link
+      href={href}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+        active ? (activeTone[accent ?? "default"]) : "bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+      }`}
+    >
+      {label}
+      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${active ? "bg-white/20" : "bg-white text-slate-500 border border-slate-200"}`}>{count}</span>
+    </Link>
   );
 }
