@@ -26,6 +26,7 @@ export default async function AddRestaurantPage() {
     // ── Restaurant info (multi-language, like StackFood) ────────────
     { name: "_h_info", label: "Restaurant information", type: "heading" },
     { name: "name", label: "Restaurant name (default)", type: "text", required: true, placeholder: "e.g. Spice Garden" },
+    { name: "restaurant_phone", label: "Restaurant number", type: "text", placeholder: "e.g. +91-9876543210" },
     { name: "translations", label: "Name in other languages", type: "multilang", langKey: "name" },
     { name: "address", label: "Restaurant address (default)", type: "textarea", required: true, placeholder: "Street, city, pincode" },
     { name: "address_translations", label: "Address in other languages", type: "multilang", langKey: "address" },
