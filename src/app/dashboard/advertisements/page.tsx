@@ -103,7 +103,7 @@ export default async function AdvertisementsPage({
               { value: "unpaid", label: "Unpaid (free)" },
               { value: "paid", label: "Paid" },
             ] },
-            { name: "amount", label: "Ad amount ₹", type: "number", placeholder: "e.g. 500", showWhen: { field: "is_paid", in: ["paid"] } },
+            { name: "amount", label: "Ad amount ₹", type: "number", required: true, placeholder: "e.g. 500", showWhen: { field: "is_paid", in: ["paid"] } },
             { name: "priority", label: "Priority", type: "number", defaultValue: 0 },
             { name: "image", label: "Advertisement image", type: "image", imageDir: "advertisement" },
             { name: "cover_image", label: "Cover image", type: "image", imageDir: "advertisement" },
