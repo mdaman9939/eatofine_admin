@@ -3,6 +3,17 @@ import { adminFetch } from "../../../../lib/api";
 
 interface ZonesResponse { zones: Array<{ id: number; name: string | null }> }
 interface CuisinesResponse { cuisines: Array<{ id: number; name: string | null }> }
+interface DocCategory {
+  id: number;
+  name: string;
+  target_role: "vendor" | "delivery_man" | "restaurant";
+  allowed_formats: string;
+  max_size_mb: number;
+  is_mandatory: boolean;
+  description: string | null;
+  status: boolean;
+  sort_order: number;
+}
 
 // State dropdown for the "Additional data" section (GST state).
 const INDIAN_STATES = [
@@ -15,12 +26,32 @@ const INDIAN_STATES = [
 export default async function AddRestaurantPage() {
   // Populate the Zone select + Cuisine multiselect from live data, the same
   // way Laravel's Add Restaurant form seeds its dropdowns.
-  const [zonesRes, cuisinesRes] = await Promise.all([
+  const [zonesRes, cuisinesRes, docCatsRes] = await Promise.all([
     adminFetch<ZonesResponse>("/admin/zones").catch(() => ({ zones: [] })),
     adminFetch<CuisinesResponse>("/admin/cuisines").catch(() => ({ cuisines: [] })),
+    adminFetch<DocCategory[]>("/admin/document-categories").catch(() => [] as DocCategory[]),
   ]);
   const zoneOptions = zonesRes.zones.map((z) => ({ value: String(z.id), label: z.name ?? `Zone ${z.id}` }));
   const cuisineOptions = cuisinesRes.cuisines.map((c) => ({ value: String(c.id), label: c.name ?? `Cuisine ${c.id}` }));
+
+  // Document master categories that apply to a restaurant / its owner (vendor),
+  // active only — each becomes its own upload field in the form.
+  const docCategories = (Array.isArray(docCatsRes) ? docCatsRes : [])
+    .filter((c) => c.status && (c.target_role === "restaurant" || c.target_role === "vendor"))
+    .sort((a, b) => a.sort_order - b.sort_order);
+  const docFields: FieldSpec[] = docCategories.length
+    ? [
+        { name: "_h_docs", label: "Documents", type: "heading" },
+        ...docCategories.map((c): FieldSpec => ({
+          name: `doc_cat_${c.id}`,
+          label: `${c.name}${c.is_mandatory ? " (Required)" : ""}`,
+          type: "image",
+          imageDir: "restaurant",
+          required: c.is_mandatory,
+          placeholder: c.description ?? undefined,
+        })),
+      ]
+    : [];
 
   const fields: FieldSpec[] = [
     // ── Restaurant info (multi-language, like StackFood) ────────────
@@ -60,6 +91,9 @@ export default async function AddRestaurantPage() {
     { name: "identity_number", label: "Owner ID / GSTIN number", type: "text", placeholder: "Enter your ID number" },
     { name: "state", label: "State", type: "select", options: INDIAN_STATES.map((s) => ({ value: s, label: s })) },
     { name: "license_document", label: "License document", type: "image", imageDir: "restaurant" },
+
+    // ── Document master uploads (FSSAI etc., configured in Documents) ────
+    ...docFields,
 
     // ── Account information (owner / vendor login) ──────────────────
     { name: "_h_account", label: "Account information", type: "heading" },
