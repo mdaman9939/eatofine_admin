@@ -30,6 +30,7 @@ export default async function DisbursementsPage({
   const type = sp.type ?? "";
   const data = await adminFetch<{ total: number; items: D[] }>(`/admin/disbursements?limit=100${type ? `&type=${type}` : ""}`);
   const heading = type === "deliveryman" ? "Deliveryman disbursements" : type === "restaurant" ? "Restaurant disbursements" : "Disbursements";
+  const recipientHeader = type === "deliveryman" ? "Delivery man" : type === "restaurant" ? "Restaurant" : "Recipient";
 
   return (
     <TablePage
@@ -39,7 +40,7 @@ export default async function DisbursementsPage({
       rowKey={(r) => r.id}
       columns={[
         { header: "#", cell: (r) => r.id, className: "font-mono" },
-        { header: "Recipient", cell: (r) => r.recipient ?? "—" },
+        { header: recipientHeader, cell: (r) => r.recipient ?? "—" },
         { header: "Type", cell: (r) => <span className="text-xs uppercase">{r.type ?? "—"}</span> },
         { header: "Amount", cell: (r) => `₹${Number(r.amount ?? r.total_amount ?? 0).toFixed(2)}` },
         {
@@ -56,12 +57,19 @@ export default async function DisbursementsPage({
           header: "Actions",
           cell: (r) => (
             <span className="flex gap-1.5 flex-wrap justify-end">
-              {/* 7a — mark that the payment has been initiated, then completed. */}
+              {/* Forward + reverse transitions, so admin can correct a
+                  mis-clicked initiate/paid (miscommunication). */}
               {r.status === "pending" && (
                 <ActionButton path={`/disbursements/${r.id}/status`} method="PATCH" body={{ status: "processing" }} label="Mark initiated" variant="primary" />
               )}
               {(r.status === "pending" || r.status === "processing") && (
                 <ActionButton path={`/disbursements/${r.id}/status`} method="PATCH" body={{ status: "disbursed" }} label="Mark paid" variant="subtle" />
+              )}
+              {r.status === "processing" && (
+                <ActionButton path={`/disbursements/${r.id}/status`} method="PATCH" body={{ status: "pending" }} label="Un-initiate" variant="subtle" confirm="Revert this payment back to not-initiated?" />
+              )}
+              {r.status === "disbursed" && (
+                <ActionButton path={`/disbursements/${r.id}/status`} method="PATCH" body={{ status: "processing" }} label="Mark unpaid" variant="subtle" confirm="Mark this disbursement as unpaid (revert the payment)?" />
               )}
             </span>
           ),
