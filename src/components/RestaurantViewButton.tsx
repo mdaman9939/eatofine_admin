@@ -34,6 +34,8 @@ interface RestaurantDetail {
     identity_number?: string | null;
     state?: string | null;
     created_at?: string | null;
+    license_document_full_url?: string | null;
+    additional_documents_full_urls?: string[];
   };
   vendor: { id: number; f_name: string | null; l_name: string | null; email: string | null; phone: string | null } | null;
   stats?: { food_count: number; order_count: number; revenue: number };
@@ -54,6 +56,28 @@ function Flag({ label, on }: { label: string; on?: boolean }) {
       <span className={`w-1.5 h-1.5 rounded-full ${on ? "bg-emerald-500" : "bg-slate-300"}`} />
       {label}
     </span>
+  );
+}
+
+function DocThumb({ url, label }: { url: string; label: string }) {
+  const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)(\?|$)/i.test(url);
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="group block">
+      <div className="w-28 h-20 rounded-lg border border-slate-200 overflow-hidden bg-slate-50 group-hover:ring-2 group-hover:ring-blue-300 transition flex items-center justify-center">
+        {isImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt={label} className="w-full h-full object-cover" />
+        ) : (
+          <div className="flex flex-col items-center gap-1 text-slate-400">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <span className="text-[10px] uppercase">Open file</span>
+          </div>
+        )}
+      </div>
+      <div className="mt-1 text-[11px] text-slate-500 text-center">{label}</div>
+    </a>
   );
 }
 
@@ -198,6 +222,26 @@ export function RestaurantViewButton({ id }: { id: number }) {
                       <Flag label="Cutlery" on={r.cutlery} />
                     </div>
                   </section>
+
+                  {/* Documents the restaurant uploaded at signup. */}
+                  {(r.license_document_full_url || (r.additional_documents_full_urls?.length ?? 0) > 0) ? (
+                    <section>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Uploaded documents</h3>
+                      <div className="flex flex-wrap gap-3">
+                        {r.license_document_full_url ? (
+                          <DocThumb url={r.license_document_full_url} label="Licence" />
+                        ) : null}
+                        {(r.additional_documents_full_urls ?? []).map((url, i) => (
+                          <DocThumb key={`doc-${i}`} url={url} label={`Document ${i + 1}`} />
+                        ))}
+                      </div>
+                    </section>
+                  ) : (
+                    <section>
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Uploaded documents</h3>
+                      <p className="text-sm text-slate-400">No documents uploaded.</p>
+                    </section>
+                  )}
                 </>
               )}
             </div>
