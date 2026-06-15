@@ -297,6 +297,7 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/shifts", label: "Shift Setup", icon: "clock" },
           { href: "/dashboard/dm-bonuses", label: "Bonuses", icon: "star" },
           { href: "/dashboard/dm-incentives", label: "Incentives", icon: "currency" },
+          { href: "/dashboard/dm-incentives/history", label: "Incentives History", icon: "ledger" },
           { href: "/dashboard/dm-reviews", label: "Reviews", icon: "star" },
           { href: "/dashboard/disbursements?type=deliveryman", label: "DM Disbursement", icon: "bank" },
           { href: "/dashboard/dm-earnings", label: "DM Earnings", icon: "currency" },
