@@ -35,7 +35,36 @@ export function UserDeliveryCalculator() {
         body: JSON.stringify({ distance_km: distance, order_value: orderValue, when }),
       });
       if (!res.ok) { setError((await res.text()).slice(0, 200)); return; }
-      setResult(await res.json() as CalcResult);
+      const data = (await res.json()) as Partial<CalcResult>;
+      // Coerce every numeric field so a null/absent value from the API never
+      // crashes the render (e.g. null.toLocaleString / null.toFixed).
+      const n = (v: unknown, d = 0) => (v == null || Number.isNaN(Number(v)) ? d : Number(v));
+      setResult({
+        distance_km: n(data.distance_km),
+        order_value: n(data.order_value),
+        matched_slab: data.matched_slab
+          ? {
+              id: n(data.matched_slab.id),
+              min_km: n(data.matched_slab.min_km),
+              max_km: n(data.matched_slab.max_km),
+              base_charge: n(data.matched_slab.base_charge),
+              extra_per_km: n(data.matched_slab.extra_per_km),
+              gst_rate: n(data.matched_slab.gst_rate),
+            }
+          : null,
+        base_charge: n(data.base_charge),
+        extra_charge: n(data.extra_charge),
+        base_after_surge: n(data.base_after_surge),
+        surge_multiplier: n(data.surge_multiplier, 1),
+        surcharges: Array.isArray(data.surcharges)
+          ? data.surcharges.map((s) => ({ id: n(s.id), type: String(s.type ?? ""), label: String(s.label ?? ""), amount: n(s.amount), gst_amount: n(s.gst_amount) }))
+          : [],
+        subtotal: n(data.subtotal),
+        gst_amount: n(data.gst_amount),
+        total: n(data.total),
+        free_delivery: !!data.free_delivery,
+        notes: data.notes,
+      });
     });
   }
 

@@ -53,7 +53,9 @@ export default async function UserDeliveryChargesPage() {
     sc.amount = Number(sc.amount ?? 0);
     sc.gst_rate = Number(sc.gst_rate ?? 0);
   }
-  if (free) free.min_order_value = Number(free.min_order_value ?? 0);
+  // Null-safe free-delivery config (endpoint can return null when never set).
+  const freeCfg: Free = free ?? { id: 0, min_order_value: 0, status: false };
+  freeCfg.min_order_value = Number(freeCfg.min_order_value ?? 0);
   for (const c of grid ?? []) {
     c.multiplier = Number(c.multiplier ?? 1);
   }
@@ -117,7 +119,7 @@ export default async function UserDeliveryChargesPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
           </svg>
         } />
-        <StatCard label="Free delivery" value={free.status ? `≥ ₹${free.min_order_value}` : "Off"} suffix={free.status ? "threshold active" : "not active"} accent={free.status ? "cyan" : "slate"} icon={
+        <StatCard label="Free delivery" value={freeCfg.status ? `≥ ₹${freeCfg.min_order_value}` : "Off"} suffix={freeCfg.status ? "threshold active" : "not active"} accent={freeCfg.status ? "cyan" : "slate"} icon={
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -247,7 +249,7 @@ export default async function UserDeliveryChargesPage() {
             </div>
           </div>
           <div className="p-6">
-            <FreeDeliveryToggle initial={{ min_order_value: free.min_order_value, status: free.status }} />
+            <FreeDeliveryToggle initial={{ min_order_value: freeCfg.min_order_value, status: freeCfg.status }} />
           </div>
         </div>
 
