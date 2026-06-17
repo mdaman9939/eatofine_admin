@@ -104,6 +104,7 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/orders", label: "All Orders", icon: "orders" },
           { href: "/dashboard/orders?type=take_away", label: "Take Away", icon: "package" },
           { href: "/dashboard/orders?type=dine_in", label: "Dine In", icon: "food" },
+          { href: "/dashboard/orders?type=delivery", label: "Home Delivery", icon: "truck" },
         ],
       },
       { href: "/dashboard/subscription-orders", label: "Subscription Orders", icon: "calendar" },

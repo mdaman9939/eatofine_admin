@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { AccountMenu } from "./AccountMenu";
 import { SidebarIcon } from "./SidebarIcon";
 
@@ -22,16 +22,29 @@ export interface NavGroup {
 
 // Walk the whole nav tree, find the navigable item whose href best matches
 // the current pathname (longest prefix wins). Returns null if nothing matches.
-function findActiveItem(items: NavItem[], pathname: string): { href: string; label: string } | null {
+function findActiveItem(items: NavItem[], pathname: string, currentType: string | null): { href: string; label: string } | null {
   let best: { href: string; label: string } | null = null;
   const visit = (arr: NavItem[]) => {
     for (const item of arr) {
       // Only real routes can be the active leaf; "#parent-id" hrefs are
       // expand/collapse placeholders.
       if (item.href.startsWith("/")) {
-        const matches =
-          pathname === item.href ||
-          (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
+        const [itemPath, itemQuery] = item.href.split("?");
+        let matches: boolean;
+        if (itemQuery) {
+          // Query-filtered item (e.g. /dashboard/orders?type=dine_in): active
+          // only when the path AND its `type` filter both match the URL — so
+          // Take Away / Dine In / Home Delivery highlight on their own page.
+          const itemType = new URLSearchParams(itemQuery).get("type");
+          matches = pathname === itemPath && currentType === itemType;
+        } else {
+          // Plain route. The "All Orders" variant (/dashboard/orders) must NOT
+          // stay active when a `type` filter is on — let the filtered sibling win.
+          const pathMatches =
+            pathname === itemPath || (itemPath !== "/dashboard" && pathname.startsWith(itemPath + "/"));
+          matches = pathMatches && !(itemPath === "/dashboard/orders" && !!currentType);
+        }
+        // Longer href = more specific → wins the tie (filtered beats plain).
         if (matches && (!best || item.href.length > best.href.length)) {
           best = { href: item.href, label: item.label };
         }
@@ -73,11 +86,13 @@ export function AdminShell({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentType = searchParams.get("type");
 
   // Single source of truth for "what route are we on?" — the longest prefix
-  // match across the whole nav tree. Used for both the active-item highlight
-  // and the page title.
-  const active = findActiveItem(nav.flatMap((g) => g.items), pathname);
+  // match across the whole nav tree (now query-aware for ?type= filters). Used
+  // for both the active-item highlight and the page title.
+  const active = findActiveItem(nav.flatMap((g) => g.items), pathname, currentType);
   const activeHref = active?.href ?? null;
 
   const pageTitle = pathname === "/dashboard" ? "Home" : active?.label ?? "Dashboard";
