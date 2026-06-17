@@ -92,6 +92,9 @@ export function ZonePolygonPicker({
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchMsg, setSearchMsg] = useState("");
+  type Suggestion = { display_name: string; lat: string; lon: string };
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const skipNextRef = useRef(false); // don't re-query right after picking a suggestion
 
   // Init map once.
   useEffect(() => {
@@ -165,6 +168,43 @@ export function ZonePolygonPicker({
     }
   }, [points, anchor]);
 
+  // Live autocomplete: debounce typing → fetch up to 5 place suggestions.
+  useEffect(() => {
+    if (skipNextRef.current) {
+      skipNextRef.current = false;
+      return;
+    }
+    const q = query.trim();
+    if (q.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(q)}`,
+          { headers: { Accept: "application/json" } },
+        );
+        const data = (await r.json()) as Suggestion[];
+        setSuggestions(Array.isArray(data) ? data : []);
+      } catch {
+        setSuggestions([]);
+      }
+    }, 350);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  function flyTo(lat: number, lon: number, name?: string) {
+    mapRef.current?.setView([lat, lon], 14);
+    setSearchMsg(name ? `📍 ${name}` : "");
+    setSuggestions([]);
+  }
+  function selectSuggestion(s: Suggestion) {
+    skipNextRef.current = true; // setQuery below shouldn't trigger another lookup
+    setQuery(s.display_name);
+    flyTo(parseFloat(s.lat), parseFloat(s.lon), s.display_name);
+  }
+
   function pickMode(m: Mode) {
     setMode(m);
     setAnchor(null);
@@ -188,10 +228,14 @@ export function ZonePolygonPicker({
       mapRef.current?.setView([pos.coords.latitude, pos.coords.longitude], 13);
     });
   }
-  async function searchPlace(e?: React.FormEvent) {
-    e?.preventDefault();
+  async function searchPlace() {
     const q = query.trim();
     if (!q || !mapRef.current) return;
+    // If suggestions are already loaded, just fly to the best one.
+    if (suggestions[0]) {
+      selectSuggestion(suggestions[0]);
+      return;
+    }
     setSearching(true);
     setSearchMsg("");
     try {
@@ -199,10 +243,9 @@ export function ZonePolygonPicker({
         `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`,
         { headers: { Accept: "application/json" } },
       );
-      const data = (await r.json()) as Array<{ lat: string; lon: string; display_name?: string }>;
+      const data = (await r.json()) as Suggestion[];
       if (data?.[0]) {
-        mapRef.current.setView([parseFloat(data[0].lat), parseFloat(data[0].lon)], 14);
-        setSearchMsg(data[0].display_name ? `📍 ${data[0].display_name}` : "");
+        flyTo(parseFloat(data[0].lat), parseFloat(data[0].lon), data[0].display_name);
       } else {
         setSearchMsg("No place found — try a fuller name (area, city).");
       }
@@ -249,22 +292,49 @@ export function ZonePolygonPicker({
         </div>
       </div>
 
-      {/* Location search */}
-      <form onSubmit={searchPlace} className="flex gap-1.5">
+      {/* Location search (NOT a <form> — this sits inside the parent zone form,
+          and a nested form would make the button submit/reload the page). */}
+      <div className="relative flex gap-1.5">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void searchPlace();
+            }
+          }}
           placeholder="Search a location / area name (e.g. Connaught Place, Delhi)"
           className="flex-1 rounded-md border border-slate-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={() => void searchPlace()}
           disabled={searching || !query.trim()}
           className="rounded-md bg-emerald-600 text-white text-sm font-semibold px-3 py-1.5 disabled:opacity-50"
         >
           {searching ? "…" : "Search"}
         </button>
-      </form>
+        {suggestions.length > 0 && (
+          <ul className="absolute left-0 right-0 top-full mt-1 z-[1000] bg-white border border-slate-200 rounded-md shadow-lg max-h-56 overflow-auto">
+            {suggestions.map((s, i) => (
+              <li key={`${s.lat},${s.lon},${i}`}>
+                <button
+                  type="button"
+                  // onMouseDown fires before the input's blur, so the pick isn't lost.
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    selectSuggestion(s);
+                  }}
+                  className="block w-full text-left px-3 py-1.5 text-sm text-slate-700 hover:bg-emerald-50 border-b border-slate-50 last:border-0"
+                >
+                  {s.display_name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       {searchMsg && <p className="text-xs text-slate-500 truncate">{searchMsg}</p>}
 
       {/* Draw-mode toolbar */}
