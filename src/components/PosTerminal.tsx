@@ -31,6 +31,7 @@ export function PosTerminal({
   const [customerPhone, setCustomerPhone] = useState("");
   const [address, setAddress] = useState("");
   const [orderType, setOrderType] = useState("take_away");
+  const [tableNumber, setTableNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discount, setDiscount] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +70,10 @@ export function PosTerminal({
       setError("Add at least one item to the cart");
       return;
     }
+    if (orderType === "dine_in" && !tableNumber.trim()) {
+      setError("Table number is required for dine in");
+      return;
+    }
     const body = {
       restaurant_id: restaurantId,
       items: lines.map((l) => ({ food_id: l.food.id, name: l.food.name, price: l.food.price, quantity: l.qty })),
@@ -76,6 +81,7 @@ export function PosTerminal({
       customer_phone: customerPhone || undefined,
       address: address || undefined,
       order_type: orderType,
+      table_number: orderType === "dine_in" ? tableNumber.trim() : undefined,
       payment_method: paymentMethod,
       discount,
       tax_percent: restaurantTax,
@@ -155,6 +161,9 @@ export function PosTerminal({
           <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="Phone (optional)" className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
           {orderType === "delivery" && (
             <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Delivery address" className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
+          )}
+          {orderType === "dine_in" && (
+            <input value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} placeholder="Table number (required)" className="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm" />
           )}
           <div className="grid grid-cols-2 gap-2">
             <select value={orderType} onChange={(e) => setOrderType(e.target.value)} className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
