@@ -278,7 +278,11 @@ const NAV: NavGroup[] = [
         ],
       },
       { href: "/dashboard/vendor-promotions", label: "Vendor Promotions", badge: "new", icon: "extra" },
-      { href: "/dashboard/platform-settings", label: "Platform Settings", badge: "new", icon: "settings" },
+      // Platform Settings hidden: its values are not read by the backend (no
+      // auth/dm/promo/billing logic consults `platform_settings`), so it had no
+      // effect on the app. The live, wired config lives in Business Setup
+      // (`business_settings`). Re-enable by uncommenting if it gets wired later.
+      // { href: "/dashboard/platform-settings", label: "Platform Settings", badge: "new", icon: "settings" },
     ],
   },
   {
