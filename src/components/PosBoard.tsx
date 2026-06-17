@@ -40,6 +40,7 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
   const [customerPhone, setCustomerPhone] = useState("");
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [orderType, setOrderType] = useState("take_away");
+  const [tableNumber, setTableNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discount, setDiscount] = useState(0);
   const [deliveryFee, setDeliveryFee] = useState(0);
@@ -126,7 +127,7 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
     vat +
     additionalChargeTotal +
     packagingAmount +
-    (orderType === "home_delivery" ? deliveryFee : 0);
+    (orderType === "delivery" ? deliveryFee : 0);
 
   function addItem(food: Food) {
     setCart((c) => ({ ...c, [food.id]: { food, qty: (c[food.id]?.qty ?? 0) + 1 } }));
@@ -142,6 +143,7 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
     setError(null);
     if (!restaurantId) { setError("Select a restaurant first"); return; }
     if (lines.length === 0) { setError("Cart is empty"); return; }
+    if (orderType === "dine_in" && !tableNumber.trim()) { setError("Table number is required for dine in"); return; }
     setPlacing(true);
     fetch("/api/admin/pos/place-order", {
       method: "POST",
@@ -152,10 +154,11 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
         customer_name: customerName || undefined,
         customer_phone: customerPhone || undefined,
         order_type: orderType,
+        table_number: orderType === "dine_in" ? tableNumber.trim() : undefined,
         payment_method: paymentMethod,
         discount,
         tax_percent: tax,
-        delivery_charge: orderType === "home_delivery" ? deliveryFee : 0,
+        delivery_charge: orderType === "delivery" ? deliveryFee : 0,
         additional_charge: Number(additionalChargeTotal.toFixed(2)),
         extra_packaging_amount: Number(packagingAmount.toFixed(2)),
       }),
@@ -240,14 +243,25 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
 
           <div>
             <span className="text-xs font-semibold text-slate-600">Select Order Type</span>
-            <div className="flex gap-4 mt-1">
+            <div className="flex gap-4 mt-1 flex-wrap">
               <label className="flex items-center gap-1.5 text-sm cursor-pointer">
                 <input type="radio" checked={orderType === "take_away"} onChange={() => setOrderType("take_away")} /> Take Away
               </label>
               <label className="flex items-center gap-1.5 text-sm cursor-pointer">
-                <input type="radio" checked={orderType === "home_delivery"} onChange={() => setOrderType("home_delivery")} /> Home Delivery
+                <input type="radio" checked={orderType === "delivery"} onChange={() => setOrderType("delivery")} /> Home Delivery
+              </label>
+              <label className="flex items-center gap-1.5 text-sm cursor-pointer">
+                <input type="radio" checked={orderType === "dine_in"} onChange={() => setOrderType("dine_in")} /> Dine In
               </label>
             </div>
+            {orderType === "dine_in" && (
+              <input
+                value={tableNumber}
+                onChange={(e) => setTableNumber(e.target.value)}
+                placeholder="Table number (required)"
+                className={`${selCls} mt-2`}
+              />
+            )}
           </div>
 
           {/* Items table */}
@@ -279,7 +293,7 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
               <span>Discount</span>
               <input type="number" min={0} value={discount} onChange={(e) => setDiscount(Math.max(0, Number(e.target.value) || 0))} className="w-24 rounded border border-slate-300 px-2 py-0.5 text-right text-sm" />
             </label>
-            {orderType === "home_delivery" && (
+            {orderType === "delivery" && (
               <label className="flex justify-between items-center text-slate-600">
                 <span>Delivery fee</span>
                 <input type="number" min={0} value={deliveryFee} onChange={(e) => setDeliveryFee(Math.max(0, Number(e.target.value) || 0))} className="w-24 rounded border border-slate-300 px-2 py-0.5 text-right text-sm" />
