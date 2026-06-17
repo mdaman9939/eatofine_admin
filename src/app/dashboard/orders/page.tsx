@@ -183,6 +183,7 @@ export default async function OrdersPage({
                 <th className="px-6 py-3 font-semibold">Order #</th>
                 <th className="px-4 py-3 font-semibold">Customer</th>
                 <th className="px-4 py-3 font-semibold">Restaurant</th>
+                <th className="px-4 py-3 font-semibold">Type</th>
                 <th className="px-4 py-3 font-semibold text-right">Amount</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold">Payment</th>
@@ -225,6 +226,7 @@ export default async function OrdersPage({
                       </div>
                     </td>
                     <td className="px-4 py-4 text-slate-700">{o.restaurant?.name ?? <span className="text-slate-300">—</span>}</td>
+                    <td className="px-4 py-4"><OrderTypeBadge type={o.order_type} /></td>
                     <td className="px-4 py-4 text-right tabular-nums font-semibold text-slate-900">₹{o.order_amount.toFixed(2)}</td>
                     <td className="px-4 py-4">
                       <StatusPill status={o.order_status} />
@@ -266,7 +268,7 @@ export default async function OrdersPage({
               })}
               {data.orders.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
+                  <td colSpan={9} className="px-6 py-12 text-center">
                     <div className="inline-flex flex-col items-center gap-2 text-slate-400">
                       <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -290,6 +292,23 @@ function initials(name: string): string {
   if (!parts[0]) return "?";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+/** Order/delivery type badge — Dine In · Take Away · Home Delivery. */
+function OrderTypeBadge({ type }: { type: string | null | undefined }) {
+  const t = (type ?? "delivery").toLowerCase();
+  const cfg: Record<string, { label: string; tone: string; icon: string }> = {
+    dine_in: { label: "Dine In", tone: "bg-indigo-50 text-indigo-700 ring-indigo-200", icon: "🍽" },
+    take_away: { label: "Take Away", tone: "bg-amber-50 text-amber-700 ring-amber-200", icon: "🛍" },
+    delivery: { label: "Home Delivery", tone: "bg-teal-50 text-teal-700 ring-teal-200", icon: "🛵" },
+    home_delivery: { label: "Home Delivery", tone: "bg-teal-50 text-teal-700 ring-teal-200", icon: "🛵" },
+  };
+  const c = cfg[t] ?? { label: type ?? "—", tone: "bg-slate-100 text-slate-600 ring-slate-200", icon: "" };
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 ${c.tone}`}>
+      {c.icon && <span>{c.icon}</span>}{c.label}
+    </span>
+  );
 }
 
 function StatusPill({ status }: { status: string }) {
