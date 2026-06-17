@@ -231,7 +231,12 @@ const NAV: NavGroup[] = [
         badge: "new",
         icon: "tax",
         children: [
-          { href: "/dashboard/tax-engine", label: "GST Engine", icon: "tax" },
+          // GST Engine hidden: the `tax_master` table it manages is not read by
+          // any billing calculation (order tax comes from each food's tax field;
+          // vendor-invoice GST is computed directly). It was reference-only, so
+          // hiding it has no effect on the app. Re-enable by uncommenting if it
+          // ever becomes the source of truth for GST.
+          // { href: "/dashboard/tax-engine", label: "GST Engine", icon: "tax" },
           { href: "/dashboard/invoices", label: "GST Invoices", icon: "invoice" },
           { href: "/dashboard/invoice-setup", label: "Invoice Setup", icon: "settings" },
         ],
