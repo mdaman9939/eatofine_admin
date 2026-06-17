@@ -143,9 +143,7 @@ export default async function VendorInvoiceDetailPage({ params }: { params: Prom
   // descriptive text so the same template handles all three plan types.
   const lineDescription = inv.plan_type === "subscription"
     ? "Online platform Subscription Fee"
-    : inv.plan_type === "commission"
-      ? `Commission on online sales (${fmtDate(inv.period_start)} → ${fmtDate(inv.period_end)})`
-      : `Pay-per-order charge (${fmtDate(inv.period_start)} → ${fmtDate(inv.period_end)})`;
+    : "Online platform usage Fee";
 
   const baseAmount = inv.taxable_amount || inv.subscription_fee || inv.commission_base || inv.ppo_base;
   const cgstPct = baseAmount > 0 ? Math.round((inv.cgst / baseAmount) * 100) : 9;
@@ -247,8 +245,9 @@ export default async function VendorInvoiceDetailPage({ params }: { params: Prom
         </div>
 
         {/* ── 6. Work Summary (orange band) ───────────────────────── */}
-        <div className="mx-8 bg-orange-500 text-white px-4 py-1.5 text-sm font-bold">
-          Work Summary:
+        <div className="mx-8 bg-orange-500 text-white px-4 py-1.5 text-sm font-bold flex items-center justify-between gap-3 flex-wrap">
+          <span>Work Summary:</span>
+          <span>Invoice Period: {fmtDate(inv.period_start)} to {fmtDate(inv.period_end)}</span>
         </div>
         <div className="px-8 py-3">
           <table className="w-full text-xs border border-slate-700 border-collapse">
