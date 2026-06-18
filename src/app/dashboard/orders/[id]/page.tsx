@@ -4,6 +4,17 @@ import { ActionButton } from "../../../../components/ActionButton";
 import { RefundPanel } from "./RefundPanel";
 
 interface OrderDetail {
+  earnings?: {
+    customer_payment: number;
+    food_amount: number;
+    commission_pct: number;
+    eatofine_commission: number;
+    eatofine_platform_fee: number;
+    eatofine_earning: number;
+    restaurant_earning: number;
+    deliveryman_earning: number;
+    tax_amount: number;
+  };
   order: {
     id: number;
     order_amount: number;
@@ -276,6 +287,76 @@ export default async function OrderDetailPage({
             })}
           </ol>
         </div>
+      </div>
+
+      {/* ── Money distribution — who keeps what ──────────────────────────── */}
+      {data.earnings && (
+        <div className="mt-4 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 mb-1">Money Distribution</h2>
+          <p className="text-xs text-zinc-400 mb-4">Of the ₹{data.earnings.customer_payment.toFixed(2)} the customer paid, here is who keeps what.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <SplitCard
+              tone="emerald"
+              title="Eatofine earns"
+              amount={data.earnings.eatofine_earning}
+              lines={[
+                [`Commission (${data.earnings.commission_pct}%)`, data.earnings.eatofine_commission],
+                ["Platform / fees", data.earnings.eatofine_platform_fee],
+              ]}
+            />
+            <SplitCard
+              tone="sky"
+              title="Restaurant gets"
+              amount={data.earnings.restaurant_earning}
+              lines={[
+                ["Food value", data.earnings.food_amount],
+                [`− Commission (${data.earnings.commission_pct}%)`, -data.earnings.eatofine_commission],
+              ]}
+            />
+            <SplitCard
+              tone="slate"
+              title="Tax + Delivery"
+              amount={data.earnings.tax_amount + data.earnings.deliveryman_earning}
+              lines={[
+                ["GST → government", data.earnings.tax_amount],
+                ["Delivery → rider", data.earnings.deliveryman_earning],
+              ]}
+            />
+          </div>
+          <p className="text-[11px] text-zinc-400 mt-3">
+            Eatofine + Restaurant + Tax + Delivery = ₹{(data.earnings.eatofine_earning + data.earnings.restaurant_earning + data.earnings.tax_amount + data.earnings.deliveryman_earning).toFixed(2)} (= customer payment). No money is lost.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SplitCard({
+  tone, title, amount, lines,
+}: {
+  tone: "emerald" | "sky" | "slate";
+  title: string;
+  amount: number;
+  lines: Array<[string, number]>;
+}) {
+  const toneCls = {
+    emerald: "border-emerald-200 bg-emerald-50/60",
+    sky: "border-sky-200 bg-sky-50/60",
+    slate: "border-slate-200 bg-slate-50",
+  }[tone];
+  const amtCls = { emerald: "text-emerald-700", sky: "text-sky-700", slate: "text-slate-700" }[tone];
+  return (
+    <div className={`rounded-lg border ${toneCls} p-4`}>
+      <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{title}</div>
+      <div className={`mt-1 text-2xl font-bold tabular-nums ${amtCls}`}>₹{amount.toFixed(2)}</div>
+      <div className="mt-2 space-y-0.5">
+        {lines.map(([label, val], i) => (
+          <div key={i} className="flex justify-between text-[11px] text-zinc-500">
+            <span>{label}</span>
+            <span className="tabular-nums">₹{val.toFixed(2)}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -16,17 +16,6 @@ interface Zone {
   restaurant_count: number;
 }
 
-function inr(n: number | null | undefined) {
-  if (n === null || n === undefined) return "—";
-  return `₹${Number(n).toLocaleString("en-IN")}`;
-}
-
-function avg(values: Array<number | null | undefined>): number | null {
-  const nums = values.filter((v): v is number => v !== null && v !== undefined && !Number.isNaN(v));
-  if (nums.length === 0) return null;
-  return nums.reduce((s, v) => s + v, 0) / nums.length;
-}
-
 export default async function ZonesPage({
   searchParams,
 }: {
@@ -40,8 +29,6 @@ export default async function ZonesPage({
 
   const activeCount = zones.filter((z) => z.status).length;
   const totalRestaurants = zones.reduce((s, z) => s + (z.restaurant_count || 0), 0);
-  const avgPerKm = avg(zones.map((z) => z.per_km_shipping_charge));
-  const avgEta = avg(zones.map((z) => z.minimum_delivery_time));
   const sorted = [...zones].sort((a, b) => Number(b.is_default) - Number(a.is_default) || b.restaurant_count - a.restaurant_count);
 
   return (
@@ -86,7 +73,7 @@ export default async function ZonesPage({
       </div>
 
       {/* ── Stats ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <StatCard
           label="Total zones"
           value={zones.length.toString()}
@@ -121,17 +108,6 @@ export default async function ZonesPage({
             </svg>
           }
         />
-        <StatCard
-          label="Avg per-km / ETA"
-          value={avgPerKm !== null ? `₹${avgPerKm.toFixed(0)}` : "—"}
-          suffix={avgEta !== null ? `${avgEta.toFixed(0)} min avg ETA` : "no ETA set"}
-          accent="teal"
-          icon={
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          }
-        />
       </div>
 
       {/* ── Zones table ─────────────────────────────────────────── */}
@@ -154,10 +130,6 @@ export default async function ZonesPage({
                 <th className="px-6 py-3 font-semibold">#</th>
                 <th className="px-4 py-3 font-semibold">Zone</th>
                 <th className="px-4 py-3 font-semibold text-right">Restaurants</th>
-                <th className="px-4 py-3 font-semibold text-right">Min ship</th>
-                <th className="px-4 py-3 font-semibold text-right">Per km</th>
-                <th className="px-4 py-3 font-semibold text-right">Max ship</th>
-                <th className="px-4 py-3 font-semibold text-right">Min ETA</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>
@@ -202,16 +174,6 @@ export default async function ZonesPage({
                         {z.restaurant_count}
                       </span>
                     </td>
-                    <td className="px-4 py-4 text-right text-slate-800 tabular-nums">{inr(z.minimum_shipping_charge)}</td>
-                    <td className="px-4 py-4 text-right text-slate-800 tabular-nums">{inr(z.per_km_shipping_charge)}</td>
-                    <td className="px-4 py-4 text-right text-slate-500 tabular-nums">{inr(z.maximum_shipping_charge)}</td>
-                    <td className="px-4 py-4 text-right text-slate-800 tabular-nums">
-                      {z.minimum_delivery_time !== null && z.minimum_delivery_time !== undefined ? (
-                        <span>{z.minimum_delivery_time}<span className="text-[11px] text-slate-400 ml-0.5">min</span></span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
                     <td className="px-4 py-4">
                       <StatusPill active={z.status} />
                     </td>
@@ -227,7 +189,7 @@ export default async function ZonesPage({
               })}
               {zones.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
+                  <td colSpan={5} className="px-6 py-12 text-center">
                     <div className="inline-flex flex-col items-center gap-2 text-slate-400">
                       <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
