@@ -2,6 +2,7 @@ import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { TablePage, fmtDate } from "../../../components/TablePage";
 import { ActionButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 import { AdvertisementViewButton } from "../../../components/AdvertisementViewButton";
 
@@ -196,6 +197,14 @@ export default async function AdvertisementsPage({
             cell: (r) => (
               <span className="flex gap-1 flex-wrap items-center">
                 <AdvertisementViewButton ad={r} />
+                <EditRecordButton basePath="/advertisements" id={r.id} title="Edit ad" values={r as unknown as Record<string, unknown>} fields={[
+                  { name: "title", label: "Title" },
+                  { name: "description", label: "Description" },
+                  { name: "priority", label: "Priority", type: "number" },
+                  { name: "start_date", label: "Start date", type: "date" },
+                  { name: "end_date", label: "End date", type: "date" },
+                  { name: "amount", label: "Amount ₹", type: "number" },
+                ]} />
                 {STATUSES.filter((s) => s !== r.status).slice(0, 3).map((s) => (
                   <ActionButton
                     key={s}

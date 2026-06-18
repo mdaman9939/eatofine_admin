@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { CreateForm } from "../../../components/CreateForm";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 
 interface Banner {
   id: number;
@@ -115,6 +116,13 @@ export default async function PromotionalBannersPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className="inline-flex gap-2">
+                      <EditRecordButton basePath="/promotional-banners" id={b.id} title="Edit banner" values={b as unknown as Record<string, unknown>} fields={[
+                        { name: "title", label: "Title" },
+                        { name: "subtitle", label: "Subtitle" },
+                        { name: "cta_text", label: "CTA text" },
+                        { name: "target", label: "Target / link" },
+                        { name: "zone_id", label: "Zone ID", type: "number" },
+                      ]} />
                       <ToggleStatusButton basePath="/promotional-banners" id={b.id} currentStatus={b.status} />
                       <DeleteButton basePath="/promotional-banners" id={b.id} />
                     </span>

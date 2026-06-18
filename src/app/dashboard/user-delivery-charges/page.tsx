@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 import { FreeDeliveryToggle } from "../../../components/FreeDeliveryToggle";
 import { SurgeGridEditor } from "../../../components/SurgeGridEditor";
@@ -216,6 +217,13 @@ export default async function UserDeliveryChargesPage() {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <span className="inline-flex gap-2">
+                      <EditRecordButton basePath="/user-delivery-charges/slabs" id={s.id} title="Edit slab" values={s as unknown as Record<string, unknown>} fields={[
+                        { name: "min_km", label: "Min km", type: "number" },
+                        { name: "max_km", label: "Max km", type: "number" },
+                        { name: "base_charge", label: "Base charge ₹", type: "number" },
+                        { name: "extra_per_km", label: "Extra per km ₹", type: "number" },
+                        { name: "gst_rate", label: "GST %", type: "number" },
+                      ]} />
                       <ToggleStatusButton basePath="/user-delivery-charges/slabs" id={s.id} currentStatus={s.status} mode="base-path" />
                       <DeleteButton basePath="/user-delivery-charges/slabs" id={s.id} />
                     </span>

@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { CreateForm } from "../../../components/CreateForm";
 import { DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 
 interface Template {
   id: number;
@@ -93,7 +94,13 @@ export default async function EmailTemplatesPage() {
                   <td className="px-4 py-3 text-slate-700 text-sm max-w-md truncate">{t.subject}</td>
                   <td className="px-4 py-3 text-slate-500 text-xs">{fmtDate(t.updated_at)}</td>
                   <td className="px-4 py-3 text-right">
-                    <DeleteButton basePath="/email-templates" id={t.id} />
+                    <span className="inline-flex gap-2 justify-end">
+                      <EditRecordButton basePath="/email-templates" id={t.id} title="Edit template" values={t as unknown as Record<string, unknown>} fields={[
+                        { name: "subject", label: "Subject" },
+                        { name: "body", label: "Body" },
+                      ]} />
+                      <DeleteButton basePath="/email-templates" id={t.id} />
+                    </span>
                   </td>
                 </tr>
               ))}

@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge } from "../../../components/TablePage";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface F {
@@ -52,6 +53,10 @@ export default async function FAQsPage() {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
+                <EditRecordButton basePath="/faqs" id={r.id} title="Edit FAQ" values={r as unknown as Record<string, unknown>} fields={[
+                  { name: "question", label: "Question" },
+                  { name: "answer", label: "Answer" },
+                ]} />
                 <ToggleStatusButton basePath="/faqs" id={r.id} currentStatus={r.status} mode="base-path" />
                 <DeleteButton basePath="/faqs" id={r.id} />
               </span>

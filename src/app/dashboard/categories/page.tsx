@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge, fmtDate } from "../../../components/TablePage";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface Category {
@@ -48,6 +49,10 @@ export default async function CategoriesPage() {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
+                <EditRecordButton basePath="/categories" id={r.id} title="Edit category" values={r as unknown as Record<string, unknown>} fields={[
+                  { name: "name", label: "Name" },
+                  { name: "priority", label: "Priority", type: "number" },
+                ]} />
                 <ToggleStatusButton basePath="/categories" id={r.id} currentStatus={r.status} mode="base-path" />
                 <DeleteButton basePath="/categories" id={r.id} />
               </span>
