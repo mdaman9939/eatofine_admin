@@ -10,6 +10,8 @@ interface OrderDetail {
     commission_pct: number;
     eatofine_commission: number;
     eatofine_platform_fee: number;
+    admin_discount: number;
+    restaurant_discount: number;
     eatofine_earning: number;
     restaurant_earning: number;
     deliveryman_earning: number;
@@ -302,6 +304,10 @@ export default async function OrderDetailPage({
               lines={[
                 [`Commission (${data.earnings.commission_pct}%)`, data.earnings.eatofine_commission],
                 ["Platform / fees", data.earnings.eatofine_platform_fee],
+                // Admin-funded coupon/discount is Eatofine's promo expense.
+                ...(data.earnings.admin_discount > 0
+                  ? ([["− Admin discount (Eatofine bears)", -data.earnings.admin_discount]] as Array<[string, number]>)
+                  : []),
               ]}
             />
             <SplitCard
@@ -311,6 +317,10 @@ export default async function OrderDetailPage({
               lines={[
                 ["Food value", data.earnings.food_amount],
                 [`− Commission (${data.earnings.commission_pct}%)`, -data.earnings.eatofine_commission],
+                // Restaurant-funded coupon/discount is the restaurant's expense.
+                ...(data.earnings.restaurant_discount > 0
+                  ? ([["− Restaurant discount (restaurant bears)", -data.earnings.restaurant_discount]] as Array<[string, number]>)
+                  : []),
               ]}
             />
             <SplitCard
