@@ -3,6 +3,7 @@ import { ActionButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
 import { SlabRangeAxis } from "../../../components/SlabRangeAxis";
 import { SlabCalculator } from "../../../components/SlabCalculator";
+import { SlabEditButton } from "../../../components/SlabEditButton";
 
 interface Slab {
   id: number;
@@ -193,6 +194,17 @@ export default async function BusinessPlansPage() {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <span className="inline-flex gap-2">
+                      <SlabEditButton
+                        slab={{
+                          id: s.id,
+                          min_order_value: s.min_order_value,
+                          max_order_value: s.max_order_value,
+                          fixed_charge: s.fixed_charge,
+                          extra_charge: s.extra_charge,
+                          gst_rate: s.gst_rate,
+                          gst_on_extra: !!s.gst_on_extra,
+                        }}
+                      />
                       <ActionButton
                         path={`/business-plans/slabs/${s.id}/status`}
                         method="PATCH"
