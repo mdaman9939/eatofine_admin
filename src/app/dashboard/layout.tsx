@@ -226,22 +226,9 @@ const NAV: NavGroup[] = [
     items: [
       { href: "/dashboard/business-plans", label: "Business Plans", badge: "new", icon: "plan" },
       { href: "/dashboard/additional-charges", label: "Additional Charges", badge: "new", icon: "extra" },
-      {
-        href: "#tax-gst",
-        label: "GST",
-        badge: "new",
-        icon: "tax",
-        children: [
-          // GST Engine hidden: the `tax_master` table it manages is not read by
-          // any billing calculation (order tax comes from each food's tax field;
-          // vendor-invoice GST is computed directly). It was reference-only, so
-          // hiding it has no effect on the app. Re-enable by uncommenting if it
-          // ever becomes the source of truth for GST.
-          // { href: "/dashboard/tax-engine", label: "GST Engine", icon: "tax" },
-          { href: "/dashboard/invoices", label: "GST Invoices", icon: "invoice" },
-          { href: "/dashboard/invoice-setup", label: "Invoice Setup", icon: "settings" },
-        ],
-      },
+      // GST group removed — its invoices were consolidated under "Billing" per
+      // the client (Vendor/Restaurant + Customer/GST invoices together). The GST
+      // Engine was already hidden (reference-only), and Invoice Setup moved too.
       {
         href: "#tds",
         label: "TDS",
@@ -279,8 +266,10 @@ const NAV: NavGroup[] = [
         badge: "new",
         icon: "invoice",
         children: [
-          { href: "/dashboard/vendor-invoices", label: "Vendor Invoices", icon: "invoice" },
+          { href: "/dashboard/vendor-invoices", label: "Vendor Invoices (Restaurant)", icon: "invoice" },
+          { href: "/dashboard/invoices", label: "Customer Invoices (GST)", icon: "invoice" },
           { href: "/dashboard/credit-notes", label: "Credit Notes", icon: "invoice" },
+          { href: "/dashboard/invoice-setup", label: "Invoice Setup", icon: "settings" },
         ],
       },
       { href: "/dashboard/vendor-promotions", label: "Vendor Promotions", badge: "new", icon: "extra" },
