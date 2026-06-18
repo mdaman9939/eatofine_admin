@@ -25,7 +25,12 @@ export function SlabEditButton({ slab }: { slab: SlabValues }) {
   const [min, setMin] = useState(String(slab.min_order_value));
   const [max, setMax] = useState(String(slab.max_order_value));
   const [fixed, setFixed] = useState(String(slab.fixed_charge));
-  const [extra, setExtra] = useState(String(slab.extra_charge));
+  // Extra charge is shown/entered as a % of the max order value. Derive the
+  // initial % from the stored ₹ amount (extra_charge ÷ max × 100).
+  const initialExtraPct = slab.max_order_value > 0
+    ? +((slab.extra_charge / slab.max_order_value) * 100).toFixed(2)
+    : 0;
+  const [extraPct, setExtraPct] = useState(String(initialExtraPct));
   const [gst, setGst] = useState(String(slab.gst_rate));
   const [gstOnExtra, setGstOnExtra] = useState(slab.gst_on_extra);
 
@@ -39,7 +44,7 @@ export function SlabEditButton({ slab }: { slab: SlabValues }) {
           min_order_value: Number(min) || 0,
           max_order_value: Number(max) || 0,
           fixed_charge: Number(fixed) || 0,
-          extra_charge: Number(extra) || 0,
+          extra_charge_pct: Number(extraPct) || 0,
           gst_rate: Number(gst) || 0,
           gst_on_extra: gstOnExtra,
         }),
@@ -83,8 +88,8 @@ export function SlabEditButton({ slab }: { slab: SlabValues }) {
                 <input value={fixed} onChange={(e) => setFixed(e.target.value)} className={field} inputMode="decimal" />
               </label>
               <label className="block">
-                <span className="text-xs font-semibold text-slate-600">Extra charge ₹</span>
-                <input value={extra} onChange={(e) => setExtra(e.target.value)} className={field} inputMode="decimal" />
+                <span className="text-xs font-semibold text-slate-600">Extra charge %</span>
+                <input value={extraPct} onChange={(e) => setExtraPct(e.target.value)} className={field} inputMode="decimal" />
               </label>
               <label className="block">
                 <span className="text-xs font-semibold text-slate-600">GST %</span>

@@ -83,7 +83,7 @@ export default async function BusinessPlansPage() {
               { name: "min_order_value", label: "Min order ₹", type: "number", required: true },
               { name: "max_order_value", label: "Max order ₹", type: "number", required: true },
               { name: "fixed_charge", label: "Fixed charge ₹", type: "number", required: true },
-              { name: "extra_charge", label: "Extra charge ₹", type: "number", defaultValue: 0 },
+              { name: "extra_charge_pct", label: "Extra charge %", type: "number", defaultValue: 0 },
               { name: "gst_rate", label: "GST %", type: "number", defaultValue: 18 },
               { name: "gst_on_extra", label: "GST on Fixed+Extra (else only Fixed)", type: "checkbox" },
             ]}
@@ -171,12 +171,9 @@ export default async function BusinessPlansPage() {
                   <td className="px-4 py-4 text-right font-semibold text-slate-900">₹{s.fixed_charge.toFixed(2)}</td>
                   <td className="px-4 py-4 text-right text-slate-700">
                     {s.extra_charge > 0 && s.max_order_value > 0 ? (
-                      <div>
-                        <span className="inline-flex items-center text-xs font-semibold text-slate-700 bg-slate-100 rounded-md px-2 py-0.5">
-                          {((s.extra_charge / s.max_order_value) * 100).toFixed(2)}%
-                        </span>
-                        <div className="text-[10px] text-slate-400 mt-0.5">₹{s.extra_charge.toFixed(2)}</div>
-                      </div>
+                      <span className="inline-flex items-center text-xs font-semibold text-slate-700 bg-slate-100 rounded-md px-2 py-0.5">
+                        {((s.extra_charge / s.max_order_value) * 100).toFixed(2)}%
+                      </span>
                     ) : (
                       <span className="text-slate-300">—</span>
                     )}
