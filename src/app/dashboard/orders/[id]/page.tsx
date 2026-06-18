@@ -150,9 +150,18 @@ export default async function OrderDetailPage({
           <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 mb-3">Customer</h2>
           {data.user ? (
             <div className="text-sm space-y-1">
-              <Link href={`/dashboard/users/${data.user.id}`} className="text-orange-600 hover:underline">
-                {`${data.user.f_name ?? ""} ${data.user.l_name ?? ""}`.trim() || "—"}
-              </Link>
+              {/* Walk-in / POS customers have id 0 (no account) — show as plain
+                  text so we never link to a non-existent /users/0 page. */}
+              {data.user.id ? (
+                <Link href={`/dashboard/users/${data.user.id}`} className="text-orange-600 hover:underline">
+                  {`${data.user.f_name ?? ""} ${data.user.l_name ?? ""}`.trim() || "—"}
+                </Link>
+              ) : (
+                <div className="font-medium">
+                  {`${data.user.f_name ?? ""} ${data.user.l_name ?? ""}`.trim() || "—"}
+                  <span className="ml-1 text-xs text-zinc-400">(walk-in)</span>
+                </div>
+              )}
               <div>{data.user.email}</div>
               <div>{data.user.phone}</div>
             </div>

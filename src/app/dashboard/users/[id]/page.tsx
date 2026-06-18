@@ -32,7 +32,29 @@ export default async function UserDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const data = await adminFetch<UserDetail>(`/admin/users/${id}`);
+  // Walk-in / POS orders carry a placeholder customer id of 0 (no real account).
+  // Fetching it 404s — render a friendly card instead of crashing the panel.
+  let data: UserDetail | null = null;
+  try {
+    data = await adminFetch<UserDetail>(`/admin/users/${id}`);
+  } catch {
+    data = null;
+  }
+  if (!data || !data.user) {
+    return (
+      <div className="p-8 max-w-3xl">
+        <Link href="/dashboard/users" className="text-sm text-orange-600 hover:underline">← All customers</Link>
+        <div className="mt-6 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-8 text-center">
+          <h1 className="text-lg font-semibold">Customer not found</h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            {String(id) === "0"
+              ? "This was a walk-in / POS order with no registered customer account."
+              : "This customer record does not exist or has been removed."}
+          </p>
+        </div>
+      </div>
+    );
+  }
   const u = data.user;
 
   return (
