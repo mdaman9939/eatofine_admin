@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge } from "../../../components/TablePage";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface S {
@@ -38,6 +39,10 @@ export default async function SocialMediaPage() {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
+                <EditRecordButton basePath="/social-media" id={r.id} title="Edit social link" values={r as unknown as Record<string, unknown>} fields={[
+                  { name: "name", label: "Name" },
+                  { name: "link", label: "URL" },
+                ]} />
                 <ToggleStatusButton basePath="/social-media" id={r.id} currentStatus={r.status} />
                 <DeleteButton basePath="/social-media" id={r.id} />
               </span>

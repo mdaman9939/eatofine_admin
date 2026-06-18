@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge, fmtDate } from "../../../components/TablePage";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface WalletBonus {
@@ -51,6 +52,15 @@ export default async function WalletBonusesPage() {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
+                <EditRecordButton basePath="/wallet-bonuses" id={r.id} title="Edit wallet bonus" values={r as unknown as Record<string, unknown>} fields={[
+                  { name: "title", label: "Title" },
+                  { name: "bonus_type", label: "Bonus type", type: "select", options: [{ value: "percentage", label: "%" }, { value: "amount", label: "Flat ₹" }] },
+                  { name: "bonus_amount", label: "Bonus amount", type: "number" },
+                  { name: "minimum_add_amount", label: "Minimum add amount", type: "number" },
+                  { name: "maximum_bonus_amount", label: "Max bonus", type: "number" },
+                  { name: "start_date", label: "Starts", type: "date" },
+                  { name: "end_date", label: "Ends", type: "date" },
+                ]} />
                 <ToggleStatusButton basePath="/wallet-bonuses" id={r.id} currentStatus={r.status} />
                 <DeleteButton basePath="/wallet-bonuses" id={r.id} />
               </span>

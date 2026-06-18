@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface Reason {
@@ -177,6 +178,10 @@ export default async function OrderCancelReasonsPage() {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <span className="inline-flex gap-2">
+                      <EditRecordButton basePath="/order-cancel-reasons" id={r.id} title="Edit reason" values={r as unknown as Record<string, unknown>} fields={[
+                        { name: "reason", label: "Reason" },
+                        { name: "user_type", label: "User type", type: "select", options: [{ value: "customer", label: "Customer" }, { value: "deliveryman", label: "Delivery man" }, { value: "restaurant", label: "Restaurant" }] },
+                      ]} />
                       <ToggleStatusButton basePath="/order-cancel-reasons" id={r.id} currentStatus={r.status} />
                       <DeleteButton basePath="/order-cancel-reasons" id={r.id} />
                     </span>

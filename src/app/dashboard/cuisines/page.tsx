@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge, fmtDate } from "../../../components/TablePage";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface Cuisine {
@@ -39,6 +40,9 @@ export default async function CuisinesPage() {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
+                <EditRecordButton basePath="/cuisines" id={r.id} title="Edit cuisine" values={r as unknown as Record<string, unknown>} fields={[
+                  { name: "name", label: "Name" },
+                ]} />
                 <ToggleStatusButton basePath="/cuisines" id={r.id} currentStatus={r.status} mode="base-path" />
                 <DeleteButton basePath="/cuisines" id={r.id} />
               </span>

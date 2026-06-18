@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge, fmtDate, fmtMoney } from "../../../components/TablePage";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface CashBack {
@@ -67,6 +68,15 @@ export default async function CashBacksPage() {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
+                <EditRecordButton basePath="/cash-backs" id={r.id} title="Edit cashback" values={r as unknown as Record<string, unknown>} fields={[
+                  { name: "title", label: "Title" },
+                  { name: "cashback_amount", label: "Cashback amount", type: "number" },
+                  { name: "min_purchase", label: "Min purchase ₹", type: "number" },
+                  { name: "max_discount", label: "Max discount ₹", type: "number" },
+                  { name: "start_date", label: "Start date", type: "date" },
+                  { name: "end_date", label: "End date", type: "date" },
+                  { name: "limit", label: "Usage limit", type: "number" },
+                ]} />
                 <ToggleStatusButton basePath="/cash-backs" id={r.id} currentStatus={!!r.status} />
                 <DeleteButton basePath="/cash-backs" id={r.id} />
               </span>

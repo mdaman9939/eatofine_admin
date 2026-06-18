@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge } from "../../../components/TablePage";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface V {
@@ -41,6 +42,12 @@ export default async function VehiclesPage() {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
+                <EditRecordButton basePath="/vehicles" id={r.id} title="Edit vehicle" values={r as unknown as Record<string, unknown>} fields={[
+                  { name: "type", label: "Type" },
+                  { name: "starting_coverage_area", label: "Starting coverage (km)", type: "number" },
+                  { name: "maximum_coverage_area", label: "Max coverage (km)", type: "number" },
+                  { name: "extra_charges", label: "Extra charges ₹", type: "number" },
+                ]} />
                 <ToggleStatusButton basePath="/vehicles" id={r.id} currentStatus={r.status} />
                 <DeleteButton basePath="/vehicles" id={r.id} />
               </span>

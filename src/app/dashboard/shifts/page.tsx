@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, StatusBadge } from "../../../components/TablePage";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface S {
@@ -51,6 +52,12 @@ export default async function ShiftsPage() {
             header: "Actions",
             cell: (r) => (
               <span className="flex gap-2">
+                <EditRecordButton basePath="/shifts" id={r.id} title="Edit shift" values={r as unknown as Record<string, unknown>} fields={[
+                  { name: "name", label: "Name" },
+                  { name: "start_time", label: "Start (HH:MM:SS)" },
+                  { name: "end_time", label: "End (HH:MM:SS)" },
+                  { name: "is_full_day", label: "Full day", type: "checkbox" },
+                ]} />
                 <ToggleStatusButton basePath="/shifts" id={r.id} currentStatus={r.status} />
                 <DeleteButton basePath="/shifts" id={r.id} />
               </span>

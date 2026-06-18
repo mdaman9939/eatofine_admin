@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
 import { DeleteButton } from "../../../components/ActionButton";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
 
 interface Reason {
@@ -90,7 +91,12 @@ export default async function RefundReasonsPage() {
                     <StatusPill active={!!r.status} />
                   </td>
                   <td className="px-4 py-4 text-right">
-                    <DeleteButton basePath="/refund-reasons" id={r.id} />
+                    <span className="inline-flex gap-2 justify-end">
+                      <EditRecordButton basePath="/refund-reasons" id={r.id} title="Edit reason" values={r as unknown as Record<string, unknown>} fields={[
+                        { name: "reason", label: "Reason" },
+                      ]} />
+                      <DeleteButton basePath="/refund-reasons" id={r.id} />
+                    </span>
                   </td>
                 </tr>
               ))}
