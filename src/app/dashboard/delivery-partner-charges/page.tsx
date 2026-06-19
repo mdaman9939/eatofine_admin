@@ -3,6 +3,7 @@ import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButt
 import { CreateForm } from "../../../components/CreateForm";
 import { DmChargesCalculator } from "../../../components/DmChargesCalculator";
 import { SituationalSurchargeEditor } from "../../../components/SituationalSurchargeEditor";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 
 interface Slab {
   id: number;
@@ -204,6 +205,12 @@ export default async function DeliveryPartnerChargesPage() {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <span className="inline-flex gap-2">
+                      <EditRecordButton basePath="/dm-charges/slabs" id={s.id} title="Edit slab" values={s as unknown as Record<string, unknown>} fields={[
+                        { name: "min_km", label: "Min km", type: "number" },
+                        { name: "max_km", label: "Max km", type: "number" },
+                        { name: "base_charge", label: "Base charge ₹", type: "number" },
+                        { name: "extra_per_km", label: "Long-trip reward ₹", type: "number" },
+                      ]} />
                       <ToggleStatusButton basePath="/dm-charges/slabs" id={s.id} currentStatus={s.status} mode="base-path" />
                       <DeleteButton basePath="/dm-charges/slabs" id={s.id} />
                     </span>

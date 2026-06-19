@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
+import { EditRecordButton } from "../../../components/EditRecordButton";
 
 interface DocCategory {
   id: number;
@@ -171,6 +172,19 @@ export default async function DocumentCategoriesPage() {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <div className="inline-flex items-center gap-2">
+                      <EditRecordButton basePath="/document-categories" id={c.id} title="Edit category" values={c as unknown as Record<string, unknown>} fields={[
+                        { name: "name", label: "Category name", type: "text" },
+                        { name: "target_role", label: "Applies to", type: "select", options: [
+                          { value: "vendor", label: "Vendor" },
+                          { value: "delivery_man", label: "Delivery partner" },
+                          { value: "restaurant", label: "Restaurant" },
+                        ] },
+                        { name: "allowed_formats", label: "Allowed formats", type: "text" },
+                        { name: "max_size_mb", label: "Max size (MB)", type: "number" },
+                        { name: "is_mandatory", label: "Mandatory document", type: "checkbox" },
+                        { name: "sort_order", label: "Display order", type: "number" },
+                        { name: "description", label: "Helper text", type: "text" },
+                      ]} />
                       <ToggleStatusButton basePath="/document-categories" id={c.id} currentStatus={c.status} />
                       <DeleteButton basePath="/document-categories" id={c.id} />
                     </div>
