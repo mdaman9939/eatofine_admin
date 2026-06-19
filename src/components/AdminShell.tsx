@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
 import { AccountMenu } from "./AccountMenu";
 import { SidebarIcon } from "./SidebarIcon";
 
@@ -67,6 +67,64 @@ function anyChildActive(item: NavItem, activeHref: string | null): boolean {
   );
 }
 
+// ── Search helpers ─────────────────────────────────────────────────
+// Filter the nav tree to items whose label (or a descendant's label) matches
+// the query. A parent whose own label matches keeps its full subtree; otherwise
+// only its matching children are retained.
+function filterNavItem(item: NavItem, q: string): NavItem | null {
+  const selfMatch = item.label.toLowerCase().includes(q);
+  if (item.children?.length) {
+    if (selfMatch) return item;
+    const kids = item.children
+      .map((c) => filterNavItem(c, q))
+      .filter((c): c is NavItem => c !== null);
+    return kids.length ? { ...item, children: kids } : null;
+  }
+  return selfMatch ? item : null;
+}
+
+function filterNavTree(groups: NavGroup[], query: string): NavGroup[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return groups;
+  return groups
+    .map((g) => ({
+      ...g,
+      items: g.items
+        .map((i) => filterNavItem(i, q))
+        .filter((i): i is NavItem => i !== null),
+    }))
+    .filter((g) => g.items.length > 0);
+}
+
+// Flat index of every navigable leaf page (href starts with "/"), each with a
+// breadcrumb trail for context in the command palette. Duplicate (href+label)
+// pairs are collapsed so the same page isn't listed twice.
+export interface FlatNavEntry { href: string; label: string; trail: string }
+function flattenNav(groups: NavGroup[]): FlatNavEntry[] {
+  const out: FlatNavEntry[] = [];
+  const seen = new Set<string>();
+  for (const g of groups) {
+    const walk = (items: NavItem[], trail: string[]) => {
+      for (const item of items) {
+        if (item.children?.length) {
+          walk(item.children, [...trail, item.label]);
+        } else if (item.href.startsWith("/")) {
+          const key = `${item.href}|${item.label}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          out.push({
+            href: item.href,
+            label: item.label,
+            trail: [g.section, ...trail].filter(Boolean).join(" › "),
+          });
+        }
+      }
+    };
+    walk(g.items, []);
+  }
+  return out;
+}
+
 export function AdminShell({
   nav,
   fullName,
@@ -88,6 +146,30 @@ export function AdminShell({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const currentType = searchParams.get("type");
+  const router = useRouter();
+
+  // Sidebar menu filter — narrows the visible nav tree by label.
+  const [navQuery, setNavQuery] = useState("");
+  const searching = navQuery.trim().length > 0;
+  const displayNav = useMemo(
+    () => (searching ? filterNavTree(nav, navQuery) : nav),
+    [nav, navQuery, searching],
+  );
+
+  // Command palette (Ctrl/⌘ + K) — jump to any page.
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const flatNav = useMemo(() => flattenNav(nav), [nav]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")) {
+        e.preventDefault();
+        setPaletteOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Single source of truth for "what route are we on?" — the longest prefix
   // match across the whole nav tree (now query-aware for ?type= filters). Used
@@ -168,18 +250,32 @@ export function AdminShell({
             <div className="relative">
               <input
                 type="text"
+                value={navQuery}
+                onChange={(e) => setNavQuery(e.target.value)}
                 placeholder="Search menu…"
-                className="w-full rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm pl-9 pr-3 py-2.5 text-sm text-white placeholder-white/45 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.07] focus:outline-none focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/10"
+                className="w-full rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm pl-9 pr-8 py-2.5 text-sm text-white placeholder-white/45 transition-all duration-300 hover:border-white/20 hover:bg-white/[0.07] focus:outline-none focus:border-white/30 focus:bg-white/10 focus:ring-2 focus:ring-white/10"
               />
               <svg className="w-4 h-4 text-white/55 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M11 18a7 7 0 110-14 7 7 0 010 14z" />
               </svg>
+              {searching && (
+                <button
+                  type="button"
+                  onClick={() => setNavQuery("")}
+                  aria-label="Clear menu search"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-white/55 hover:text-white transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
 
           {/* Nav */}
           <nav className="flex-1 min-h-0 px-3 pb-6 pt-1 space-y-5 overflow-y-auto scrollbar-premium">
-            {nav.map((group, gi) => (
+            {displayNav.map((group, gi) => (
               <div key={group.section ?? `g-${gi}`} className="space-y-1">
                 {group.section && (
                   <div className="px-3 pt-3 pb-1.5 text-[10px] uppercase tracking-[0.18em] text-white/40 font-semibold">
@@ -192,12 +288,17 @@ export function AdminShell({
                     item={item}
                     activeHref={activeHref}
                     depth={0}
-                    isParentOpen={isParentOpen}
+                    isParentOpen={searching ? () => true : isParentOpen}
                     toggleParent={toggleParent}
                   />
                 ))}
               </div>
             ))}
+            {searching && displayNav.length === 0 && (
+              <div className="px-3 py-8 text-center text-xs text-white/50">
+                No menu items match &ldquo;{navQuery}&rdquo;.
+              </div>
+            )}
           </nav>
         </div>
       </aside>
@@ -230,8 +331,12 @@ export function AdminShell({
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search…"
-                className="w-full rounded-full border border-slate-200 bg-slate-50 pl-10 pr-16 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Search pages…"
+                readOnly
+                value=""
+                onClick={() => setPaletteOpen(true)}
+                onFocus={() => setPaletteOpen(true)}
+                className="w-full rounded-full border border-slate-200 bg-slate-50 pl-10 pr-16 py-2 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M11 18a7 7 0 110-14 7 7 0 010 14z" />
@@ -271,6 +376,124 @@ export function AdminShell({
         <main className="flex-1 min-h-0 overflow-y-auto overflow-x-auto scrollbar-hide">
           {children}
         </main>
+      </div>
+
+      {paletteOpen && (
+        <CommandPalette
+          items={flatNav}
+          onClose={() => setPaletteOpen(false)}
+          onNavigate={(href) => {
+            setPaletteOpen(false);
+            router.push(href);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Ctrl/⌘+K command palette: fuzzy-filters every navigable page by label/trail,
+// supports keyboard (↑/↓/Enter/Esc) and click navigation.
+function CommandPalette({
+  items,
+  onClose,
+  onNavigate,
+}: {
+  items: FlatNavEntry[];
+  onClose: () => void;
+  onNavigate: (href: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [active, setActive] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const activeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const results = useMemo(() => {
+    const query = q.trim().toLowerCase();
+    if (!query) return items.slice(0, 50);
+    return items
+      .filter((it) => it.label.toLowerCase().includes(query) || it.trail.toLowerCase().includes(query))
+      .slice(0, 50);
+  }, [q, items]);
+
+  // Keep the highlighted row in view during keyboard navigation.
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: "nearest" });
+  }, [active]);
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActive((a) => Math.min(a + 1, results.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((a) => Math.max(a - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const sel = results[active];
+      if (sel) onNavigate(sel.href);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      onClose();
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[1000] flex items-start justify-center bg-black/40 backdrop-blur-sm p-4 pt-[12vh]"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg bg-white rounded-2xl shadow-2xl ring-1 ring-slate-200 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-2 px-4 border-b border-slate-100">
+          <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M11 18a7 7 0 110-14 7 7 0 010 14z" />
+          </svg>
+          <input
+            ref={inputRef}
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setActive(0); // reset highlight on every query change
+            }}
+            onKeyDown={onKeyDown}
+            placeholder="Search pages… (e.g. TDS, coupons, reports)"
+            className="flex-1 py-3.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none"
+          />
+          <kbd className="text-[10px] text-slate-400 border border-slate-200 px-1.5 py-0.5 rounded shrink-0">Esc</kbd>
+        </div>
+        <div className="max-h-[60vh] overflow-y-auto py-1">
+          {results.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-slate-400">No pages match &ldquo;{q}&rdquo;.</div>
+          ) : (
+            results.map((it, i) => (
+              <button
+                key={`${it.href}|${it.label}`}
+                ref={i === active ? activeRef : undefined}
+                type="button"
+                onMouseEnter={() => setActive(i)}
+                onClick={() => onNavigate(it.href)}
+                className={`w-full text-left px-4 py-2.5 flex items-center justify-between gap-3 transition-colors ${
+                  i === active ? "bg-emerald-50" : "hover:bg-slate-50"
+                }`}
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-slate-800 truncate">{it.label}</span>
+                  {it.trail && <span className="block text-[11px] text-slate-400 truncate">{it.trail}</span>}
+                </span>
+                <span className="text-[10px] text-slate-300 font-mono truncate shrink-0">
+                  {it.href.replace("/dashboard", "") || "/"}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

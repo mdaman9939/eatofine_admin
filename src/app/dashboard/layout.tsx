@@ -135,6 +135,7 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/restaurants", label: "All Restaurants", icon: "restaurant" },
           { href: "/dashboard/restaurants/add", label: "Add New", icon: "addon" },
           { href: "/dashboard/restaurants-pending", label: "Joining Requests", icon: "shield" },
+          { href: "/dashboard/restaurant-registration", label: "Registration Settings", icon: "settings" },
           { href: "/dashboard/restaurants/bulk", label: "Bulk Import / Export", icon: "ledger" },
         ],
       },

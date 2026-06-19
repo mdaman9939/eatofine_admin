@@ -46,6 +46,11 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discount, setDiscount] = useState(0);
   const [deliveryFee, setDeliveryFee] = useState(0);
+  // Apply/waive toggles for the auto-applied charges. All default ON so the
+  // billing behaves exactly as before until the admin unticks something.
+  const [taxEnabled, setTaxEnabled] = useState(true);
+  const [packagingEnabled, setPackagingEnabled] = useState(true);
+  const [disabledCharges, setDisabledCharges] = useState<Set<number>>(new Set());
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -121,7 +126,10 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
   const addonTotal = lines.reduce((s, l) => s + lineAddOnTotal(l) * l.qty, 0);
   // Add-ons are part of the taxable food value.
   const taxable = Math.max(0, subtotal + addonTotal - discount);
-  const vat = taxable * (tax / 100);
+  // Gross GST is always computed (for display); it only feeds the total when the
+  // GST checkbox is ticked.
+  const vatGross = taxable * (tax / 100);
+  const vat = taxEnabled ? vatGross : 0;
 
   // Each configured charge, resolved against this order's subtotal (incl. GST).
   const chargeRows = useMemo(
@@ -133,9 +141,13 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
       }),
     [charges, subtotal],
   );
-  const additionalChargeTotal = chargeRows.reduce((s, r) => s + r.amount, 0);
-  // Extra packaging applies to take-away orders (StackFood behaviour).
-  const packagingAmount = orderType === "take_away" ? extraPackaging : 0;
+  // Only charges left ticked contribute to the total; unticked ones are still
+  // shown (struck-through) but excluded from the bill and the placed order.
+  const additionalChargeTotal = chargeRows.reduce((s, r) => s + (disabledCharges.has(r.id) ? 0 : r.amount), 0);
+  // Extra packaging applies to take-away orders (StackFood behaviour), and only
+  // when its checkbox is ticked.
+  const packagingGross = orderType === "take_away" ? extraPackaging : 0;
+  const packagingAmount = packagingEnabled ? packagingGross : 0;
 
   const total =
     taxable +
@@ -162,6 +174,15 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
     });
   }
 
+  function toggleCharge(id: number) {
+    setDisabledCharges((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   function placeOrder() {
     setError(null);
     if (!restaurantId) { setError("Select a restaurant first"); return; }
@@ -183,8 +204,11 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
         table_number: orderType === "dine_in" ? tableNumber.trim() : undefined,
         payment_method: paymentMethod,
         discount,
-        tax_percent: tax,
+        // Send 0% GST when the tax checkbox is unticked so the backend's
+        // taxAmount is 0 — the placed order matches the displayed total.
+        tax_percent: taxEnabled ? tax : 0,
         delivery_charge: orderType === "delivery" ? deliveryFee : 0,
+        // Already filtered to ticked charges / enabled packaging above.
         additional_charge: Number(additionalChargeTotal.toFixed(2)),
         extra_packaging_amount: Number(packagingAmount.toFixed(2)),
       }),
@@ -347,12 +371,29 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
                 <input type="number" min={0} value={deliveryFee} onChange={(e) => setDeliveryFee(Math.max(0, Number(e.target.value) || 0))} className="w-24 rounded border border-slate-300 px-2 py-0.5 text-right text-sm" />
               </label>
             )}
-            <Row label={`GST (${tax}%)`} value={inr(vat)} />
-            {/* Configured platform charges (Additional Charges plan). */}
+            <ChargeToggleRow
+              label={`GST (${tax}%)`}
+              value={inr(vatGross)}
+              checked={taxEnabled}
+              onChange={setTaxEnabled}
+            />
+            {/* Configured platform charges (Additional Charges plan). Tick to
+                apply, untick to waive — affects the total and the placed order. */}
             {chargeRows.map((c) => (
-              <Row key={c.id} label={c.label} value={inr(c.amount)} />
+              <ChargeToggleRow
+                key={c.id}
+                label={c.label}
+                value={inr(c.amount)}
+                checked={!disabledCharges.has(c.id)}
+                onChange={() => toggleCharge(c.id)}
+              />
             ))}
-            <Row label="Extra Packaging Amount" value={inr(packagingAmount)} />
+            <ChargeToggleRow
+              label="Extra Packaging Amount"
+              value={inr(packagingGross)}
+              checked={packagingEnabled}
+              onChange={setPackagingEnabled}
+            />
             <div className="flex justify-between font-bold text-base pt-1 border-t border-slate-100">
               <span>Total</span><span className="tabular-nums">{inr(total)}</span>
             </div>
@@ -386,5 +427,35 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between text-slate-600">
       <span>{label}</span><span className="tabular-nums">{value}</span>
     </div>
+  );
+}
+
+/** A billing line with an apply/waive checkbox. When unticked, the row is shown
+ *  struck-through and its amount is excluded from the total and the order. */
+function ChargeToggleRow({
+  label,
+  value,
+  checked,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  const strike = checked ? "" : "line-through text-slate-400";
+  return (
+    <label className="flex justify-between items-center text-slate-600 cursor-pointer select-none">
+      <span className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          className="accent-emerald-600 cursor-pointer"
+        />
+        <span className={strike}>{label}</span>
+      </span>
+      <span className={`tabular-nums ${strike}`}>{value}</span>
+    </label>
   );
 }

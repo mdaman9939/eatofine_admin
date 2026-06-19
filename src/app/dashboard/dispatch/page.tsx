@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
 import { AssignDmButton } from "./DispatchActions";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface DispatchOrder {
   id: number;
@@ -55,56 +56,53 @@ export default async function DispatchPage({ searchParams }: { searchParams: Pro
         <TabLink active={type === "ongoing"} href="/dashboard/dispatch?type=ongoing" count={type === "ongoing" ? orders.total : null}>On-going</TabLink>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-base font-semibold text-slate-900">{type === "ongoing" ? "On-going deliveries" : "Pending pickup"}</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{orders.total} order(s) · {activeDms.length} active riders available.</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Restaurant</th>
-                <th className="px-4 py-3 font-semibold">Customer</th>
-                <th className="px-4 py-3 font-semibold">Address</th>
-                <th className="px-4 py-3 font-semibold text-right">Amount</th>
-                <th className="px-4 py-3 font-semibold">Wait</th>
-                <th className="px-4 py-3 font-semibold text-right">{type === "ongoing" ? "Status" : "Assign"}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {orders.items.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400">No orders in this state. 🎉</td></tr>
-              ) : orders.items.map((o) => {
-                const wb = waitBadge(o.wait_minutes);
-                return (
-                  <tr key={o.id} className="hover:bg-emerald-50/40">
-                    <td className="px-6 py-3 font-mono text-xs text-slate-400">#{o.id}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-900">{o.restaurant}</td>
-                    <td className="px-4 py-3 text-slate-700">{o.customer}</td>
-                    <td className="px-4 py-3 text-slate-600 text-xs max-w-xs truncate">{o.address}</td>
-                    <td className="px-4 py-3 text-right font-semibold tabular-nums">₹{o.order_amount}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold border ${wb.cls}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${wb.icon}`} />
-                        {o.wait_minutes} min
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {type === "ongoing" ? (
-                        <span className="text-xs text-slate-500">DM #{o.assigned_to ?? "?"} en-route</span>
-                      ) : (
-                        <AssignDmButton orderId={o.id} deliveryMen={activeDms} />
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      <div>
+        <h2 className="text-base font-semibold text-slate-900">{type === "ongoing" ? "On-going deliveries" : "Pending pickup"}</h2>
+        <p className="text-xs text-slate-500 mt-0.5">{orders.total} order(s) · {activeDms.length} active riders available.</p>
       </div>
+      <PaginatedTable
+        colCount={7}
+        pageSize={10}
+        searchable
+        empty="No orders in this state. 🎉"
+        headerRow={
+          <tr>
+            <th className="px-6 py-3 font-semibold">#</th>
+            <th className="px-4 py-3 font-semibold">Restaurant</th>
+            <th className="px-4 py-3 font-semibold">Customer</th>
+            <th className="px-4 py-3 font-semibold">Address</th>
+            <th className="px-4 py-3 font-semibold text-right">Amount</th>
+            <th className="px-4 py-3 font-semibold">Wait</th>
+            <th className="px-4 py-3 font-semibold text-right">{type === "ongoing" ? "Status" : "Assign"}</th>
+          </tr>
+        }
+        searchTexts={orders.items.map((o) => `#${o.id} ${o.restaurant} ${o.customer} ${o.address}`.toLowerCase())}
+        bodyRows={orders.items.map((o) => {
+          const wb = waitBadge(o.wait_minutes);
+          return (
+            <tr key={o.id} className="hover:bg-emerald-50/40">
+              <td className="px-6 py-3 font-mono text-xs text-slate-400">#{o.id}</td>
+              <td className="px-4 py-3 font-semibold text-slate-900">{o.restaurant}</td>
+              <td className="px-4 py-3 text-slate-700">{o.customer}</td>
+              <td className="px-4 py-3 text-slate-600 text-xs max-w-xs truncate">{o.address}</td>
+              <td className="px-4 py-3 text-right font-semibold tabular-nums">₹{o.order_amount}</td>
+              <td className="px-4 py-3">
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-semibold border ${wb.cls}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${wb.icon}`} />
+                  {o.wait_minutes} min
+                </span>
+              </td>
+              <td className="px-4 py-3 text-right">
+                {type === "ongoing" ? (
+                  <span className="text-xs text-slate-500">DM #{o.assigned_to ?? "?"} en-route</span>
+                ) : (
+                  <AssignDmButton orderId={o.id} deliveryMen={activeDms} />
+                )}
+              </td>
+            </tr>
+          );
+        })}
+      />
     </div>
   );
 }

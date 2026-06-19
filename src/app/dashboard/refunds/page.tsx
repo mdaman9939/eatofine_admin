@@ -2,6 +2,7 @@ import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { ActionButton } from "../../../components/ActionButton";
 import { RefundSettingsPanel } from "../../../components/RefundSettingsPanel";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface Refund {
   id: number;
@@ -46,7 +47,7 @@ const METHOD_PILL: Record<string, { tone: string; icon: React.ReactNode; label: 
 };
 
 export default async function RefundsPage() {
-  const data = await adminFetch<{ total: number; items: Refund[] }>("/admin/refunds?limit=100");
+  const data = await adminFetch<{ total: number; items: Refund[] }>("/admin/refunds?limit=500");
   const refunds = data.items;
 
   // Normalise all numeric fields — MongoDB returns null/string for some rows
@@ -121,114 +122,102 @@ export default async function RefundsPage() {
       <RefundSettingsPanel />
 
       {/* ── Refunds table ──────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">Refund requests</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Pending requests at the top need a decision — use the action buttons on the right.</p>
-          </div>
-          <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md font-mono">
-            {refunds.length} {refunds.length === 1 ? "request" : "requests"}
-          </span>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">Refund requests</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Pending requests at the top need a decision — use the action buttons on the right.</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Order</th>
-                <th className="px-4 py-3 font-semibold">Customer</th>
-                <th className="px-4 py-3 font-semibold">Reason</th>
-                <th className="px-4 py-3 font-semibold text-right">Amount</th>
-                <th className="px-4 py-3 font-semibold">Method</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold">When</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {refunds.map((r) => (
-                <tr key={r.id} className="hover:bg-emerald-50/40 transition-colors align-top">
-                  <td className="px-6 py-4 font-mono text-xs text-slate-400">#{r.id}</td>
-                  <td className="px-4 py-4">
-                    <Link
-                      href={`/dashboard/orders/${r.order_id}`}
-                      className="inline-flex items-center font-mono text-sm text-emerald-700 hover:text-emerald-800 font-semibold hover:underline"
-                    >
-                      #{r.order_id}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                        U{r.user_id}
-                      </span>
-                      <span className="text-slate-700 text-sm font-mono">#{r.user_id}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-slate-700 max-w-xs">
-                    {r.customer_reason ? (
-                      <span className="line-clamp-2">{r.customer_reason}</span>
-                    ) : (
-                      <span className="text-slate-300">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-4 text-right tabular-nums font-semibold text-slate-900">
-                    ₹{Number(r.refund_amount ?? 0).toFixed(2)}
-                  </td>
-                  <td className="px-4 py-4">
-                    <MethodPill method={r.refund_method} />
-                  </td>
-                  <td className="px-4 py-4">
-                    <StatusPill status={r.refund_status} />
-                  </td>
-                  <td className="px-4 py-4 text-xs text-slate-500">
-                    {r.created_at ? (
-                      <div>
-                        <div>{new Date(r.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</div>
-                        <div className="text-[10px] text-slate-400">{new Date(r.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</div>
-                      </div>
-                    ) : "—"}
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <span className="inline-flex flex-wrap gap-1.5 justify-end">
-                      <Link
-                        href={`/dashboard/refunds/${r.id}`}
-                        className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
-                      >
-                        View
-                      </Link>
-                      {NEXT_STATES.filter((s) => s !== r.refund_status).map((s) => (
-                        <ActionButton
-                          key={s}
-                          path={`/refunds/${r.id}/status`}
-                          method="PATCH"
-                          body={{ status: s }}
-                          label={transitionLabel(s)}
-                          variant={transitionVariant(s)}
-                        />
-                      ))}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {refunds.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 10h11a4 4 0 014 4v0a4 4 0 01-4 4h-3m-8-8l3-3m-3 3l3 3" />
-                      </svg>
-                      <p className="text-sm font-medium">No refund requests yet</p>
-                      <p className="text-xs">Refund requests from customers will appear here once raised.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md font-mono">
+          {refunds.length} {refunds.length === 1 ? "request" : "requests"}
+        </span>
       </div>
+      <PaginatedTable
+        colCount={9}
+        pageSize={10}
+        searchable
+        empty="No refund requests yet"
+        headerRow={
+          <tr>
+            <th className="px-6 py-3 font-semibold">#</th>
+            <th className="px-4 py-3 font-semibold">Order</th>
+            <th className="px-4 py-3 font-semibold">Customer</th>
+            <th className="px-4 py-3 font-semibold">Reason</th>
+            <th className="px-4 py-3 font-semibold text-right">Amount</th>
+            <th className="px-4 py-3 font-semibold">Method</th>
+            <th className="px-4 py-3 font-semibold">Status</th>
+            <th className="px-4 py-3 font-semibold">When</th>
+            <th className="px-4 py-3 font-semibold text-right">Actions</th>
+          </tr>
+        }
+        searchTexts={refunds.map((r) =>
+          `#${r.id} #${r.order_id} u${r.user_id} ${r.customer_reason ?? ""} ${r.refund_method} ${r.refund_status}`.toLowerCase()
+        )}
+        bodyRows={refunds.map((r) => (
+          <tr key={r.id} className="hover:bg-emerald-50/40 transition-colors align-top">
+            <td className="px-6 py-4 font-mono text-xs text-slate-400">#{r.id}</td>
+            <td className="px-4 py-4">
+              <Link
+                href={`/dashboard/orders/${r.order_id}`}
+                className="inline-flex items-center font-mono text-sm text-emerald-700 hover:text-emerald-800 font-semibold hover:underline"
+              >
+                #{r.order_id}
+              </Link>
+            </td>
+            <td className="px-4 py-4">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                  U{r.user_id}
+                </span>
+                <span className="text-slate-700 text-sm font-mono">#{r.user_id}</span>
+              </div>
+            </td>
+            <td className="px-4 py-4 text-sm text-slate-700 max-w-xs">
+              {r.customer_reason ? (
+                <span className="line-clamp-2">{r.customer_reason}</span>
+              ) : (
+                <span className="text-slate-300">—</span>
+              )}
+            </td>
+            <td className="px-4 py-4 text-right tabular-nums font-semibold text-slate-900">
+              ₹{Number(r.refund_amount ?? 0).toFixed(2)}
+            </td>
+            <td className="px-4 py-4">
+              <MethodPill method={r.refund_method} />
+            </td>
+            <td className="px-4 py-4">
+              <StatusPill status={r.refund_status} />
+            </td>
+            <td className="px-4 py-4 text-xs text-slate-500">
+              {r.created_at ? (
+                <div>
+                  <div>{new Date(r.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</div>
+                  <div className="text-[10px] text-slate-400">{new Date(r.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</div>
+                </div>
+              ) : "—"}
+            </td>
+            <td className="px-4 py-4 text-right">
+              <span className="inline-flex flex-wrap gap-1.5 justify-end">
+                <Link
+                  href={`/dashboard/refunds/${r.id}`}
+                  className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
+                >
+                  View
+                </Link>
+                {NEXT_STATES.filter((s) => s !== r.refund_status).map((s) => (
+                  <ActionButton
+                    key={s}
+                    path={`/refunds/${r.id}/status`}
+                    method="PATCH"
+                    body={{ status: s }}
+                    label={transitionLabel(s)}
+                    variant={transitionVariant(s)}
+                  />
+                ))}
+              </span>
+            </td>
+          </tr>
+        ))}
+      />
 
       {/* ── Closing card — refund lifecycle ────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl sidebar-gradient text-white shadow-xl shadow-emerald-900/30 ring-1 ring-white/10">

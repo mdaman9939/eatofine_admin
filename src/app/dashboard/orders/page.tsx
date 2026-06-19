@@ -2,6 +2,7 @@ import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { OrderTypeConfigPanel } from "../../../components/OrderTypeConfigPanel";
 import { ActionButton } from "../../../components/ActionButton";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface OrdersResponse {
   total: number;
@@ -60,7 +61,7 @@ export default async function OrdersPage({
   const sp = await searchParams;
   const status = sp.status ?? "";
   const orderType = sp.type ?? "";
-  const path = `/admin/orders?limit=100${status ? `&status=${status}` : ""}${orderType ? `&order_type=${orderType}` : ""}`;
+  const path = `/admin/orders?limit=500${status ? `&status=${status}` : ""}${orderType ? `&order_type=${orderType}` : ""}`;
   const data = await adminFetch<OrdersResponse>(path);
 
   // Compute summary buckets across the rendered set.
@@ -166,123 +167,114 @@ export default async function OrdersPage({
       </div>
 
       {/* ── Orders table ───────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">Order list</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Newest first. Click any order # for the full detail view.</p>
-          </div>
-          <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md font-mono">
-            {data.orders.length} {data.orders.length === 1 ? "row" : "rows"}
-          </span>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">Order list</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Newest first. Click any order # for the full detail view.</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">Order #</th>
-                <th className="px-4 py-3 font-semibold">Customer</th>
-                <th className="px-4 py-3 font-semibold">Restaurant</th>
-                <th className="px-4 py-3 font-semibold">Type</th>
-                <th className="px-4 py-3 font-semibold text-right">Amount</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold">Payment</th>
-                <th className="px-4 py-3 font-semibold">Created</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {data.orders.map((o) => {
-                const customerName = o.user
-                  ? `${o.user.f_name ?? ""} ${o.user.l_name ?? ""}`.trim() || o.user.email || o.user.phone || "—"
-                  : "—";
-                const paid = o.payment_status === "paid";
-                return (
-                  <tr key={o.id} className="hover:bg-emerald-50/40 transition-colors">
-                    <td className="px-6 py-4">
-                      <Link
-                        href={`/dashboard/orders/${o.id}`}
-                        className="inline-flex items-center gap-1 font-mono text-sm text-emerald-700 hover:text-emerald-800 font-semibold hover:underline"
-                      >
-                        #{o.id}
-                      </Link>
-                      <Link
-                        href={`/dashboard/invoices/${o.id}`}
-                        className="mt-1 flex items-center gap-1 text-[11px] text-slate-400 hover:text-emerald-700"
-                        title="View customer invoice"
-                      >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Invoice
-                      </Link>
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                          {initials(customerName)}
-                        </span>
-                        <span className="text-slate-700 text-sm truncate">{customerName}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-slate-700">{o.restaurant?.name ?? <span className="text-slate-300">—</span>}</td>
-                    <td className="px-4 py-4"><OrderTypeBadge type={o.order_type} /></td>
-                    <td className="px-4 py-4 text-right tabular-nums font-semibold text-slate-900">₹{o.order_amount.toFixed(2)}</td>
-                    <td className="px-4 py-4">
-                      <StatusPill status={o.order_status} />
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <PaymentChip method={o.payment_method} />
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${paid ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-1 ring-slate-200"}`}>
-                          <span className={`w-1 h-1 rounded-full ${paid ? "bg-emerald-500" : "bg-slate-400"}`} />
-                          {paid ? "Paid" : "Unpaid"}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-xs text-slate-500">
-                      {o.created_at ? (
-                        <div>
-                          <div>{new Date(o.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</div>
-                          <div className="text-[10px] text-slate-400">{new Date(o.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</div>
-                        </div>
-                      ) : "—"}
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      {/* Admin authority — cancel any order directly from the list. */}
-                      {o.order_status === "canceled" || o.order_status === "refunded" ? (
-                        <span className="text-[11px] text-slate-300">—</span>
-                      ) : (
-                        <ActionButton
-                          path={`/orders/${o.id}/status`}
-                          method="PATCH"
-                          body={{ status: "canceled", reason: "Cancelled by admin" }}
-                          label="Cancel"
-                          variant="danger"
-                          confirm={`Cancel order #${o.id}? This is an admin override.`}
-                        />
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {data.orders.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                      <p className="text-sm font-medium">No orders match this filter</p>
-                      <p className="text-xs">Try clearing the filter or check back when more orders come in.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md font-mono">
+          {data.orders.length} {data.orders.length === 1 ? "row" : "rows"}
+        </span>
       </div>
+      <PaginatedTable
+        colCount={9}
+        pageSize={10}
+        searchable
+        empty="No orders match this filter"
+        headerRow={
+          <tr>
+            <th className="px-6 py-3 font-semibold">Order #</th>
+            <th className="px-4 py-3 font-semibold">Customer</th>
+            <th className="px-4 py-3 font-semibold">Restaurant</th>
+            <th className="px-4 py-3 font-semibold">Type</th>
+            <th className="px-4 py-3 font-semibold text-right">Amount</th>
+            <th className="px-4 py-3 font-semibold">Status</th>
+            <th className="px-4 py-3 font-semibold">Payment</th>
+            <th className="px-4 py-3 font-semibold">Created</th>
+            <th className="px-4 py-3 font-semibold text-right">Actions</th>
+          </tr>
+        }
+        searchTexts={data.orders.map((o) => {
+          const customerName = o.user
+            ? `${o.user.f_name ?? ""} ${o.user.l_name ?? ""}`.trim() || o.user.email || o.user.phone || ""
+            : "";
+          return `#${o.id} ${customerName} ${o.restaurant?.name ?? ""} ${o.order_status} ${o.payment_method ?? ""} ${o.payment_status}`.toLowerCase();
+        })}
+        bodyRows={data.orders.map((o) => {
+          const customerName = o.user
+            ? `${o.user.f_name ?? ""} ${o.user.l_name ?? ""}`.trim() || o.user.email || o.user.phone || "—"
+            : "—";
+          const paid = o.payment_status === "paid";
+          return (
+            <tr key={o.id} className="hover:bg-emerald-50/40 transition-colors">
+              <td className="px-6 py-4">
+                <Link
+                  href={`/dashboard/orders/${o.id}`}
+                  className="inline-flex items-center gap-1 font-mono text-sm text-emerald-700 hover:text-emerald-800 font-semibold hover:underline"
+                >
+                  #{o.id}
+                </Link>
+                <Link
+                  href={`/dashboard/invoices/${o.id}`}
+                  className="mt-1 flex items-center gap-1 text-[11px] text-slate-400 hover:text-emerald-700"
+                  title="View customer invoice"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Invoice
+                </Link>
+              </td>
+              <td className="px-4 py-4">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {initials(customerName)}
+                  </span>
+                  <span className="text-slate-700 text-sm truncate">{customerName}</span>
+                </div>
+              </td>
+              <td className="px-4 py-4 text-slate-700">{o.restaurant?.name ?? <span className="text-slate-300">—</span>}</td>
+              <td className="px-4 py-4"><OrderTypeBadge type={o.order_type} /></td>
+              <td className="px-4 py-4 text-right tabular-nums font-semibold text-slate-900">₹{o.order_amount.toFixed(2)}</td>
+              <td className="px-4 py-4">
+                <StatusPill status={o.order_status} />
+              </td>
+              <td className="px-4 py-4">
+                <div className="flex items-center gap-2">
+                  <PaymentChip method={o.payment_method} />
+                  <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded ${paid ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-slate-100 text-slate-600 ring-1 ring-slate-200"}`}>
+                    <span className={`w-1 h-1 rounded-full ${paid ? "bg-emerald-500" : "bg-slate-400"}`} />
+                    {paid ? "Paid" : "Unpaid"}
+                  </span>
+                </div>
+              </td>
+              <td className="px-4 py-4 text-xs text-slate-500">
+                {o.created_at ? (
+                  <div>
+                    <div>{new Date(o.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</div>
+                    <div className="text-[10px] text-slate-400">{new Date(o.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</div>
+                  </div>
+                ) : "—"}
+              </td>
+              <td className="px-4 py-4 text-right">
+                {/* Admin authority — cancel any order directly from the list. */}
+                {o.order_status === "canceled" || o.order_status === "refunded" ? (
+                  <span className="text-[11px] text-slate-300">—</span>
+                ) : (
+                  <ActionButton
+                    path={`/orders/${o.id}/status`}
+                    method="PATCH"
+                    body={{ status: "canceled", reason: "Cancelled by admin" }}
+                    label="Cancel"
+                    variant="danger"
+                    confirm={`Cancel order #${o.id}? This is an admin override.`}
+                  />
+                )}
+              </td>
+            </tr>
+          );
+        })}
+      />
     </div>
   );
 }

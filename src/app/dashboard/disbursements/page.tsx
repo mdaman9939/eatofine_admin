@@ -38,6 +38,18 @@ export default async function DisbursementsPage({
       subtitle={`${data.items.length} of ${data.total}`}
       rows={data.items}
       rowKey={(r) => r.id}
+      actions={
+        type === "deliveryman" ? (
+          <ActionButton
+            path="/disbursements/generate"
+            method="POST"
+            body={{}}
+            label="Generate payouts"
+            variant="primary"
+            confirm="Create a pending payout for every rider with a positive withdrawable balance? Their available funds get reserved, then 'Mark paid' debits the wallet."
+          />
+        ) : undefined
+      }
       columns={[
         { header: "#", cell: (r) => r.id, className: "font-mono" },
         { header: recipientHeader, cell: (r) => r.recipient ?? "—" },

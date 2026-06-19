@@ -5,6 +5,7 @@ import { TdsReportTable } from "../../../components/TdsReportTable";
 interface TDSReport {
   tds_rate: number;
   threshold: number;
+  financial_year_start: string | null;
   rows: Array<{
     restaurant_id: number;
     restaurant: string | null;
@@ -74,7 +75,13 @@ export default async function TDSPage({ searchParams }: { searchParams: Promise<
               Tax Deducted at Source for vendor wallet disbursements. Default
               <span className="font-semibold text-white"> {data.tds_rate}%</span> under Section 194C,
               threshold <span className="font-semibold text-white">₹{data.threshold.toLocaleString("en-IN")}</span>.
-              Override via URL <code className="text-xs bg-white/10 px-1.5 py-0.5 rounded ring-1 ring-white/20">?rate=2&amp;threshold=30000</code>.
+              {data.financial_year_start && (
+                <> Counting delivered orders from{" "}
+                <span className="font-semibold text-white">
+                  {new Date(data.financial_year_start).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                </span>{" "}(current financial year).</>
+              )}
+              {" "}Override via URL <code className="text-xs bg-white/10 px-1.5 py-0.5 rounded ring-1 ring-white/20">?rate=2&amp;threshold=30000</code>.
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">

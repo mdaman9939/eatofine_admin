@@ -1,4 +1,5 @@
 import { adminFetch } from "../../../lib/api";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface LogEntry {
   id: number;
@@ -28,7 +29,7 @@ function actionBadge(action: string) {
 }
 
 export default async function ActivityLogPage() {
-  const data = await adminFetch<{ total: number; items: LogEntry[] }>("/admin/activity-log?limit=200");
+  const data = await adminFetch<{ total: number; items: LogEntry[] }>("/admin/activity-log?limit=500");
   const logs = data.items;
 
   const last24h = logs.filter((l) => {
@@ -62,40 +63,39 @@ export default async function ActivityLogPage() {
         <StatTile label="Total events" value={logs.length.toString()} accent="slate" />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-base font-semibold text-slate-900">Recent events</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Latest {logs.length} events, newest first.</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-6 py-3 font-semibold">Time</th>
-                <th className="px-4 py-3 font-semibold">Admin</th>
-                <th className="px-4 py-3 font-semibold">Action</th>
-                <th className="px-4 py-3 font-semibold">Target</th>
-                <th className="px-4 py-3 font-semibold">IP</th>
-                <th className="px-4 py-3 font-semibold">Type</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {logs.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400">No activity recorded.</td></tr>
-              ) : logs.map((l) => (
-                <tr key={l.id} className="hover:bg-emerald-50/40">
-                  <td className="px-6 py-3 text-slate-500 text-xs">{fmtDateTime(l.created_at)}</td>
-                  <td className="px-4 py-3 text-slate-700 font-mono text-xs">{l.admin_email}</td>
-                  <td className="px-4 py-3 text-slate-900 font-medium">{l.action}</td>
-                  <td className="px-4 py-3 text-slate-600 text-xs">{l.target}</td>
-                  <td className="px-4 py-3 text-slate-500 font-mono text-xs">{l.ip ?? "—"}</td>
-                  <td className="px-4 py-3">{actionBadge(l.action)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div>
+        <h2 className="text-base font-semibold text-slate-900">Recent events</h2>
+        <p className="text-xs text-slate-500 mt-0.5">Latest {logs.length} events, newest first.</p>
       </div>
+      <PaginatedTable
+        colCount={6}
+        pageSize={10}
+        searchable
+        empty="No activity recorded."
+        headerRow={
+          <tr>
+            <th className="px-6 py-3 font-semibold">Time</th>
+            <th className="px-4 py-3 font-semibold">Admin</th>
+            <th className="px-4 py-3 font-semibold">Action</th>
+            <th className="px-4 py-3 font-semibold">Target</th>
+            <th className="px-4 py-3 font-semibold">IP</th>
+            <th className="px-4 py-3 font-semibold">Type</th>
+          </tr>
+        }
+        searchTexts={logs.map((l) =>
+          `${l.admin_email} ${l.action} ${l.target} ${l.ip ?? ""}`.toLowerCase()
+        )}
+        bodyRows={logs.map((l) => (
+          <tr key={l.id} className="hover:bg-emerald-50/40">
+            <td className="px-6 py-3 text-slate-500 text-xs">{fmtDateTime(l.created_at)}</td>
+            <td className="px-4 py-3 text-slate-700 font-mono text-xs">{l.admin_email}</td>
+            <td className="px-4 py-3 text-slate-900 font-medium">{l.action}</td>
+            <td className="px-4 py-3 text-slate-600 text-xs">{l.target}</td>
+            <td className="px-4 py-3 text-slate-500 font-mono text-xs">{l.ip ?? "—"}</td>
+            <td className="px-4 py-3">{actionBadge(l.action)}</td>
+          </tr>
+        ))}
+      />
     </div>
   );
 }

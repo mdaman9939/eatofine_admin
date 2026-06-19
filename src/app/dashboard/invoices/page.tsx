@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface InvoiceRow {
   invoice_no: string;
@@ -19,7 +20,7 @@ interface InvoiceRow {
 }
 
 export default async function InvoicesPage() {
-  const data = await adminFetch<{ total: number; invoices: InvoiceRow[] }>("/admin/invoices?limit=100");
+  const data = await adminFetch<{ total: number; invoices: InvoiceRow[] }>("/admin/invoices?limit=500");
   const invoices = data.invoices;
 
   const totalRevenue = invoices.reduce((a, i) => a + i.total, 0);
@@ -168,85 +169,76 @@ export default async function InvoicesPage() {
       )}
 
       {/* ── Invoices table ─────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">All invoices</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Click any invoice number to open its detail view.</p>
-          </div>
-          <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md font-mono">
-            {invoices.length} {invoices.length === 1 ? "invoice" : "invoices"}
-          </span>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">All invoices</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Click any invoice number to open its detail view.</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">Invoice #</th>
-                <th className="px-4 py-3 font-semibold">Order</th>
-                <th className="px-4 py-3 font-semibold">Customer</th>
-                <th className="px-4 py-3 font-semibold">Restaurant</th>
-                <th className="px-4 py-3 font-semibold text-right">Subtotal</th>
-                <th className="px-4 py-3 font-semibold text-right">CGST</th>
-                <th className="px-4 py-3 font-semibold text-right">SGST</th>
-                <th className="px-4 py-3 font-semibold text-right">Delivery</th>
-                <th className="px-4 py-3 font-semibold text-right">Grand total</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {invoices.map((i) => {
-                const customerName = i.customer
-                  ? `${i.customer.f_name ?? ""} ${i.customer.l_name ?? ""}`.trim() || i.customer.email || "—"
-                  : "—";
-                return (
-                  <tr key={i.invoice_no} className="hover:bg-emerald-50/40 transition-colors">
-                    <td className="px-6 py-4">
-                      <Link
-                        href={`/dashboard/invoices/${i.order_id}`}
-                        className="font-mono text-xs text-emerald-700 hover:text-emerald-800 hover:underline font-semibold"
-                      >
-                        {i.invoice_no}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-4 font-mono text-xs text-slate-500">#{i.order_id}</td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
-                          {initials(customerName)}
-                        </span>
-                        <span className="text-slate-700 text-sm truncate">{customerName}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-slate-700">{i.restaurant?.name ?? <span className="text-slate-300">—</span>}</td>
-                    <td className="px-4 py-4 text-right tabular-nums text-slate-700">₹{i.subtotal.toFixed(2)}</td>
-                    <td className="px-4 py-4 text-right tabular-nums text-xs text-slate-500">₹{i.cgst.toFixed(2)}</td>
-                    <td className="px-4 py-4 text-right tabular-nums text-xs text-slate-500">₹{i.sgst.toFixed(2)}</td>
-                    <td className="px-4 py-4 text-right tabular-nums text-xs text-slate-500">₹{i.delivery_charge.toFixed(2)}</td>
-                    <td className="px-4 py-4 text-right tabular-nums font-bold text-slate-900">₹{i.total.toFixed(2)}</td>
-                    <td className="px-4 py-4">
-                      <StatusPill status={i.status} />
-                    </td>
-                  </tr>
-                );
-              })}
-              {invoices.length === 0 && (
-                <tr>
-                  <td colSpan={10} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <p className="text-sm font-medium">No delivered+paid orders yet</p>
-                      <p className="text-xs">Place a demo order and mark it delivered to generate the first invoice.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md font-mono">
+          {invoices.length} {invoices.length === 1 ? "invoice" : "invoices"}
+        </span>
       </div>
+      <PaginatedTable
+        colCount={10}
+        pageSize={10}
+        searchable
+        empty="No delivered+paid orders yet"
+        headerRow={
+          <tr>
+            <th className="px-6 py-3 font-semibold">Invoice #</th>
+            <th className="px-4 py-3 font-semibold">Order</th>
+            <th className="px-4 py-3 font-semibold">Customer</th>
+            <th className="px-4 py-3 font-semibold">Restaurant</th>
+            <th className="px-4 py-3 font-semibold text-right">Subtotal</th>
+            <th className="px-4 py-3 font-semibold text-right">CGST</th>
+            <th className="px-4 py-3 font-semibold text-right">SGST</th>
+            <th className="px-4 py-3 font-semibold text-right">Delivery</th>
+            <th className="px-4 py-3 font-semibold text-right">Grand total</th>
+            <th className="px-4 py-3 font-semibold">Status</th>
+          </tr>
+        }
+        searchTexts={invoices.map((i) => {
+          const customerName = i.customer
+            ? `${i.customer.f_name ?? ""} ${i.customer.l_name ?? ""}`.trim() || i.customer.email || ""
+            : "";
+          return `${i.invoice_no} #${i.order_id} ${customerName} ${i.restaurant?.name ?? ""} ${i.status}`.toLowerCase();
+        })}
+        bodyRows={invoices.map((i) => {
+          const customerName = i.customer
+            ? `${i.customer.f_name ?? ""} ${i.customer.l_name ?? ""}`.trim() || i.customer.email || "—"
+            : "—";
+          return (
+            <tr key={i.invoice_no} className="hover:bg-emerald-50/40 transition-colors">
+              <td className="px-6 py-4">
+                <Link
+                  href={`/dashboard/invoices/${i.order_id}`}
+                  className="font-mono text-xs text-emerald-700 hover:text-emerald-800 hover:underline font-semibold"
+                >
+                  {i.invoice_no}
+                </Link>
+              </td>
+              <td className="px-4 py-4 font-mono text-xs text-slate-500">#{i.order_id}</td>
+              <td className="px-4 py-4">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                    {initials(customerName)}
+                  </span>
+                  <span className="text-slate-700 text-sm truncate">{customerName}</span>
+                </div>
+              </td>
+              <td className="px-4 py-4 text-slate-700">{i.restaurant?.name ?? <span className="text-slate-300">—</span>}</td>
+              <td className="px-4 py-4 text-right tabular-nums text-slate-700">₹{i.subtotal.toFixed(2)}</td>
+              <td className="px-4 py-4 text-right tabular-nums text-xs text-slate-500">₹{i.cgst.toFixed(2)}</td>
+              <td className="px-4 py-4 text-right tabular-nums text-xs text-slate-500">₹{i.sgst.toFixed(2)}</td>
+              <td className="px-4 py-4 text-right tabular-nums text-xs text-slate-500">₹{i.delivery_charge.toFixed(2)}</td>
+              <td className="px-4 py-4 text-right tabular-nums font-bold text-slate-900">₹{i.total.toFixed(2)}</td>
+              <td className="px-4 py-4">
+                <StatusPill status={i.status} />
+              </td>
+            </tr>
+          );
+        })}
+      />
 
       {/* ── Closing: lifecycle explainer ───────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl sidebar-gradient text-white shadow-xl shadow-emerald-900/30 ring-1 ring-white/10">

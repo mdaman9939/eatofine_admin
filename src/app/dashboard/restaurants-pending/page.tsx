@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../lib/api";
 import { ApproveRejectButtons } from "../../../components/ApproveRejectButtons";
 import { RestaurantViewButton } from "../../../components/RestaurantViewButton";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface PendingRestaurant {
   id: number;
@@ -63,61 +64,48 @@ export default async function RestaurantsPendingPage() {
         <StatTile label="Oldest pending" value={rows[rows.length - 1] ? daysSince(rows[rows.length - 1].submitted_at) : "—"} accent="rose" />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-base font-semibold text-slate-900">Pending applications</h2>
-          <p className="text-xs text-slate-500 mt-0.5">{rows.length} restaurant(s) awaiting your decision.</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Restaurant</th>
-                <th className="px-4 py-3 font-semibold">Contact</th>
-                <th className="px-4 py-3 font-semibold">Address</th>
-                <th className="px-4 py-3 font-semibold">Submitted</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
-                    <div className="inline-flex flex-col items-center gap-2">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <p className="text-sm font-medium">No pending applications</p>
-                      <p className="text-xs">All caught up.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : rows.map((r) => (
-                <tr key={r.id} className="hover:bg-emerald-50/40 align-top">
-                  <td className="px-6 py-4 font-mono text-xs text-slate-400">#{r.id}</td>
-                  <td className="px-4 py-4 font-semibold text-slate-900">{r.name}</td>
-                  <td className="px-4 py-4 text-slate-600 text-xs">
-                    <div>{r.email ?? "—"}</div>
-                    <div className="text-slate-400">{r.phone ?? ""}</div>
-                  </td>
-                  <td className="px-4 py-4 text-slate-600 text-xs max-w-[240px]">{r.address ?? "—"}</td>
-                  <td className="px-4 py-4 text-slate-600 text-xs">
-                    <div>{fmtDate(r.submitted_at)}</div>
-                    <div className="text-slate-400">{daysSince(r.submitted_at)}</div>
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <div className="inline-flex items-center gap-2">
-                      <RestaurantViewButton id={r.id} />
-                      <ApproveRejectButtons basePath="restaurants" id={r.id} />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div>
+        <h2 className="text-base font-semibold text-slate-900">Pending applications</h2>
+        <p className="text-xs text-slate-500 mt-0.5">{rows.length} restaurant(s) awaiting your decision.</p>
       </div>
+      <PaginatedTable
+        colCount={6}
+        pageSize={10}
+        searchable
+        empty="No pending applications"
+        headerRow={
+          <tr>
+            <th className="px-6 py-3 font-semibold">#</th>
+            <th className="px-4 py-3 font-semibold">Restaurant</th>
+            <th className="px-4 py-3 font-semibold">Contact</th>
+            <th className="px-4 py-3 font-semibold">Address</th>
+            <th className="px-4 py-3 font-semibold">Submitted</th>
+            <th className="px-4 py-3 font-semibold text-right">Actions</th>
+          </tr>
+        }
+        searchTexts={rows.map((r) => `#${r.id} ${r.name} ${r.email ?? ""} ${r.phone ?? ""} ${r.address ?? ""}`.toLowerCase())}
+        bodyRows={rows.map((r) => (
+          <tr key={r.id} className="hover:bg-emerald-50/40 align-top">
+            <td className="px-6 py-4 font-mono text-xs text-slate-400">#{r.id}</td>
+            <td className="px-4 py-4 font-semibold text-slate-900">{r.name}</td>
+            <td className="px-4 py-4 text-slate-600 text-xs">
+              <div>{r.email ?? "—"}</div>
+              <div className="text-slate-400">{r.phone ?? ""}</div>
+            </td>
+            <td className="px-4 py-4 text-slate-600 text-xs max-w-[240px]">{r.address ?? "—"}</td>
+            <td className="px-4 py-4 text-slate-600 text-xs">
+              <div>{fmtDate(r.submitted_at)}</div>
+              <div className="text-slate-400">{daysSince(r.submitted_at)}</div>
+            </td>
+            <td className="px-4 py-4 text-right">
+              <div className="inline-flex items-center gap-2">
+                <RestaurantViewButton id={r.id} />
+                <ApproveRejectButtons basePath="restaurants" id={r.id} />
+              </div>
+            </td>
+          </tr>
+        ))}
+      />
     </div>
   );
 }

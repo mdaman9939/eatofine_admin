@@ -2,6 +2,7 @@ import { adminFetch } from "../../../lib/api";
 import { CreateForm } from "../../../components/CreateForm";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { EditRecordButton } from "../../../components/EditRecordButton";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface Bonus {
   id: number;
@@ -70,71 +71,70 @@ export default async function DmBonusesPage() {
         <StatTile label="Avg per rider" value={bonuses.length ? `₹${Math.round(totalPayout / Math.max(1, totalClaims))}` : "—"} accent="slate" />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-base font-semibold text-slate-900">All bonus rules</h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Bonus</th>
-                <th className="px-4 py-3 font-semibold">Rule</th>
-                <th className="px-4 py-3 font-semibold text-right">Reward</th>
-                <th className="px-4 py-3 font-semibold">Note</th>
-                <th className="px-4 py-3 font-semibold text-right">Claims (30d)</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {bonuses.length === 0 ? (
-                <tr><td colSpan={8} className="px-6 py-12 text-center text-slate-400">No bonuses configured.</td></tr>
-              ) : bonuses.map((b) => (
-                <tr key={b.id} className="hover:bg-emerald-50/40">
-                  <td className="px-6 py-3 font-mono text-xs text-slate-400">#{b.id}</td>
-                  <td className="px-4 py-3 font-semibold text-slate-900">{b.name}</td>
-                  <td className="px-4 py-3 text-xs text-slate-700">
-                    {b.threshold > 0 ? (
-                      <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5">
-                        {b.threshold} deliveries · {periodLabel(b.period)}
-                      </span>
-                    ) : (
-                      <span className="text-amber-600">No threshold set</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right font-semibold text-slate-900 tabular-nums">₹{b.amount}</td>
-                  <td className="px-4 py-3 text-slate-600 text-xs">{b.trigger}</td>
-                  <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{b.claims_30d}</td>
-                  <td className="px-4 py-3">
-                    {b.status ? (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-xs font-semibold border border-slate-200">Inactive</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <span className="inline-flex gap-2">
-                      <EditRecordButton basePath="/dm-bonuses" id={b.id} title="Edit bonus" values={b as unknown as Record<string, unknown>} fields={[
-                        { name: "name", label: "Bonus name" },
-                        { name: "threshold", label: "Deliveries needed", type: "number" },
-                        { name: "period", label: "Within", type: "select", options: PERIOD_OPTIONS },
-                        { name: "amount", label: "Reward ₹", type: "number" },
-                        { name: "trigger", label: "Note" },
-                      ]} />
-                      <ToggleStatusButton basePath="/dm-bonuses" id={b.id} currentStatus={b.status} />
-                      <DeleteButton basePath="/dm-bonuses" id={b.id} />
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div>
+        <h2 className="text-base font-semibold text-slate-900">All bonus rules</h2>
       </div>
+      <PaginatedTable
+        colCount={8}
+        pageSize={10}
+        searchable
+        empty="No bonuses configured."
+        headerRow={
+          <tr>
+            <th className="px-6 py-3 font-semibold">#</th>
+            <th className="px-4 py-3 font-semibold">Bonus</th>
+            <th className="px-4 py-3 font-semibold">Rule</th>
+            <th className="px-4 py-3 font-semibold text-right">Reward</th>
+            <th className="px-4 py-3 font-semibold">Note</th>
+            <th className="px-4 py-3 font-semibold text-right">Claims (30d)</th>
+            <th className="px-4 py-3 font-semibold">Status</th>
+            <th className="px-4 py-3 font-semibold text-right">Actions</th>
+          </tr>
+        }
+        searchTexts={bonuses.map((b) =>
+          `#${b.id} ${b.name} ${b.trigger} ${periodLabel(b.period)} ${b.status ? "active" : "inactive"}`.toLowerCase()
+        )}
+        bodyRows={bonuses.map((b) => (
+          <tr key={b.id} className="hover:bg-emerald-50/40">
+            <td className="px-6 py-3 font-mono text-xs text-slate-400">#{b.id}</td>
+            <td className="px-4 py-3 font-semibold text-slate-900">{b.name}</td>
+            <td className="px-4 py-3 text-xs text-slate-700">
+              {b.threshold > 0 ? (
+                <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5">
+                  {b.threshold} deliveries · {periodLabel(b.period)}
+                </span>
+              ) : (
+                <span className="text-amber-600">No threshold set</span>
+              )}
+            </td>
+            <td className="px-4 py-3 text-right font-semibold text-slate-900 tabular-nums">₹{b.amount}</td>
+            <td className="px-4 py-3 text-slate-600 text-xs">{b.trigger}</td>
+            <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{b.claims_30d}</td>
+            <td className="px-4 py-3">
+              {b.status ? (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Active
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-xs font-semibold border border-slate-200">Inactive</span>
+              )}
+            </td>
+            <td className="px-4 py-3 text-right">
+              <span className="inline-flex gap-2">
+                <EditRecordButton basePath="/dm-bonuses" id={b.id} title="Edit bonus" values={b as unknown as Record<string, unknown>} fields={[
+                  { name: "name", label: "Bonus name" },
+                  { name: "threshold", label: "Deliveries needed", type: "number" },
+                  { name: "period", label: "Within", type: "select", options: PERIOD_OPTIONS },
+                  { name: "amount", label: "Reward ₹", type: "number" },
+                  { name: "trigger", label: "Note" },
+                ]} />
+                <ToggleStatusButton basePath="/dm-bonuses" id={b.id} currentStatus={b.status} />
+                <DeleteButton basePath="/dm-bonuses" id={b.id} />
+              </span>
+            </td>
+          </tr>
+        ))}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
 import { AddFundForm } from "./AddFundForm";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface HistoryRow {
   id: number;
@@ -18,7 +19,7 @@ function fmtDate(iso: string | null): string {
 }
 
 export default async function CustomerWalletFundPage() {
-  const data = await adminFetch<{ total: number; items: HistoryRow[] }>("/admin/customer-wallet/add-fund/history?limit=50");
+  const data = await adminFetch<{ total: number; items: HistoryRow[] }>("/admin/customer-wallet/add-fund/history?limit=200");
   const rows = data.items;
 
   const last30d = rows.filter((r) => {
@@ -57,43 +58,35 @@ export default async function CustomerWalletFundPage() {
       <AddFundForm />
 
       {/* History */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h2 className="text-base font-semibold text-slate-900">Recent credits</h2>
-          <p className="text-xs text-slate-500 mt-0.5">Last {rows.length} admin-initiated wallet credits.</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Customer</th>
-                <th className="px-4 py-3 font-semibold text-right">Amount</th>
-                <th className="px-4 py-3 font-semibold">Reason</th>
-                <th className="px-4 py-3 font-semibold">Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
-                    <p className="text-sm font-medium">No credits yet</p>
-                    <p className="text-xs">Use the form above to add the first one.</p>
-                  </td>
-                </tr>
-              ) : rows.map((r) => (
-                <tr key={r.id} className="hover:bg-emerald-50/40">
-                  <td className="px-6 py-3 font-mono text-xs text-slate-400">#{r.id}</td>
-                  <td className="px-4 py-3 font-medium text-slate-900">{r.customer_name}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-emerald-700 tabular-nums">+ ₹{r.amount.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-slate-600 text-xs max-w-xs truncate">{r.reason}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{fmtDate(r.created_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div>
+        <h2 className="text-base font-semibold text-slate-900">Recent credits</h2>
+        <p className="text-xs text-slate-500 mt-0.5">Last {rows.length} admin-initiated wallet credits.</p>
       </div>
+      <PaginatedTable
+        colCount={5}
+        pageSize={10}
+        searchable
+        empty="No credits yet"
+        headerRow={
+          <tr>
+            <th className="px-6 py-3 font-semibold">#</th>
+            <th className="px-4 py-3 font-semibold">Customer</th>
+            <th className="px-4 py-3 font-semibold text-right">Amount</th>
+            <th className="px-4 py-3 font-semibold">Reason</th>
+            <th className="px-4 py-3 font-semibold">Date</th>
+          </tr>
+        }
+        searchTexts={rows.map((r) => `#${r.id} ${r.customer_name} ${r.reason}`.toLowerCase())}
+        bodyRows={rows.map((r) => (
+          <tr key={r.id} className="hover:bg-emerald-50/40">
+            <td className="px-6 py-3 font-mono text-xs text-slate-400">#{r.id}</td>
+            <td className="px-4 py-3 font-medium text-slate-900">{r.customer_name}</td>
+            <td className="px-4 py-3 text-right font-semibold text-emerald-700 tabular-nums">+ ₹{r.amount.toFixed(2)}</td>
+            <td className="px-4 py-3 text-slate-600 text-xs max-w-xs truncate">{r.reason}</td>
+            <td className="px-4 py-3 text-slate-500 text-xs">{fmtDate(r.created_at)}</td>
+          </tr>
+        ))}
+      />
     </div>
   );
 }

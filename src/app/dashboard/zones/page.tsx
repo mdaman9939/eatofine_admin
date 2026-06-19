@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface Zone {
   id: number;
@@ -111,100 +112,85 @@ export default async function ZonesPage({
       </div>
 
       {/* ── Zones table ─────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">Configured zones</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Disabling a zone hides every restaurant inside it from the customer apps — without deleting any data.
-            </p>
-          </div>
-          <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md font-mono">
-            {zones.length} {zones.length === 1 ? "zone" : "zones"}
-          </span>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">Configured zones</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Disabling a zone hides every restaurant inside it from the customer apps — without deleting any data.
+          </p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Zone</th>
-                <th className="px-4 py-3 font-semibold text-right">Restaurants</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sorted.map((z) => {
-                const display = z.display_name || z.name;
-                return (
-                  <tr key={z.id} className="hover:bg-emerald-50/40 transition-colors">
-                    <td className="px-6 py-4 font-mono text-xs text-slate-400">#{z.id}</td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-start gap-3">
-                        <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 ring-1 ring-emerald-300/50 text-white flex items-center justify-center shadow-sm shrink-0">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                        </span>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-slate-900">{display}</div>
-                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                            {z.is_default && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
-                                <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                                Default
-                              </span>
-                            )}
-                            {display !== z.name && (
-                              <span className="text-[11px] text-slate-400 font-mono truncate">{z.name}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100 tabular-nums">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7h18M5 7v13a1 1 0 001 1h12a1 1 0 001-1V7M9 11h6" />
-                        </svg>
-                        {z.restaurant_count}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4">
-                      <StatusPill active={z.status} />
-                    </td>
-                    <td className="px-4 py-4 text-right">
-                      <span className="inline-flex gap-2">
-                        <Link href={`/dashboard/zones/${z.id}/edit`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">Edit</Link>
-                        <ToggleStatusButton basePath="/zones" id={z.id} currentStatus={z.status} />
-                        {!z.is_default && <DeleteButton basePath="/zones" id={z.id} />}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-              {zones.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <p className="text-sm font-medium">No zones configured</p>
-                      <p className="text-xs">Create at least one zone — restaurants must belong to a zone to appear in the apps.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md font-mono">
+          {zones.length} {zones.length === 1 ? "zone" : "zones"}
+        </span>
       </div>
+      <PaginatedTable
+        colCount={5}
+        pageSize={10}
+        searchable
+        empty="No zones configured"
+        headerRow={
+          <tr>
+            <th className="px-6 py-3 font-semibold">#</th>
+            <th className="px-4 py-3 font-semibold">Zone</th>
+            <th className="px-4 py-3 font-semibold text-right">Restaurants</th>
+            <th className="px-4 py-3 font-semibold">Status</th>
+            <th className="px-4 py-3 font-semibold text-right">Actions</th>
+          </tr>
+        }
+        searchTexts={sorted.map((z) => `#${z.id} ${z.display_name || z.name} ${z.name}`.toLowerCase())}
+        bodyRows={sorted.map((z) => {
+          const display = z.display_name || z.name;
+          return (
+            <tr key={z.id} className="hover:bg-emerald-50/40 transition-colors">
+              <td className="px-6 py-4 font-mono text-xs text-slate-400">#{z.id}</td>
+              <td className="px-4 py-4">
+                <div className="flex items-start gap-3">
+                  <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 ring-1 ring-emerald-300/50 text-white flex items-center justify-center shadow-sm shrink-0">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </span>
+                  <div className="min-w-0">
+                    <div className="font-semibold text-slate-900">{display}</div>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      {z.is_default && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+                          <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                          Default
+                        </span>
+                      )}
+                      {display !== z.name && (
+                        <span className="text-[11px] text-slate-400 font-mono truncate">{z.name}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td className="px-4 py-4 text-right">
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-100 tabular-nums">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7h18M5 7v13a1 1 0 001 1h12a1 1 0 001-1V7M9 11h6" />
+                  </svg>
+                  {z.restaurant_count}
+                </span>
+              </td>
+              <td className="px-4 py-4">
+                <StatusPill active={z.status} />
+              </td>
+              <td className="px-4 py-4 text-right">
+                <span className="inline-flex gap-2">
+                  <Link href={`/dashboard/zones/${z.id}/edit`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">Edit</Link>
+                  <ToggleStatusButton basePath="/zones" id={z.id} currentStatus={z.status} />
+                  {!z.is_default && <DeleteButton basePath="/zones" id={z.id} />}
+                </span>
+              </td>
+            </tr>
+          );
+        })}
+      />
 
       {/* ── Closing card ───────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl sidebar-gradient text-white shadow-lg shadow-emerald-900/20 ring-1 ring-white/10">

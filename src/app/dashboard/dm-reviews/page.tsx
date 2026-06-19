@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
 import { TablePage, fmtDate } from "../../../components/TablePage";
+import { DeleteButton } from "../../../components/ActionButton";
 
 interface R {
   id: number;
@@ -30,6 +31,7 @@ export default async function DMReviewsPage() {
         { header: "Rating", cell: (r) => "★".repeat(r.rating) || "—" },
         { header: "Comment", cell: (r) => <span className="text-sm">{r.comment ?? ""}</span> },
         { header: "When", cell: (r) => <span className="text-xs text-zinc-500">{fmtDate(r.created_at)}</span> },
+        { header: "", cell: (r) => <DeleteButton basePath="/dm-reviews" id={r.id} />, className: "text-right" },
       ]}
     />
   );
