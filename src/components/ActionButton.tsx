@@ -48,7 +48,14 @@ export function ActionButton({
       });
       if (!res.ok) {
         const text = await res.text();
-        setError(text.slice(0, 100));
+        // Surface the human message from a `{errors:[{message}]}` payload
+        // rather than dumping raw JSON next to the button.
+        let msg = text;
+        try {
+          const j = JSON.parse(text);
+          msg = j?.errors?.[0]?.message ?? j?.message ?? text;
+        } catch { /* not JSON — show as-is */ }
+        setError(String(msg).slice(0, 160));
         return;
       }
       router.refresh();

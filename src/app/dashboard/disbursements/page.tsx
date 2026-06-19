@@ -83,6 +83,9 @@ export default async function DisbursementsPage({
               {r.status === "disbursed" && (
                 <ActionButton path={`/disbursements/${r.id}/status`} method="PATCH" body={{ status: "processing" }} label="Mark unpaid" variant="subtle" confirm="Mark this disbursement as unpaid (revert the payment)?" />
               )}
+              {(r.status === "pending" || r.status === "processing") && (
+                <ActionButton path={`/disbursements/${r.id}/status`} method="PATCH" body={{ status: "canceled" }} label="Cancel" variant="danger" confirm="Cancel this payout row? For a generated payout this releases the reserved funds back to the rider's available balance. Legacy rows are just voided." />
+              )}
             </span>
           ),
         },
