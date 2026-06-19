@@ -9,6 +9,28 @@ interface Reason {
   user_type: string;
   status: boolean;
   is_default: boolean;
+  scenario_key?: string | null;
+}
+
+/** Fault-attribution scenarios a cancel reason can be mapped to. Used by the
+ *  refund engine: a restaurant-reject reason with one of these set overrides the
+ *  stage-based default and decides whose wallet the penalty hits. "" = auto. */
+const SCENARIO_OPTIONS = [
+  { value: "", label: "— Auto (decide by stage) —" },
+  { value: "RESTAURANT_REJECT_AFTER_ACCEPT_NO_DM", label: "Restaurant reject — after accept, no rider (restaurant penalty)" },
+  { value: "RESTAURANT_REJECT_AFTER_ACCEPT_WITH_DM", label: "Restaurant reject — rider assigned (restaurant penalty + rider paid)" },
+  { value: "RESTAURANT_REJECT_BEFORE_ACCEPT", label: "Restaurant reject — before accept (no penalty)" },
+  { value: "ADMIN_WRONG_ITEM_RESTAURANT", label: "Wrong / missing item (restaurant pays)" },
+  { value: "ADMIN_MISSING_PACKET_DM", label: "Missing packets (deliveryman pays)" },
+  { value: "ADMIN_RESTAURANT_FAULT_AFTER_DELIVERY", label: "Restaurant fault after delivery" },
+  { value: "ADMIN_RESTAURANT_FAULT_BEFORE_DELIVERY", label: "Restaurant fault before delivery" },
+  { value: "ADMIN_DM_FAULT_AFTER_DELIVERY", label: "Deliveryman fault after delivery" },
+  { value: "ADMIN_DM_FAULT_BEFORE_DELIVERY", label: "Deliveryman fault before delivery" },
+];
+
+function scenarioLabel(key?: string | null): string {
+  if (!key) return "Auto (by stage)";
+  return SCENARIO_OPTIONS.find((o) => o.value === key)?.label ?? key;
 }
 
 const USER_TYPE_CHIP: Record<string, { tone: string; icon: React.ReactNode; label: string }> = {
@@ -107,6 +129,12 @@ export default async function OrderCancelReasonsPage() {
                   { value: "admin", label: "Admin" },
                 ],
               },
+              {
+                name: "scenario_key",
+                label: "Fault mapping (penalty)",
+                type: "select",
+                options: SCENARIO_OPTIONS,
+              },
             ]}
           />
         </div>
@@ -154,6 +182,7 @@ export default async function OrderCancelReasonsPage() {
                 <th className="px-6 py-3 font-semibold">#</th>
                 <th className="px-4 py-3 font-semibold">Reason</th>
                 <th className="px-4 py-3 font-semibold">Applies to</th>
+                <th className="px-4 py-3 font-semibold">Fault mapping</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>
               </tr>
@@ -174,6 +203,9 @@ export default async function OrderCancelReasonsPage() {
                     <UserTypeChip type={r.user_type} />
                   </td>
                   <td className="px-4 py-4">
+                    <span className={`text-xs ${r.scenario_key ? "text-rose-700 font-medium" : "text-slate-400"}`}>{scenarioLabel(r.scenario_key)}</span>
+                  </td>
+                  <td className="px-4 py-4">
                     <StatusPill active={r.status} />
                   </td>
                   <td className="px-4 py-4 text-right">
@@ -181,6 +213,7 @@ export default async function OrderCancelReasonsPage() {
                       <EditRecordButton basePath="/order-cancel-reasons" id={r.id} title="Edit reason" values={r as unknown as Record<string, unknown>} fields={[
                         { name: "reason", label: "Reason" },
                         { name: "user_type", label: "User type", type: "select", options: [{ value: "customer", label: "Customer" }, { value: "deliveryman", label: "Delivery man" }, { value: "restaurant", label: "Restaurant" }] },
+                        { name: "scenario_key", label: "Fault mapping (penalty)", type: "select", options: SCENARIO_OPTIONS },
                       ]} />
                       <ToggleStatusButton basePath="/order-cancel-reasons" id={r.id} currentStatus={r.status} />
                       <DeleteButton basePath="/order-cancel-reasons" id={r.id} />
@@ -190,7 +223,7 @@ export default async function OrderCancelReasonsPage() {
               ))}
               {reasons.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center">
+                  <td colSpan={6} className="px-6 py-12 text-center">
                     <div className="inline-flex flex-col items-center gap-2 text-slate-400">
                       <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />

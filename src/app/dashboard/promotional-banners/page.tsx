@@ -122,6 +122,7 @@ export default async function PromotionalBannersPage() {
                         { name: "cta_text", label: "CTA text" },
                         { name: "target", label: "Target / link" },
                         { name: "zone_id", label: "Zone ID", type: "number" },
+                        { name: "image", label: "Banner image", type: "image", imageDir: "banner" },
                       ]} />
                       <ToggleStatusButton basePath="/promotional-banners" id={b.id} currentStatus={b.status} />
                       <DeleteButton basePath="/promotional-banners" id={b.id} />

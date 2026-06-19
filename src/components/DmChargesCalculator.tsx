@@ -120,7 +120,7 @@ export function DmChargesCalculator() {
                   <tbody className="divide-y divide-slate-100">
                     <Row label="Base charge" value={`₹${result.base_charge.toFixed(2)}`} />
                     {result.extra_charge > 0 && (
-                      <Row label="Extra (per-km)" value={`₹${result.extra_charge.toFixed(2)}`} />
+                      <Row label="Long-trip reward" value={`₹${result.extra_charge.toFixed(2)}`} />
                     )}
                     {result.surcharges.map((s) => (
                       <Row key={s.id} label={`+ ${s.label}`} value={`+ ₹${s.amount.toFixed(2)}`} sub />

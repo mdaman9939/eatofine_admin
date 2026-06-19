@@ -2,6 +2,7 @@ import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
 import { DmChargesCalculator } from "../../../components/DmChargesCalculator";
+import { SituationalSurchargeEditor } from "../../../components/SituationalSurchargeEditor";
 
 interface Slab {
   id: number;
@@ -163,7 +164,7 @@ export default async function DeliveryPartnerChargesPage() {
               { name: "min_km", label: "Min km", type: "number", required: true },
               { name: "max_km", label: "Max km", type: "number", required: true },
               { name: "base_charge", label: "Base charge ₹", type: "number", required: true },
-              { name: "extra_per_km", label: "Extra per-km ₹", type: "number", defaultValue: 0 },
+              { name: "extra_per_km", label: "Long-trip reward ₹", type: "number", defaultValue: 0 },
             ]}
           />
         </div>
@@ -174,7 +175,7 @@ export default async function DeliveryPartnerChargesPage() {
                 <th className="px-6 py-3 font-semibold">#</th>
                 <th className="px-4 py-3 font-semibold">Range</th>
                 <th className="px-4 py-3 font-semibold text-right">Base ₹</th>
-                <th className="px-4 py-3 font-semibold text-right">Extra / km ₹</th>
+                <th className="px-4 py-3 font-semibold text-right">Long-trip reward ₹</th>
                 <th className="px-4 py-3 font-semibold">Effective from</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>
@@ -234,7 +235,7 @@ export default async function DeliveryPartnerChargesPage() {
             <h2 className="text-base font-semibold text-slate-900">Situational surcharges</h2>
             <p className="text-xs text-slate-500 mt-0.5">Weekend / festival / late-night uplifts applied on top of the matched slab.</p>
           </div>
-          <span className="text-[11px] text-slate-500 italic">Edit JSON in DB · UI editor coming next sprint</span>
+          <SituationalSurchargeEditor basePath="/dm-charges/surcharges" mode="create" />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -266,6 +267,7 @@ export default async function DeliveryPartnerChargesPage() {
                   </td>
                   <td className="px-4 py-4 text-right">
                     <span className="inline-flex gap-2">
+                      <SituationalSurchargeEditor basePath="/dm-charges/surcharges" surcharge={s as unknown as Parameters<typeof SituationalSurchargeEditor>[0]["surcharge"]} />
                       <ToggleStatusButton basePath="/dm-charges/surcharges" id={s.id} currentStatus={s.status} mode="base-path" />
                       <DeleteButton basePath="/dm-charges/surcharges" id={s.id} />
                     </span>
@@ -303,12 +305,13 @@ export default async function DeliveryPartnerChargesPage() {
             </div>
             <h3 className="mt-2 text-xl font-bold tracking-tight">How a delivery partner&apos;s payout is built</h3>
             <p className="mt-1.5 text-sm text-white/75">
-              The delivery&apos;s distance picks one slab. The slab&apos;s base + per-km extra forms
-              the trip pay. Active surcharges that match the current day/time/date stack on top. The
-              final number is what the partner receives — no GST on this side per BRD.
+              The delivery&apos;s distance picks one slab. The slab&apos;s base plus its flat
+              long-trip reward forms the trip pay — longer slabs carry a bigger reward. Active
+              surcharges that match the current day/time/date stack on top. The final number is
+              what the partner receives — no GST on this side per BRD.
             </p>
             <pre className="mt-4 text-xs leading-relaxed text-white/95 font-mono bg-black/25 rounded-xl p-4 ring-1 ring-white/10 overflow-x-auto">
-{`Base trip pay = Base charge + (extra_per_km × distance over min_km)
+{`Base trip pay = Base charge + Long-trip reward (flat, per matched slab)
 Surcharges    = Σ active surcharges that match (day / time / date)
 DM payable    = Base trip pay + Surcharges    // no GST applied`}
             </pre>

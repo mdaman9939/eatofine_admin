@@ -204,6 +204,8 @@ export default async function AdvertisementsPage({
                   { name: "start_date", label: "Start date", type: "date" },
                   { name: "end_date", label: "End date", type: "date" },
                   { name: "amount", label: "Amount ₹", type: "number" },
+                  { name: "image", label: "Advertisement image", type: "image", imageDir: "advertisement", previewField: "image_full_url" },
+                  { name: "cover_image", label: "Cover image", type: "image", imageDir: "advertisement", previewField: "cover_image_full_url" },
                 ]} />
                 {STATUSES.filter((s) => s !== r.status).slice(0, 3).map((s) => (
                   <ActionButton
