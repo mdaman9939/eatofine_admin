@@ -146,7 +146,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           {/* Restaurant + invoice meta */}
           <div className="grid grid-cols-2 gap-x-8 text-[13px] mt-3">
             <div className="space-y-0.5">
-              <KV k="Business Name" v={(inv.restaurant.business_name && inv.restaurant.business_name.trim() !== "") ? inv.restaurant.business_name : inv.restaurant.name} />
+              <KV k="Business Name" v={inv.restaurant.business_name && inv.restaurant.business_name.trim() !== "" ? inv.restaurant.business_name : "—"} />
               <KV k="Restaurant Name" v={inv.restaurant.name} />
               <KV k="Restaurant FSSAI" v={orPlaceholder(inv.restaurant.fssai)} />
               <KV k="Restaurant Address" v={inv.restaurant.address} />
