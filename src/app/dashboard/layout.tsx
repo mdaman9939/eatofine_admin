@@ -311,6 +311,7 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/dm-reviews", label: "Reviews", icon: "star" },
           { href: "/dashboard/disbursements?type=deliveryman", label: "DM Disbursement", icon: "bank" },
           { href: "/dashboard/dm-earnings", label: "DM Earnings", icon: "currency" },
+          { href: "/dashboard/dm-payouts", label: "DM Payouts (net)", icon: "currency" },
           { href: "/dashboard/withdraw-requests?type=deliveryman", label: "DM Withdraw Requests", icon: "cash" },
         ],
       },
