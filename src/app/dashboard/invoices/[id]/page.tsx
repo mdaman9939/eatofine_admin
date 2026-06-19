@@ -8,7 +8,7 @@ interface Invoice {
   order_id: number;
   order_date: string | null;
   issued_on: string | null;
-  restaurant: { name: string; address: string; gstin: string | null; fssai: string | null; cin: string | null };
+  restaurant: { name: string; business_name?: string | null; address: string; gstin: string | null; fssai: string | null; cin: string | null };
   customer: { name: string; email: string | null; phone: string | null; address: string; place_of_delivery: string | null };
   restaurant_invoice: {
     hsn: string;
@@ -146,7 +146,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           {/* Restaurant + invoice meta */}
           <div className="grid grid-cols-2 gap-x-8 text-[13px] mt-3">
             <div className="space-y-0.5">
-              <KV k="Business Name" v={EATOFINE.legal_name} />
+              <KV k="Business Name" v={(inv.restaurant.business_name && inv.restaurant.business_name.trim() !== "") ? inv.restaurant.business_name : inv.restaurant.name} />
               <KV k="Restaurant Name" v={inv.restaurant.name} />
               <KV k="Restaurant FSSAI" v={orPlaceholder(inv.restaurant.fssai)} />
               <KV k="Restaurant Address" v={inv.restaurant.address} />

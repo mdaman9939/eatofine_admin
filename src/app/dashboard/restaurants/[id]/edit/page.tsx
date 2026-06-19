@@ -35,6 +35,10 @@ interface RestaurantDetail {
     take_away?: boolean;
     identity_number?: string | null;
     state?: string | null;
+    business_name?: string | null;
+    gstin?: string | null;
+    fssai?: string | null;
+    cin?: string | null;
   };
 }
 
@@ -81,6 +85,12 @@ export default async function EditRestaurantPage({ params }: { params: Promise<{
     { name: "_h_additional", label: "Additional data", type: "heading" },
     { name: "identity_number", label: "Owner ID / GSTIN number", type: "text", placeholder: "Enter your ID number" },
     { name: "state", label: "State", type: "select", options: INDIAN_STATES.map((s) => ({ value: s, label: s })) },
+
+    { name: "_h_legal", label: "Tax invoice / legal details", type: "heading" },
+    { name: "business_name", label: "Business name (parent company)", type: "text", placeholder: "e.g. Curry Express Foods Pvt. Ltd." },
+    { name: "gstin", label: "Restaurant GSTIN", type: "text", placeholder: "Leave blank if unregistered" },
+    { name: "fssai", label: "Restaurant FSSAI", type: "text", placeholder: "Leave blank if unregistered" },
+    { name: "cin", label: "Restaurant CIN", type: "text", placeholder: "Leave blank if unregistered" },
 
     { name: "_h_account", label: "Account information", type: "heading" },
     { name: "email", label: "Owner email", type: "text", placeholder: "owner@restaurant.com" },
@@ -139,6 +149,10 @@ export default async function EditRestaurantPage({ params }: { params: Promise<{
             cover_photo: r.cover_photo ?? "",
             identity_number: r.identity_number ?? "",
             state: r.state ?? "",
+            business_name: r.business_name ?? "",
+            gstin: r.gstin ?? "",
+            fssai: r.fssai ?? "",
+            cin: r.cin ?? "",
             email: r.email,
             phone: r.phone,
             password: "",
