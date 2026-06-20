@@ -163,12 +163,13 @@ export default async function PlatformSettingsPage() {
             </div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">Platform settings</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Operational knobs for auth security, delivery partner behaviour, promotion approval flow,
-              and billing automation. Changes are live immediately.
+              Configuration registry for auth security, delivery partner behaviour, promotion approval
+              flow, and billing automation. These values are stored here for reference — the live
+              runtime config the backend actually reads lives in Business Settings.
             </p>
           </div>
           <div className="rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur-sm px-4 py-3">
-            <div className="text-[10px] uppercase tracking-wider text-white/70 font-semibold">Live</div>
+            <div className="text-[10px] uppercase tracking-wider text-white/70 font-semibold">Registry</div>
             <div className="text-lg font-bold tabular-nums">{total}</div>
             <div className="text-[11px] text-white/70">configuration keys</div>
           </div>
