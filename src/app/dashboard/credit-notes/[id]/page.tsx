@@ -2,15 +2,22 @@ import Link from "next/link";
 import { adminFetch } from "../../../../lib/api";
 import { PrintButton } from "./PrintButton";
 
-interface Invoice {
-  invoice_no: string;
-  eatofine_invoice_no: string;
+interface CreditNote {
+  credit_note_no_obr: string;
+  credit_note_no_etu: string;
+  credit_note_date: string | null;
+  reference_invoice_no_obr: string | null;
+  reference_invoice_no_etu: string | null;
+  reference_invoice_date: string | null;
+  arn: string | null;
+  reason: string | null;
+  refund_kind: "full" | "partial";
+  refund_amount: number;
   order_id: number;
   order_date: string | null;
-  issued_on: string | null;
   restaurant: { name: string; business_name?: string | null; address: string; gstin: string | null; fssai: string | null; cin: string | null };
   customer: { name: string; email: string | null; phone: string | null; address: string; place_of_delivery: string | null };
-  restaurant_invoice: {
+  restaurant_credit: {
     hsn: string;
     service_type: string;
     items: Array<{ name: string; qty: number; unit_rate: number; amount: number }>;
@@ -23,14 +30,12 @@ interface Invoice {
     packaging_charge?: number;
     total: number;
   };
-  eatofine_invoice: {
+  eatofine_credit: {
     hsn: string;
     supply_description: string;
     rows: Array<{ description: string; amount: number; cgst: number; sgst: number; net: number }>;
     total: number;
   };
-  payment_method: string | null;
-  payment_status: string;
 }
 
 const EATOFINE_DEFAULTS = {
@@ -118,59 +123,67 @@ const fmtDate = (v: string | null, sep = "-") => {
 const orPlaceholder = (v: string | null | undefined) =>
   v && v.trim() !== "" ? v : "Unregistered";
 
-export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CreditNoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [inv, EATOFINE] = await Promise.all([
-    adminFetch<Invoice>(`/admin/invoices/${id}`),
+  const [cn, EATOFINE] = await Promise.all([
+    adminFetch<CreditNote>(`/admin/credit-notes/${id}`),
     loadEatofineSettings(),
   ]);
 
-  const ri = inv.restaurant_invoice;
-  const ei = inv.eatofine_invoice;
-  const invoiceDate = fmtDate(inv.issued_on ?? inv.order_date);
-  const placeOfDelivery = inv.customer.place_of_delivery ?? `${EATOFINE.state} (${EATOFINE.state_code})`;
+  const rc = cn.restaurant_credit;
+  const ec = cn.eatofine_credit;
+  const cnDate = fmtDate(cn.credit_note_date);
+  const refDate = fmtDate(cn.reference_invoice_date);
+  const placeOfDelivery = cn.customer.place_of_delivery ?? `${EATOFINE.state} (${EATOFINE.state_code})`;
 
   return (
     <div className="p-6 max-w-4xl mx-auto print:p-0 print:max-w-none">
       <div className="flex items-center justify-between mb-4 print:hidden">
-        <Link href="/dashboard/invoices" className="text-sm text-blue-600 hover:underline">← All invoices</Link>
-        <PrintButton />
+        <Link href="/dashboard/credit-notes" className="text-sm text-blue-600 hover:underline">← All credit notes</Link>
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-semibold rounded-full px-3 py-1 bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+            {cn.refund_kind === "full" ? "Full" : "Partial"} refund · ₹{cn.refund_amount.toFixed(2)}
+          </span>
+          <PrintButton />
+        </div>
       </div>
 
       <div id="invoice-print-area">
-        {/* ═══════════════ PAGE 1 — On Behalf of Restaurant ═══════════════ */}
+        {/* ═══════════════ PAGE 1 — Credit Note (On Behalf of Restaurant) ═══════════════ */}
         <section className="invoice-page bg-white shadow-sm border border-slate-200 print:shadow-none print:border-0 p-8 mb-8">
           <Brand short={EATOFINE.short_name} tag="Original for Recipient" />
 
-          <Band>Tax Invoice (On Behalf of Restaurant)</Band>
+          <Band>Credit Note (On Behalf of Restaurant)</Band>
 
-          {/* Restaurant + invoice meta */}
           <div className="grid grid-cols-2 gap-x-8 text-[13px] mt-3">
             <div className="space-y-0.5">
-              <KV k="Business Name" v={inv.restaurant.business_name && inv.restaurant.business_name.trim() !== "" ? inv.restaurant.business_name : "—"} />
-              <KV k="Restaurant Name" v={inv.restaurant.name} />
-              <KV k="Restaurant FSSAI" v={orPlaceholder(inv.restaurant.fssai)} />
-              <KV k="Restaurant Address" v={inv.restaurant.address} />
-              <KV k="Restaurant GSTIN" v={orPlaceholder(inv.restaurant.gstin)} />
-              <KV k="Restaurant CIN" v={orPlaceholder(inv.restaurant.cin)} />
+              <KV k="Business Name" v={cn.restaurant.business_name && cn.restaurant.business_name.trim() !== "" ? cn.restaurant.business_name : "—"} />
+              <KV k="Restaurant Name" v={cn.restaurant.name} />
+              <KV k="Restaurant FSSAI" v={orPlaceholder(cn.restaurant.fssai)} />
+              <KV k="Restaurant Address" v={cn.restaurant.address} />
+              <KV k="Restaurant GSTIN" v={orPlaceholder(cn.restaurant.gstin)} />
+              <KV k="Restaurant CIN" v={orPlaceholder(cn.restaurant.cin)} />
             </div>
             <div className="space-y-0.5">
-              <KV k="Invoice No" v={inv.invoice_no} mono />
-              <KV k="Invoice Date" v={invoiceDate} />
+              <KV k="Credit Note No" v={cn.credit_note_no_obr} mono />
+              <KV k="Credit Note Date" v={cnDate} />
+              <KV k="Reference Invoice no" v={cn.reference_invoice_no_obr ?? "—"} mono />
+              <KV k="Reference Invoice Date" v={refDate} />
+              <KV k="ARN" v={cn.arn ?? "—"} mono />
             </div>
           </div>
 
           <Band yellow className="mt-4">Customer Details</Band>
           <div className="grid grid-cols-2 gap-x-8 text-[13px] mt-2">
-            <KV k="Customer Name" v={inv.customer.name} />
+            <KV k="Customer Name" v={cn.customer.name} />
             <KV k="Place of Delivery" v={placeOfDelivery} />
-            <KV k="Address" v={inv.customer.address} />
+            <KV k="Address" v={cn.customer.address} />
           </div>
 
           <Band peach className="mt-4">Service Details</Band>
           <div className="grid grid-cols-2 gap-x-8 text-[13px] mt-2">
-            <KV k="HSN Code" v={ri.hsn} />
-            <KV k="Service Type" v={ri.service_type} />
+            <KV k="HSN Code" v={rc.hsn} />
+            <KV k="Service Type" v={rc.service_type} />
           </div>
 
           <Band className="mt-4">Order Details</Band>
@@ -179,42 +192,41 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               <tr className="text-slate-800">
                 <Th>Item</Th><Th c>Qty</Th><Th r>Unit Rate</Th><Th r>Amount</Th>
                 <Th r>Sub Total</Th><Th r>Discount</Th><Th r>Net Value</Th>
-                <Th r>CGST<br /><span className="font-normal text-[9px]">({ri.gst_rate_half}%)</span></Th>
-                <Th r>IGST<br /><span className="font-normal text-[9px]">({ri.gst_rate_half}%)</span></Th>
+                <Th r>CGST<br /><span className="font-normal text-[9px]">({rc.gst_rate_half}%)</span></Th>
+                <Th r>IGST<br /><span className="font-normal text-[9px]">({rc.gst_rate_half}%)</span></Th>
                 <Th r>Total</Th>
               </tr>
             </thead>
             <tbody>
-              {ri.items.map((it, i) => (
+              {rc.items.map((it, i) => (
                 <tr key={i} className="text-slate-800">
                   <Td>{it.name}</Td><Td c>{it.qty}</Td><Td r>{it.unit_rate.toFixed(2)}</Td><Td r>{it.amount.toFixed(2)}</Td>
                   <Td /><Td /><Td /><Td /><Td /><Td />
                 </tr>
               ))}
-              {/* Totals row — matches the PDF (single summary row at the bottom). */}
               <tr className="font-semibold text-slate-900">
                 <Td /><Td /><Td /><Td />
-                <Td r>₹{ri.sub_total.toFixed(2)}</Td>
-                <Td r>₹{ri.discount.toFixed(2)}</Td>
-                <Td r>₹{ri.net_value.toFixed(2)}</Td>
-                <Td r>₹{ri.cgst.toFixed(2)}</Td>
-                <Td r>₹{ri.igst.toFixed(2)}</Td>
-                <Td r>₹{ri.total.toFixed(2)}</Td>
+                <Td r>₹{rc.sub_total.toFixed(2)}</Td>
+                <Td r>₹{rc.discount.toFixed(2)}</Td>
+                <Td r>₹{rc.net_value.toFixed(2)}</Td>
+                <Td r>₹{rc.cgst.toFixed(2)}</Td>
+                <Td r>₹{rc.igst.toFixed(2)}</Td>
+                <Td r>₹{rc.total.toFixed(2)}</Td>
               </tr>
             </tbody>
           </table>
 
-          {!!ri.packaging_charge && ri.packaging_charge > 0 && (
+          {!!rc.packaging_charge && rc.packaging_charge > 0 && (
             <p className="text-[12px] mt-2 text-right">
               <span className="font-semibold">Add: Packaging Charge</span>{" "}
-              ₹{ri.packaging_charge.toFixed(2)}{" "}
+              ₹{rc.packaging_charge.toFixed(2)}{" "}
               <span className="text-slate-500">(included in Total above)</span>
             </p>
           )}
 
           <p className="text-[12px] mt-3">
             <span className="font-semibold">Amount Total in words:</span>{" "}
-            {numberToWords(ri.total)} (against Order id: {inv.order_id})
+            {numberToWords(rc.total)} (against Order id: {cn.order_id})
           </p>
 
           <div className="text-[12px] mt-5">
@@ -225,19 +237,18 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <div>Eatofine FSSAI : {orPlaceholder(EATOFINE.fssai)}</div>
           </div>
           <div className="text-[12px] mt-3">
-            <span className="font-semibold">HSN Code:</span> {ri.hsn}{" "}
-            <span className="font-semibold ml-4">Service Type:</span> {ri.service_type}
+            <span className="font-semibold">HSN Code:</span> {rc.hsn}{" "}
+            <span className="font-semibold ml-4">Service Type:</span> {rc.service_type}
           </div>
 
           <Disclaimer />
         </section>
 
-        {/* ═══════════════ PAGE 2 — Eatofine service invoice ═══════════════ */}
+        {/* ═══════════════ PAGE 2 — Credit Note (Eatofine service) ═══════════════ */}
         <section className="invoice-page bg-white shadow-sm border border-slate-200 print:shadow-none print:border-0 p-8">
           <Brand short={EATOFINE.short_name} />
-          <Band>Tax Invoice <span className="font-normal italic">(Original for Recipient)</span></Band>
+          <Band>Credit Note <span className="font-normal italic">(Original for Recipient)</span></Band>
 
-          {/* Company + invoice meta box */}
           <div className="border border-slate-400 mt-3 text-[12px]">
             <div className="grid grid-cols-2 divide-x divide-slate-400">
               <div className="p-3">
@@ -249,29 +260,32 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 <div>FSSAI: {orPlaceholder(EATOFINE.fssai)}</div>
               </div>
               <div className="p-3">
-                <div><span className="font-semibold">Invoice Number:</span> <span className="font-mono">{inv.eatofine_invoice_no}</span></div>
-                <div><span className="font-semibold">Invoice Date:</span> {invoiceDate}</div>
+                <div><span className="font-semibold">Credit Note No:</span> <span className="font-mono">{cn.credit_note_no_etu}</span></div>
+                <div><span className="font-semibold">Credit Note Date:</span> {cnDate}</div>
+                <div><span className="font-semibold">Reference Invoice no:</span> <span className="font-mono">{cn.reference_invoice_no_etu ?? "—"}</span></div>
+                <div><span className="font-semibold">Reference Invoice Date:</span> {refDate}</div>
+                <div><span className="font-semibold">ARN:</span> <span className="font-mono">{cn.arn ?? "—"}</span></div>
               </div>
             </div>
             <div className="grid grid-cols-2 divide-x divide-slate-400 border-t border-slate-400">
               <div className="p-3">
-                <div>Customer Name: {inv.customer.name}</div>
-                <div>Email: {inv.customer.email ?? "—"}</div>
-                <div>Phone: {inv.customer.phone ?? "—"}</div>
+                <div>Customer Name: {cn.customer.name}</div>
+                <div>Email: {cn.customer.email ?? "—"}</div>
+                <div>Phone: {cn.customer.phone ?? "—"}</div>
                 <div>Place of Delivery: {placeOfDelivery}</div>
               </div>
               <div className="p-3">
                 <div className="font-semibold">Service Details</div>
-                <div>HSN Code: {ei.hsn}</div>
-                <div>Supply Description: {ei.supply_description}</div>
+                <div>HSN Code: {ec.hsn}</div>
+                <div>Supply Description: {ec.supply_description}</div>
               </div>
             </div>
           </div>
 
           <Band className="mt-4">Product Summary:</Band>
           <div className="flex justify-between text-[13px] font-semibold mt-2 mb-1">
-            <span>Order ID: {inv.order_id}</span>
-            <span>Order Date: {fmtDate(inv.order_date, "/")}</span>
+            <span>Order ID: {cn.order_id}</span>
+            <span>Order Date: {fmtDate(cn.order_date, "/")}</span>
           </div>
 
           <table className="w-full text-[12px] border border-slate-400 border-collapse">
@@ -281,30 +295,25 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               </tr>
             </thead>
             <tbody>
-              {/* Hide all-zero fee lines (e.g. ₹0 Delivery Charges / Other Fees) —
-                  only charges that actually apply are listed. S.No renumbers after
-                  filtering so the list stays 1, 2, 3… with no gaps. */}
-              {ei.rows
-                .filter((row) => row.amount !== 0 || row.net !== 0 || row.cgst !== 0 || row.sgst !== 0)
-                .map((row, i) => (
-                  <tr key={i} className="text-slate-800">
-                    <Td c>{i + 1}.</Td>
-                    <Td>{row.description}</Td>
-                    <Td r>{row.amount.toFixed(2)}</Td>
-                    <Td r>{row.cgst.toFixed(2)}</Td>
-                    <Td r>{row.sgst.toFixed(2)}</Td>
-                    <Td r>{row.net.toFixed(2)}</Td>
-                  </tr>
-                ))}
+              {ec.rows.map((row, i) => (
+                <tr key={i} className="text-slate-800">
+                  <Td c>{i + 1}.</Td>
+                  <Td>{row.description}</Td>
+                  <Td r>{row.amount.toFixed(2)}</Td>
+                  <Td r>{row.cgst.toFixed(2)}</Td>
+                  <Td r>{row.sgst.toFixed(2)}</Td>
+                  <Td r>{row.net.toFixed(2)}</Td>
+                </tr>
+              ))}
               <tr className="font-bold text-slate-900">
-                <Td /><Td r>Total</Td><Td /><Td /><Td /><Td r>{ei.total.toFixed(2)}</Td>
+                <Td /><Td r>Total</Td><Td /><Td /><Td /><Td r>{ec.total.toFixed(2)}</Td>
               </tr>
             </tbody>
           </table>
 
           <p className="text-[12px] mt-3">
             <span className="font-semibold">Amount Total in words:</span>{" "}
-            {numberToWords(ei.total)} (against Order id: {inv.order_id})
+            {numberToWords(ec.total)} (against Order id: {cn.order_id})
           </p>
 
           <div className="text-[12px] mt-6 text-right">
@@ -334,7 +343,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   );
 }
 
-// ─── Small presentational helpers ────────────────────────────────────────
+// ─── Small presentational helpers (mirror of the invoice detail page) ────────
 
 function Brand({ short, tag }: { short: string; tag?: string }) {
   return (

@@ -109,6 +109,7 @@ const NAV: NavGroup[] = [
       },
       { href: "/dashboard/subscription-orders", label: "Subscription Orders", icon: "calendar" },
       { href: "/dashboard/dispatch", label: "Dispatch", icon: "compass" },
+      { href: "/dashboard/order-settings", label: "Order Settings", icon: "settings" },
       { href: "/dashboard/refunds", label: "Order Refunds", icon: "refunds" },
       { href: "/dashboard/refund-reviews", label: "Refund Reviews", icon: "refunds" },
       {

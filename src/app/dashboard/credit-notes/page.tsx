@@ -160,9 +160,13 @@ export default async function CreditNotesPage() {
             <tr key={n.id} className="hover:bg-emerald-50/40 transition-colors align-top">
               <td className="w-16 px-6 py-4 font-mono text-xs text-slate-400">#{n.id}</td>
               <td className="px-4 py-4">
-                <span className="font-mono text-xs font-semibold text-slate-800 bg-slate-100 ring-1 ring-slate-200 px-2 py-0.5 rounded">
+                <Link
+                  href={`/dashboard/credit-notes/${n.id}`}
+                  className="font-mono text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 ring-1 ring-emerald-200 px-2 py-0.5 rounded hover:underline"
+                  title="Open printable credit note"
+                >
                   {n.credit_note_number}
-                </span>
+                </Link>
               </td>
               <td className="px-4 py-4">
                 <Link

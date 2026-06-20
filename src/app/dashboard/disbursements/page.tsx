@@ -12,6 +12,7 @@ interface D {
   created_at: string | null;
   initiated_at: string | null;
   paid_at: string | null;
+  rider_available: number | null;
 }
 
 const STATUS_TONE: Record<string, string> = {
@@ -54,7 +55,26 @@ export default async function DisbursementsPage({
         { header: "#", cell: (r) => r.id, className: "font-mono" },
         { header: recipientHeader, cell: (r) => r.recipient ?? "—" },
         { header: "Type", cell: (r) => <span className="text-xs uppercase">{r.type ?? "—"}</span> },
-        { header: "Amount", cell: (r) => `₹${Number(r.amount ?? r.total_amount ?? 0).toFixed(2)}` },
+        {
+          header: "Amount",
+          cell: (r) => {
+            const amt = Number(r.amount ?? r.total_amount ?? 0);
+            const wallet = r.rider_available;
+            // A pending/processing row whose amount the wallet can't back is an
+            // unbacked/legacy row — flag it so the admin cancels instead of paying.
+            const short = wallet != null && wallet < amt && (r.status === "pending" || r.status === "processing");
+            return (
+              <div>
+                <div className="font-semibold">₹{amt.toFixed(2)}</div>
+                {r.type === "deliveryman" && wallet != null && (
+                  <div className={`text-[11px] ${short ? "text-rose-600" : "text-slate-400"}`}>
+                    wallet covers ₹{wallet.toFixed(2)}{short ? " — unbacked, cancel" : ""}
+                  </div>
+                )}
+              </div>
+            );
+          },
+        },
         {
           header: "Status",
           cell: (r) => (
