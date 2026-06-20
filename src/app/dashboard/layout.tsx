@@ -2,6 +2,15 @@ import { redirect } from "next/navigation";
 import { getAdminToken, adminFetch } from "../../lib/api";
 import { AdminShell, type NavGroup } from "../../components/AdminShell";
 
+/** A 401/403 from any admin API call means the JWT is expired/revoked even
+ *  though the cookie is still present. We detect it here (server-side) where
+ *  the real error message is available — in production Next sanitizes
+ *  server-component error messages, so the client error boundary can't. */
+function isSessionExpired(e: unknown): boolean {
+  const m = e instanceof Error ? e.message : String(e);
+  return m === "not_authenticated" || m.startsWith("api_error_401") || m.startsWith("api_error_403");
+}
+
 /** Read theme/addon/flag settings and surface them as:
  *   - `theme`: { primary_color, secondary_color, … } for CSS variables
  *   - `disabledAddons`: a Set of addon keys whose `.enabled` is false → used
@@ -30,6 +39,7 @@ async function loadShellSettings() {
     }
     const brandName = new Map(branding.settings.map((s) => [s.key, s.value])).get("invoice.short_name");
     return {
+      authExpired: false,
       theme: {
         primary: themeMap.get("theme.primary_color") ?? "#10b981",
         secondary: themeMap.get("theme.secondary_color") ?? "#0f766e",
@@ -41,8 +51,12 @@ async function loadShellSettings() {
       disabledAddons,
       disabledFlags,
     };
-  } catch {
+  } catch (e) {
+    // 401/403 → signal the layout to redirect to login. Any other failure
+    // (cold start, settings hiccup) → fall back to safe defaults so the shell
+    // still renders.
     return {
+      authExpired: isSessionExpired(e),
       theme: { primary: "#10b981", secondary: "#0f766e", danger: "#e11d48", appPrimary: "#f97316" },
       brandName: "Eatofine",
       tagline: "Admin Panel",
@@ -269,6 +283,7 @@ const NAV: NavGroup[] = [
         badge: "new",
         icon: "invoice",
         children: [
+          { href: "/dashboard/billing", label: "Billing Center (Start here)", icon: "invoice" },
           { href: "/dashboard/vendor-invoices", label: "Vendor Invoices (Restaurant)", icon: "invoice" },
           { href: "/dashboard/invoices", label: "Customer Invoices (GST)", icon: "invoice" },
           { href: "/dashboard/credit-notes", label: "Credit Notes", icon: "invoice" },
@@ -463,6 +478,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // Pull theme + addon gating from settings — applied on every nav render.
   const settings = await loadShellSettings();
+  // Session no longer valid (expired/revoked JWT) → send to login instead of
+  // letting every page crash with a generic "Something went wrong".
+  if (settings.authExpired) redirect("/login?reason=session_expired");
   const filteredNav = filterNav(NAV, settings.disabledAddons);
 
   // Inject as inline CSS variables so existing utility classes pick them up.

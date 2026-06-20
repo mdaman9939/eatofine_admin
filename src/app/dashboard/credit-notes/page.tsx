@@ -5,11 +5,17 @@ import { PaginatedTable } from "../../../components/PaginatedTable";
 interface CreditNote {
   id: number;
   credit_note_number: string;
+  credit_note_number_obr: string | null;
+  credit_note_number_etu: string | null;
   order_id: number;
   customer_id: number | null;
   customer_name: string | null;
   restaurant_id: number | null;
   restaurant_name: string | null;
+  // Original tax invoice this credit note reverses (CNOBR → OBR…, CNETU → ETFU…).
+  reference_invoice_no_obr: string | null;
+  reference_invoice_no_etu: string | null;
+  reference_invoice_date: string | null;
   reason: string | null;
   refund_amount: number;
   tax_reversed: number;
@@ -146,6 +152,7 @@ export default async function CreditNotesPage() {
             <tr>
               <th className="w-16 px-6 py-3 font-semibold">#</th>
               <th className="px-4 py-3 font-semibold">CN number</th>
+              <th className="px-4 py-3 font-semibold">Reference invoice</th>
               <th className="px-4 py-3 font-semibold">Order</th>
               <th className="px-4 py-3 font-semibold">Customer</th>
               <th className="px-4 py-3 font-semibold">Restaurant</th>
@@ -165,8 +172,36 @@ export default async function CreditNotesPage() {
                   className="font-mono text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 ring-1 ring-emerald-200 px-2 py-0.5 rounded hover:underline"
                   title="Open printable credit note"
                 >
-                  {n.credit_note_number}
+                  {n.credit_note_number_obr ?? n.credit_note_number}
                 </Link>
+                {n.credit_note_number_etu && (
+                  <div className="text-[10px] font-mono text-slate-400 mt-1">{n.credit_note_number_etu}</div>
+                )}
+              </td>
+              {/* Original tax invoice this credit note reverses — page-1 OBR +
+                  page-2 ETFU + the invoice date, matching the printed document. */}
+              <td className="px-4 py-4">
+                {n.reference_invoice_no_obr || n.reference_invoice_no_etu ? (
+                  <div className="space-y-0.5">
+                    {n.reference_invoice_no_obr && (
+                      <div className="font-mono text-[11px] text-slate-700" title="Original restaurant tax invoice (OBR)">
+                        {n.reference_invoice_no_obr}
+                      </div>
+                    )}
+                    {n.reference_invoice_no_etu && (
+                      <div className="font-mono text-[11px] text-slate-500" title="Original Eatofine service invoice (ETFU)">
+                        {n.reference_invoice_no_etu}
+                      </div>
+                    )}
+                    {n.reference_invoice_date && (
+                      <div className="text-[10px] text-slate-400">
+                        {new Date(n.reference_invoice_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-slate-300">—</span>
+                )}
               </td>
               <td className="px-4 py-4">
                 <Link
@@ -229,11 +264,11 @@ export default async function CreditNotesPage() {
             </tr>
           ))}
           searchTexts={sorted.map((n) =>
-            `${n.credit_note_number} ${n.order_id} ${n.customer_name ?? ""} ${n.restaurant_name ?? ""} ${n.reason ?? ""} ${n.status}`.toLowerCase()
+            `${n.credit_note_number} ${n.credit_note_number_obr ?? ""} ${n.credit_note_number_etu ?? ""} ${n.reference_invoice_no_obr ?? ""} ${n.reference_invoice_no_etu ?? ""} ${n.order_id} ${n.customer_name ?? ""} ${n.restaurant_name ?? ""} ${n.reason ?? ""} ${n.status}`.toLowerCase()
           )}
           pageSize={10}
           searchable
-          colCount={10}
+          colCount={11}
         />
       </div>
     </div>

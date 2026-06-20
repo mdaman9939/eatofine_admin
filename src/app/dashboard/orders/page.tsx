@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { adminFetch } from "../../../lib/api";
 import { OrderTypeConfigPanel } from "../../../components/OrderTypeConfigPanel";
 import { ActionButton } from "../../../components/ActionButton";
@@ -62,16 +63,35 @@ export default async function OrdersPage({
   const status = sp.status ?? "";
   const orderType = sp.type ?? "";
   const path = `/admin/orders?limit=500${status ? `&status=${status}` : ""}${orderType ? `&order_type=${orderType}` : ""}`;
-  const data = await adminFetch<OrdersResponse>(path);
+
+  let data: OrdersResponse;
+  try {
+    data = await adminFetch<OrdersResponse>(path);
+  } catch (e) {
+    const reason = e instanceof Error ? e.message : String(e);
+    // Expired/revoked session → login. (In production the global error boundary
+    // can't detect this because Next sanitizes server-error messages, so we
+    // handle it here where the real reason is available.)
+    if (reason === "not_authenticated" || reason.startsWith("api_error_401") || reason.startsWith("api_error_403")) {
+      redirect("/login?reason=session_expired");
+    }
+    // Any other failure (backend cold start / 5xx / network) → a friendly,
+    // retryable panel instead of crashing the whole route.
+    return <OrdersLoadError reason={reason} />;
+  }
+
+  // Defensive: never let a missing field crash the whole page render.
+  const orders = Array.isArray(data?.orders) ? data.orders : [];
+  const totalOrders = Number(data?.total ?? orders.length);
 
   // Compute summary buckets across the rendered set.
-  const delivered = data.orders.filter((o) => o.order_status === "delivered").length;
-  const canceled = data.orders.filter((o) => o.order_status === "canceled").length;
-  const inFlight = data.orders.filter((o) => !["delivered", "canceled", "pending"].includes(o.order_status)).length;
-  const pending = data.orders.filter((o) => o.order_status === "pending").length;
-  const grossRevenue = data.orders
+  const delivered = orders.filter((o) => o.order_status === "delivered").length;
+  const canceled = orders.filter((o) => o.order_status === "canceled").length;
+  const inFlight = orders.filter((o) => !["delivered", "canceled", "pending"].includes(o.order_status)).length;
+  const pending = orders.filter((o) => o.order_status === "pending").length;
+  const grossRevenue = orders
     .filter((o) => o.order_status === "delivered")
-    .reduce((a, o) => a + o.order_amount, 0);
+    .reduce((a, o) => a + Number(o.order_amount ?? 0), 0);
 
   return (
     <div className="relative p-8 space-y-6">
@@ -97,8 +117,8 @@ export default async function OrdersPage({
           </div>
           <div className="text-right flex flex-col items-end gap-1">
             <div className="text-[11px] uppercase tracking-[0.18em] text-white/65 font-semibold">Showing</div>
-            <div className="text-3xl font-bold tracking-tight tabular-nums">{data.orders.length}</div>
-            <div className="text-xs text-white/65">of {data.total} total orders</div>
+            <div className="text-3xl font-bold tracking-tight tabular-nums">{orders.length}</div>
+            <div className="text-xs text-white/65">of {totalOrders} total orders</div>
           </div>
         </div>
       </div>
@@ -173,7 +193,7 @@ export default async function OrdersPage({
           <p className="text-xs text-slate-500 mt-0.5">Newest first. Click any order # for the full detail view.</p>
         </div>
         <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md font-mono">
-          {data.orders.length} {data.orders.length === 1 ? "row" : "rows"}
+          {orders.length} {orders.length === 1 ? "row" : "rows"}
         </span>
       </div>
       <PaginatedTable
@@ -194,13 +214,13 @@ export default async function OrdersPage({
             <th className="px-4 py-3 font-semibold text-right">Actions</th>
           </tr>
         }
-        searchTexts={data.orders.map((o) => {
+        searchTexts={orders.map((o) => {
           const customerName = o.user
             ? `${o.user.f_name ?? ""} ${o.user.l_name ?? ""}`.trim() || o.user.email || o.user.phone || ""
             : "";
           return `#${o.id} ${customerName} ${o.restaurant?.name ?? ""} ${o.order_status} ${o.payment_method ?? ""} ${o.payment_status}`.toLowerCase();
         })}
-        bodyRows={data.orders.map((o) => {
+        bodyRows={orders.map((o) => {
           const customerName = o.user
             ? `${o.user.f_name ?? ""} ${o.user.l_name ?? ""}`.trim() || o.user.email || o.user.phone || "—"
             : "—";
@@ -235,7 +255,7 @@ export default async function OrdersPage({
               </td>
               <td className="px-4 py-4 text-slate-700">{o.restaurant?.name ?? <span className="text-slate-300">—</span>}</td>
               <td className="px-4 py-4"><OrderTypeBadge type={o.order_type} /></td>
-              <td className="px-4 py-4 text-right tabular-nums font-semibold text-slate-900">₹{o.order_amount.toFixed(2)}</td>
+              <td className="px-4 py-4 text-right tabular-nums font-semibold text-slate-900">₹{Number(o.order_amount ?? 0).toFixed(2)}</td>
               <td className="px-4 py-4">
                 <StatusPill status={o.order_status} />
               </td>
@@ -275,6 +295,38 @@ export default async function OrdersPage({
           );
         })}
       />
+    </div>
+  );
+}
+
+/** Inline, retryable failure panel — shown when the orders feed can't be
+ *  loaded (backend cold start / 5xx / network). Keeps the route alive and shows
+ *  the real reason (this server-rendered string is NOT sanitized like the
+ *  global error boundary), so issues are diagnosable instead of cryptic. */
+function OrdersLoadError({ reason }: { reason: string }) {
+  return (
+    <div className="p-8">
+      <div className="max-w-xl mx-auto bg-white rounded-2xl border border-amber-200 shadow-sm p-8 text-center">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-50 ring-1 ring-amber-200 text-amber-600 flex items-center justify-center mb-4">
+          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4a2 2 0 00-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z" />
+          </svg>
+        </div>
+        <h1 className="text-lg font-bold text-slate-900">Couldn&apos;t load orders</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          The orders service didn&apos;t respond. The backend may be waking up from idle
+          (free-tier cold start can take ~30–60s). Please retry in a moment.
+        </p>
+        <pre className="mt-4 text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 overflow-auto whitespace-pre-wrap text-left">{reason}</pre>
+        <div className="mt-5 flex gap-2 justify-center">
+          <Link href="/dashboard/orders" className="rounded-md px-4 py-1.5 text-sm font-semibold bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white shadow-sm transition">
+            Retry
+          </Link>
+          <Link href="/dashboard" className="rounded-md px-3 py-1.5 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition">
+            Back to dashboard
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
