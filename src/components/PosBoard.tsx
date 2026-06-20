@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { TaxBreakdownDisclosure } from "./TaxBreakdownSheet";
 
 export interface PosZone { id: number; name: string }
 export interface PosRestaurant { id: number; name: string; zone_id: number | null }
@@ -137,7 +138,9 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
       charges.map((c) => {
         const base = c.charge_type === "fixed" ? c.amount : (subtotal * c.amount) / 100;
         const gst = c.gst_applicable ? (base * c.gst_rate) / 100 : 0;
-        return { id: c.id, label: c.charge_head, amount: base + gst };
+        // Expose the already-computed GST portion + a packaging flag so the
+        // Taxes & Charges breakdown can regroup these without recomputing tax.
+        return { id: c.id, label: c.charge_head, amount: base + gst, gst, gstRate: c.gst_rate, isPackaging: /packag/i.test(c.charge_head) };
       }),
     [charges, subtotal],
   );
@@ -155,6 +158,25 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
     additionalChargeTotal +
     packagingAmount +
     (orderType === "delivery" ? deliveryFee : 0);
+
+  // ── Taxes & Charges breakdown (Zomato-style) — DERIVED from the values above,
+  //    no new tax math. Restaurant GST = the food tax; each non-packaging service
+  //    charge contributes its own already-computed GST; packaging-type charges +
+  //    extra packaging are shown as Packaging Charges. POS is a walk-in counter
+  //    sale (no inter-state delivery address) → intra-state CGST/SGST. ──
+  const enabledCharges = chargeRows.filter((r) => !disabledCharges.has(r.id));
+  const serviceCharges = enabledCharges.filter((r) => !r.isPackaging && r.gst > 0);
+  const packagingChargeTotal = packagingAmount + enabledCharges.filter((r) => r.isPackaging).reduce((s, r) => s + r.amount, 0);
+  const serviceGstRates = Array.from(new Set(serviceCharges.map((r) => Number(r.gstRate)).filter((n) => n > 0)));
+  const taxBreakdown = {
+    restaurantGst: taxEnabled && vatGross > 0
+      ? { ratePct: tax, interState: false, cgst: vatGross / 2, sgst: vatGross / 2, igst: vatGross }
+      : null,
+    platformServiceGst: serviceCharges.length
+      ? { ratePct: serviceGstRates.length === 1 ? serviceGstRates[0] : null, items: serviceCharges.map((r) => ({ label: `${r.label} GST`, amount: r.gst })) }
+      : null,
+    packagingCharges: packagingChargeTotal,
+  };
 
   function addItem(food: Food) {
     setCart((c) => ({ ...c, [food.id]: { food, qty: (c[food.id]?.qty ?? 0) + 1, addOns: c[food.id]?.addOns ?? [] } }));
@@ -394,6 +416,7 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
               checked={packagingEnabled}
               onChange={setPackagingEnabled}
             />
+            <TaxBreakdownDisclosure data={taxBreakdown} className="mt-1.5" />
             <div className="flex justify-between font-bold text-base pt-1 border-t border-slate-100">
               <span>Total</span><span className="tabular-nums">{inr(total)}</span>
             </div>
