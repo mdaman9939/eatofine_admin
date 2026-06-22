@@ -229,6 +229,15 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <span className="font-semibold ml-4">Service Type:</span> {ri.service_type}
           </div>
 
+          {/* Sec 9(5): the platform (e-commerce operator), not the restaurant, is
+              liable to pay the GST on restaurant food supplied through it. */}
+          <div className="text-[11px] mt-3 border border-slate-400 px-3 py-2">
+            <span className="font-semibold">GST note (Section 9(5)):</span> GST on this restaurant food supply
+            {ri.cgst + ri.igst > 0 ? ` (₹${(ri.cgst + ri.igst).toFixed(2)})` : ""} is collected from the customer and
+            remitted to the Government by {EATOFINE.legal_name}, the e-commerce operator, under section 9(5) of the
+            CGST Act, 2017 — not by the restaurant.
+          </div>
+
           <Disclaimer />
         </section>
 

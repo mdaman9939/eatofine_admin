@@ -241,6 +241,15 @@ export default async function CreditNoteDetailPage({ params }: { params: Promise
             <span className="font-semibold ml-4">Service Type:</span> {rc.service_type}
           </div>
 
+          {/* Sec 9(5): GST on restaurant food is the e-commerce operator's
+              liability — so this reversal is accounted by the platform too. */}
+          <div className="text-[11px] mt-3 border border-slate-400 px-3 py-2">
+            <span className="font-semibold">GST note (Section 9(5)):</span> GST on this restaurant food supply
+            {rc.cgst + rc.igst > 0 ? ` (₹${(rc.cgst + rc.igst).toFixed(2)})` : ""} is collected and remitted to the
+            Government by {EATOFINE.legal_name}, the e-commerce operator, under section 9(5) of the CGST Act, 2017 —
+            not by the restaurant.
+          </div>
+
           <Disclaimer />
         </section>
 
