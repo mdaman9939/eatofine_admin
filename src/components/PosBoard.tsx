@@ -218,6 +218,11 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, char
     if (!restaurantId) { setError("Select a restaurant first"); return; }
     if (lines.length === 0) { setError("Cart is empty"); return; }
     if (orderType === "dine_in" && !tableNumber.trim()) { setError("Table number is required for dine in"); return; }
+    // Phone is optional, but when given it must be a valid 10-digit Indian mobile.
+    if (customerPhone && !/^[6-9]\d{9}$/.test(customerPhone)) {
+      setError("Enter a valid 10-digit Indian mobile number (starts with 6–9)");
+      return;
+    }
     setPlacing(true);
     fetch("/api/admin/pos/place-order", {
       method: "POST",
@@ -318,7 +323,21 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, char
             <button type="button" onClick={() => setShowNewCustomer((v) => !v)} className="shrink-0 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3">Add New</button>
           </div>
           {showNewCustomer && (
-            <input value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="Customer phone" className={selCls} />
+            <div>
+              {/* Indian mobile only: digits, max 10, must start 6–9. Strip
+                  non-digits + cap at 10 as the user types. */}
+              <input
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                placeholder="Customer phone (10-digit Indian)"
+                inputMode="numeric"
+                maxLength={10}
+                className={selCls}
+              />
+              {customerPhone !== "" && !/^[6-9]\d{9}$/.test(customerPhone) && (
+                <p className="mt-1 text-[11px] text-rose-600">Enter a valid 10-digit Indian mobile number (starts with 6–9).</p>
+              )}
+            </div>
           )}
 
           <div>
