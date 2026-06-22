@@ -36,6 +36,21 @@ const GROUPS: FieldGroup[] = [
     ],
   },
   {
+    title: "Take Away & Dine In charges",
+    description:
+      "By default GST and the platform / convenience / packaging / extra-packaging charges are taken on Home Delivery only. Turn this ON to also charge them on Take Away & Dine In orders. Applies to the customer app, admin POS, and placed orders.",
+    fields: [
+      {
+        key: "charges_on_takeaway_dinein",
+        label: "Charge GST & fees on Take Away / Dine In",
+        type: "checkbox",
+        defaultValue: "false",
+        description:
+          "OFF (default): Take Away & Dine In are billed the food subtotal only — no GST, platform, convenience, packaging or extra-packaging charge. ON: those charges apply to Take Away & Dine In just like Home Delivery.",
+      },
+    ],
+  },
+  {
     title: "Cancellation permissions",
     description: "Who is allowed to cancel an in-progress order from their app.",
     fields: [
@@ -60,6 +75,7 @@ export default async function OrderSettingsPage() {
   const keys = [
     "order_delivery_verification",
     "order_confirmation_model",
+    "charges_on_takeaway_dinein",
     "canceled_by_restaurant",
     "canceled_by_deliveryman",
   ];

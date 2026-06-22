@@ -26,7 +26,7 @@ const inr = (n: number) => `₹${(n || 0).toFixed(2)}`;
 /** StackFood-style POS: Food Section (zone → restaurant → categories → search →
  *  menu) on the left, Billing Section (customer, order type, items, totals) on
  *  the right. */
-export function PosBoard({ zones, restaurants, categories, foodGstRate = 5 }: { zones: PosZone[]; restaurants: PosRestaurant[]; categories: PosCategory[]; foodGstRate?: number }) {
+export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, chargesOnTakeawayDinein = false }: { zones: PosZone[]; restaurants: PosRestaurant[]; categories: PosCategory[]; foodGstRate?: number; chargesOnTakeawayDinein?: boolean }) {
   const router = useRouter();
   const [zoneId, setZoneId] = useState("");
   const [restaurantId, setRestaurantId] = useState("");
@@ -132,7 +132,12 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5 }: { 
   // Gross GST is always computed (for display); it only feeds the total when the
   // GST checkbox is ticked.
   const vatGross = taxable * (tax / 100);
-  const vat = taxEnabled ? vatGross : 0;
+  // Extra charges (GST + platform/service/packaging fees + extra packaging) are
+  // taken on Home Delivery always; on Take Away / Dine In only when the admin has
+  // enabled `charges_on_takeaway_dinein` in Order Settings. Otherwise the bill is
+  // just food − discount (matches the customer app + the order API).
+  const chargesApply = orderType === "delivery" || chargesOnTakeawayDinein;
+  const vat = taxEnabled && chargesApply ? vatGross : 0;
 
   // Each configured charge, resolved against this order's subtotal (incl. GST).
   const chargeRows = useMemo(
@@ -148,11 +153,11 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5 }: { 
   );
   // Only charges left ticked contribute to the total; unticked ones are still
   // shown (struck-through) but excluded from the bill and the placed order.
-  const additionalChargeTotal = chargeRows.reduce((s, r) => s + (disabledCharges.has(r.id) ? 0 : r.amount), 0);
+  const additionalChargeTotal = chargesApply ? chargeRows.reduce((s, r) => s + (disabledCharges.has(r.id) ? 0 : r.amount), 0) : 0;
   // Extra packaging applies to take-away orders (StackFood behaviour), and only
-  // when its checkbox is ticked.
+  // when its checkbox is ticked — and only when charges apply for this order type.
   const packagingGross = orderType === "take_away" ? extraPackaging : 0;
-  const packagingAmount = packagingEnabled ? packagingGross : 0;
+  const packagingAmount = packagingEnabled && chargesApply ? packagingGross : 0;
 
   const total =
     taxable +
@@ -396,30 +401,39 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5 }: { 
                 <input type="number" min={0} value={deliveryFee} onChange={(e) => setDeliveryFee(Math.max(0, Number(e.target.value) || 0))} className="w-24 rounded border border-slate-300 px-2 py-0.5 text-right text-sm" />
               </label>
             )}
-            <ChargeToggleRow
-              label={`GST (${tax}%)`}
-              value={inr(vatGross)}
-              checked={taxEnabled}
-              onChange={setTaxEnabled}
-            />
-            {/* Configured platform charges (Additional Charges plan). Tick to
-                apply, untick to waive — affects the total and the placed order. */}
-            {chargeRows.map((c) => (
-              <ChargeToggleRow
-                key={c.id}
-                label={c.label}
-                value={inr(c.amount)}
-                checked={!disabledCharges.has(c.id)}
-                onChange={() => toggleCharge(c.id)}
-              />
-            ))}
-            <ChargeToggleRow
-              label="Extra Packaging Amount"
-              value={inr(packagingGross)}
-              checked={packagingEnabled}
-              onChange={setPackagingEnabled}
-            />
-            <TaxBreakdownDisclosure data={taxBreakdown} className="mt-1.5" />
+            {chargesApply ? (
+              <>
+                <ChargeToggleRow
+                  label={`GST (${tax}%)`}
+                  value={inr(vatGross)}
+                  checked={taxEnabled}
+                  onChange={setTaxEnabled}
+                />
+                {/* Configured platform charges (Additional Charges plan). Tick to
+                    apply, untick to waive — affects the total and the placed order. */}
+                {chargeRows.map((c) => (
+                  <ChargeToggleRow
+                    key={c.id}
+                    label={c.label}
+                    value={inr(c.amount)}
+                    checked={!disabledCharges.has(c.id)}
+                    onChange={() => toggleCharge(c.id)}
+                  />
+                ))}
+                <ChargeToggleRow
+                  label="Extra Packaging Amount"
+                  value={inr(packagingGross)}
+                  checked={packagingEnabled}
+                  onChange={setPackagingEnabled}
+                />
+                <TaxBreakdownDisclosure data={taxBreakdown} className="mt-1.5" />
+              </>
+            ) : (
+              <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded px-2 py-1.5">
+                GST & extra charges are not applied to {orderType === "dine_in" ? "Dine In" : "Take Away"} orders.
+                Enable them in <span className="font-medium">Order Settings → “Charge GST & fees on Take Away / Dine In”</span>.
+              </p>
+            )}
             <div className="flex justify-between font-bold text-base pt-1 border-t border-slate-100">
               <span>Total</span><span className="tabular-nums">{inr(total)}</span>
             </div>
