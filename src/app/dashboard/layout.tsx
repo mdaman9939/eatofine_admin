@@ -327,7 +327,9 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/dm-incentives/history", label: "Incentives History", icon: "ledger" },
           { href: "/dashboard/dm-reviews", label: "Reviews", icon: "star" },
           { href: "/dashboard/disbursements?type=deliveryman", label: "DM Disbursement", icon: "bank" },
-          { href: "/dashboard/dm-earnings", label: "DM Earnings", icon: "currency" },
+          // "DM Earnings" hidden from the menu — its live wallet-credit ledger now
+          // lives under Reports → Deliveryman Earning. The /dashboard/dm-earnings
+          // route + /admin/dm-earnings endpoint stay intact (nothing breaks).
           { href: "/dashboard/dm-payouts", label: "DM Payouts (net)", icon: "currency" },
           { href: "/dashboard/withdraw-requests?type=deliveryman", label: "DM Withdraw Requests", icon: "cash" },
         ],
