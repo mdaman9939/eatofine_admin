@@ -14,6 +14,8 @@ export interface TaxBreakdownData {
     cgst: number;
     sgst: number;
     igst: number;
+    label?: string;         // section heading; defaults to "Restaurant GST"
+    note?: string;          // small caption under the heading (e.g. who collects it)
   } | null;
   platformServiceGst?: {
     ratePct?: number | null; // shown in the header when the service charges share one rate
@@ -97,7 +99,7 @@ export function TaxBreakdownDisclosure({
 
             <div className="px-5 py-4 space-y-4 text-sm">
               {rg && (
-                <Section title={`Restaurant GST (${pct(rg.ratePct)})`}>
+                <Section title={`${rg.label ?? "Restaurant GST"} (${pct(rg.ratePct)})`} note={rg.note}>
                   {rg.interState ? (
                     <Line label={`IGST (${pct(rg.ratePct)})`} value={money(rg.igst, cur)} />
                   ) : (
@@ -144,10 +146,11 @@ export function TaxBreakdownDisclosure({
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, note, children }: { title: string; note?: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">{title}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">{title}</div>
+      {note && <div className="text-[10px] text-slate-400 mb-1.5">{note}</div>}
       <div className="space-y-1.5">{children}</div>
     </div>
   );

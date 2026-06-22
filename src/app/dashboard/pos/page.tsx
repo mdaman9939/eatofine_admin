@@ -7,11 +7,18 @@ export default async function POSPage() {
   // StackFood-style POS: Food Section (zone → restaurant → categories) on the
   // left, Billing Section on the right. We seed the zone/restaurant/category
   // selects here; the menu loads client-side when a restaurant is chosen.
-  const [restRes, zonesRes, catsRes] = await Promise.all([
+  const [restRes, zonesRes, catsRes, gstRes] = await Promise.all([
     adminFetch<{ restaurants?: Restaurant[]; items?: Restaurant[] }>("/admin/restaurants?limit=500").catch(() => ({} as { restaurants?: Restaurant[]; items?: Restaurant[] })),
     adminFetch<{ zones: Array<{ id: number; name: string | null }> }>("/admin/zones").catch(() => ({ zones: [] })),
     adminFetch<{ items?: Array<{ id: number; name: string | null }>; categories?: Array<{ id: number; name: string | null }> }>("/admin/categories?limit=300").catch(() => ({} as { items?: Array<{ id: number; name: string | null }>; categories?: Array<{ id: number; name: string | null }> })),
+    // Platform food-GST rate (sec 9(5)) — collected by the admin, not the restaurant.
+    adminFetch<{ settings: Array<{ key: string; value: string | null }> }>("/admin/business-settings?prefix=food_gst_rate").catch(() => ({ settings: [] as Array<{ key: string; value: string | null }> })),
   ]);
+  const foodGstRate = (() => {
+    const v = gstRes.settings.find((s) => s.key === "food_gst_rate")?.value;
+    const n = v != null ? parseFloat(v) : NaN;
+    return Number.isFinite(n) && n >= 0 ? n : 5;
+  })();
   const restaurants: PosRestaurant[] = (restRes.restaurants ?? restRes.items ?? [])
     .filter((r) => r.status)
     .map((r) => ({ id: r.id, name: r.name, zone_id: r.zone_id }));
@@ -30,7 +37,7 @@ export default async function POSPage() {
           <p className="text-sm text-white/80">Take walk-in / phone orders — pick a zone & restaurant, build the cart, place the order.</p>
         </div>
       </div>
-      <PosBoard zones={zones} restaurants={restaurants} categories={categories} />
+      <PosBoard zones={zones} restaurants={restaurants} categories={categories} foodGstRate={foodGstRate} />
     </div>
   );
 }

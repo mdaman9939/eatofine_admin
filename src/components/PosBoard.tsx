@@ -26,7 +26,7 @@ const inr = (n: number) => `₹${(n || 0).toFixed(2)}`;
 /** StackFood-style POS: Food Section (zone → restaurant → categories → search →
  *  menu) on the left, Billing Section (customer, order type, items, totals) on
  *  the right. */
-export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[]; restaurants: PosRestaurant[]; categories: PosCategory[] }) {
+export function PosBoard({ zones, restaurants, categories, foodGstRate = 5 }: { zones: PosZone[]; restaurants: PosRestaurant[]; categories: PosCategory[]; foodGstRate?: number }) {
   const router = useRouter();
   const [zoneId, setZoneId] = useState("");
   const [restaurantId, setRestaurantId] = useState("");
@@ -34,7 +34,9 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
   const [search, setSearch] = useState("");
   const [foods, setFoods] = useState<Food[]>([]);
   const [addOnMap, setAddOnMap] = useState<Record<number, AddOn>>({});
-  const [tax, setTax] = useState(0);
+  // Food GST rate is the PLATFORM's (admin-configured, sec 9(5)) — same for every
+  // restaurant, not restaurant.tax. So GST always shows even for 0%-tax outlets.
+  const [tax, setTax] = useState(foodGstRate);
   const [extraPackaging, setExtraPackaging] = useState(0);
   const [charges, setCharges] = useState<AdditionalCharge[]>([]);
   const [loading, setLoading] = useState(false);
@@ -103,7 +105,7 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
           if (Number.isFinite(id)) map[id] = { id, name: String(x.name ?? `Add-on ${id}`), price: Number(x.price ?? 0) };
         }
         setAddOnMap(map);
-        setTax(Number(d?.restaurant?.tax ?? 0));
+        setTax(foodGstRate); // platform food-GST rate, independent of the restaurant's own tax
         // Restaurant extra-packaging charge (applied to take-away orders).
         const pkgActive = d?.restaurant?.is_extra_packaging_active ?? d?.restaurant?.extra_packaging_status ?? false;
         setExtraPackaging(pkgActive ? Number(d?.restaurant?.extra_packaging_amount ?? 0) : 0);
@@ -170,7 +172,8 @@ export function PosBoard({ zones, restaurants, categories }: { zones: PosZone[];
   const serviceGstRates = Array.from(new Set(serviceCharges.map((r) => Number(r.gstRate)).filter((n) => n > 0)));
   const taxBreakdown = {
     restaurantGst: taxEnabled && vatGross > 0
-      ? { ratePct: tax, interState: false, cgst: vatGross / 2, sgst: vatGross / 2, igst: vatGross }
+      ? { ratePct: tax, interState: false, cgst: vatGross / 2, sgst: vatGross / 2, igst: vatGross,
+          label: "GST on Food", note: "Collected by platform & paid to Govt (GST sec 9(5)) — not the restaurant" }
       : null,
     platformServiceGst: serviceCharges.length
       ? { ratePct: serviceGstRates.length === 1 ? serviceGstRates[0] : null, items: serviceCharges.map((r) => ({ label: `${r.label} GST`, amount: r.gst })) }
