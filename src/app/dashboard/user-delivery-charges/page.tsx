@@ -89,7 +89,7 @@ export default async function UserDeliveryChargesPage() {
               <span className="inline-block w-1 h-1 rounded-full bg-white/70" />
               BRD §6 · Enhancements
             </div>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight">User Delivery Charges</h1>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">Long Distance Charge</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
               Customer-side delivery fee. Distance slabs + situational surcharges + free-delivery
               threshold + surge pricing grid (weekday × hour). Per BRD §6.5{" "}

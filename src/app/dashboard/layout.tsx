@@ -263,7 +263,7 @@ const NAV: NavGroup[] = [
         icon: "bike",
         children: [
           { href: "/dashboard/delivery-partner-charges", label: "Partner Charges", icon: "bike" },
-          { href: "/dashboard/user-delivery-charges", label: "User Charges", icon: "bike" },
+          { href: "/dashboard/user-delivery-charges", label: "Long Distance Charge", icon: "bike" },
         ],
       },
       {
