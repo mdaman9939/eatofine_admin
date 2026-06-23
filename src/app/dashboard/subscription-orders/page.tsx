@@ -37,7 +37,7 @@ export default async function SubscriptionOrdersPage() {
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Subscription Orders</h1>
           <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">
-            Long-term recurring meal plans. Customers subscribe to daily / weekly deliveries from a chosen restaurant.
+            Track customers&apos; recurring meal-plan subscriptions for daily or weekly deliveries, and pause, resume or cancel any plan.
           </p>
         </div>
       </div>

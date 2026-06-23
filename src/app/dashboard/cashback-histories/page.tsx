@@ -21,6 +21,7 @@ export default async function CashbackHistoriesPage() {
     <TablePage
       title="Cashback history"
       subtitle={`${data.items.length} of ${data.total}`}
+      description="View a read-only record of every cashback that was awarded to customers — which order, which customer and how much was given back."
       rows={data.items}
       rowKey={(r) => r.id}
       columns={[

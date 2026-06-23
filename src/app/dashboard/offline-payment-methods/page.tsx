@@ -37,6 +37,7 @@ export default async function OfflinePaymentMethodsPage() {
       <TablePage
         title="Offline payment methods"
         subtitle={`${data.offline_payment_methods.length} methods`}
+        description="Set up the manual ways customers can pay (like bank transfer) — add a method with its payment details and instructions, and enable, edit or remove it."
         rows={data.offline_payment_methods}
         rowKey={(r) => r.id}
         columns={[

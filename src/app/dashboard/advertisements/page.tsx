@@ -182,6 +182,7 @@ export default async function AdvertisementsPage({
       <TablePage
         title="Advertisements"
         subtitle={`${filteredItems.length} of ${data.total}${view === "expired" ? " · expired" : view === "active" ? " · active" : ""}${source !== "all" ? ` · ${source === "admin" ? "admin-created" : "restaurant-requested"}` : ""}`}
+        description="Create and manage promotional ads shown to customers — set the image, dates and priority, approve or pause restaurant requests, and remove old ones."
         rows={filteredItems}
         rowKey={(r) => r.id}
         columns={[

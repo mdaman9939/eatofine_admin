@@ -37,7 +37,7 @@ export default async function EmailTemplatesPage() {
             </div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">Email Templates</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Subject + HTML body per system event × audience. Merge tags like <code className="bg-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">{`{{customer_name}}`}</code> are replaced at send time.
+              Write and manage the automatic emails the platform sends for each event — set the subject and message customers, restaurants and delivery men receive.
             </p>
           </div>
           <CreateForm

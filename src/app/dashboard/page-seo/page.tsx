@@ -29,6 +29,7 @@ export default async function PageSeoPage() {
       <TablePage
         title="Page SEO"
         subtitle={`${data.pages.length} pages`}
+        description="Set the search-engine title and description shown for each website page (home, about, privacy and more) so they appear well in Google results."
         rows={data.pages}
         rowKey={(r) => r.id}
         columns={[

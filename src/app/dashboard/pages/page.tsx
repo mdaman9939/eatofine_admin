@@ -23,7 +23,7 @@ export default function ContentPagesPage() {
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Public Pages</h1>
           <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">
-            Markdown / WYSIWYG editable pages shown on the public marketing site. Each page is per-locale and supports HTML embeds for tables, contact addresses, and signed PDFs.
+            Edit the public information pages shown to customers — Terms &amp; Conditions, Privacy Policy, About Us, Refund, Shipping and Cancellation; click any page to update its content.
           </p>
         </div>
       </div>

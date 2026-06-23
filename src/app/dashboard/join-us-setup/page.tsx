@@ -38,7 +38,7 @@ export default async function JoinUsSetupPage() {
             <span className="inline-block w-1 h-1 rounded-full bg-white/70" /> SYSTEM · 3RD PARTY
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Join Us Page Setup</h1>
-          <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">Content for the public restaurant + delivery-man partner signup pages.</p>
+          <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">Edit the headlines, images and benefits shown on the public pages where new restaurants and delivery partners sign up to join your platform.</p>
         </div>
       </div>
       <SettingsForm initial={data.settings} groups={GROUPS} />

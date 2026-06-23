@@ -38,6 +38,7 @@ export default async function WalletBonusesPage() {
       <TablePage
         title="Wallet bonuses"
         subtitle={`${data.wallet_bonuses.length} bonuses`}
+        description="Create and manage extra cashback rewards customers earn when they add money to their wallet — set the bonus, minimum top-up, caps and active dates."
         rows={data.wallet_bonuses}
         rowKey={(r) => r.id}
         columns={[

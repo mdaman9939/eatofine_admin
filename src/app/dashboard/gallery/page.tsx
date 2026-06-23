@@ -47,7 +47,7 @@ export default async function GalleryPage({ searchParams }: { searchParams: Prom
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Gallery / File Manager</h1>
           <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">
-            Browse files served from <code className="bg-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">storage/app/public</code>. Filter by folder.
+            Browse all the images and files uploaded across the platform — filter by folder and open any file to view it.
           </p>
         </div>
       </div>

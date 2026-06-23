@@ -31,6 +31,7 @@ export default async function VehiclesPage() {
       <TablePage
         title="Vehicles"
         subtitle={`${data.vehicles.length} types`}
+        description="Manage the delivery vehicle types (bike, scooter, car) and their distance coverage — add, edit, enable/disable or delete them."
         rows={data.vehicles}
         rowKey={(r) => r.id}
         columns={[

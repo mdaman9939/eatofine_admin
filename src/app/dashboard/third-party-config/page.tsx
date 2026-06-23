@@ -72,7 +72,7 @@ export default async function ThirdPartyConfigPage() {
             <span className="inline-block w-1 h-1 rounded-full bg-white/70" /> SYSTEM · 3RD PARTY & CONFIGURATIONS
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">3rd Party & Configurations</h1>
-          <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">SMS, mail, storage, reCAPTCHA and social-login credentials.</p>
+          <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">Connect the outside services the platform relies on — text messaging, email, file storage and social sign-in — by entering their account keys here.</p>
         </div>
       </div>
       <SettingsForm initial={data.settings} groups={GROUPS} />

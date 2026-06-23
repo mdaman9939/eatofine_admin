@@ -73,8 +73,7 @@ export default async function RestaurantsPage() {
             </div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">Restaurants</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Every storefront on the platform. &quot;Active&quot; means the restaurant is approved and visible;
-              &quot;Open now&quot; means it&apos;s currently accepting orders this minute.
+              View and manage every restaurant on the platform — edit their details, commission and settings, or enable and disable each storefront.
             </p>
           </div>
           <div className="rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur-sm px-4 py-3">

@@ -15,6 +15,7 @@ export default async function CurrenciesPage() {
     <TablePage
       title="Currencies"
       subtitle={`${data.currencies.length} currencies`}
+      description="View the supported currencies with their codes, symbols and exchange rates used for pricing across the platform."
       rows={data.currencies}
       rowKey={(r) => r.id}
       columns={[

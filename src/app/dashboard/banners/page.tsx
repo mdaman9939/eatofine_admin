@@ -51,6 +51,7 @@ export default async function BannersPage() {
       <TablePage
         title="Banners"
         subtitle={`${data.banners.length} banners`}
+        description="Manage the promotional banners shown in the customer app — add an image, choose its zone and link, and enable, disable or delete it."
         rows={data.banners}
         rowKey={(r) => r.id}
         columns={[

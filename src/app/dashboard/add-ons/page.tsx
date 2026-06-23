@@ -35,6 +35,7 @@ export default async function AddOnsPage() {
       <TablePage
         title="Add-ons"
         subtitle={`${data.items.length} of ${data.total}`}
+        description="Manage the optional extras customers add to a dish (toppings, sides, sauces) — add new ones, set their price, edit, enable/disable or delete them."
         rows={data.items}
         rowKey={(r) => r.id}
         columns={[

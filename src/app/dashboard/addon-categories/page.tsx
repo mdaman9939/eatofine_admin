@@ -22,6 +22,7 @@ export default async function AddonCategoriesPage() {
       <TablePage
         title="Addon categories"
         subtitle={`${data.items.length} of ${data.total}`}
+        description="Manage the groups used to organise add-ons (such as Toppings or Sides) — add new categories, rename them, enable/disable or delete them."
         rows={data.items}
         rowKey={(r) => r.id}
         columns={[

@@ -14,6 +14,7 @@ export default async function TranslationsPage() {
     <TablePage
       title="Translations"
       subtitle={`${data.items.length} of ${data.total}`}
+      description="Review the text labels used across the app in each language, so the platform reads correctly for every customer."
       rows={data.items}
       rowKey={(r) => r.id}
       columns={[

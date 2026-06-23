@@ -29,6 +29,7 @@ export default async function CuisinesPage() {
       <TablePage
         title="Cuisines"
         subtitle={`${data.cuisines.length} cuisines`}
+        description="Manage the cuisine types (Indian, Chinese, etc.) used to tag restaurants — add, edit, enable/disable or delete them."
         rows={data.cuisines}
         rowKey={(r) => r.id}
         columns={[

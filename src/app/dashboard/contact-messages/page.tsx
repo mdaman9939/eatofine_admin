@@ -20,6 +20,7 @@ export default async function ContactMessagesPage() {
     <TablePage
       title="Contact messages"
       subtitle={`${data.items.length} of ${data.total}`}
+      description="Read enquiries customers sent through the contact form and reply to them directly from here."
       rows={data.items}
       rowKey={(r) => r.id}
       columns={[

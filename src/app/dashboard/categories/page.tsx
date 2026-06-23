@@ -37,6 +37,7 @@ export default async function CategoriesPage() {
       <TablePage
         title="Category"
         subtitle={`${top.categories.length} top-level categories`}
+        description="Manage the main food categories customers browse by — add new ones, edit names and priority, enable/disable or delete them."
         rows={top.categories}
         rowKey={(r) => r.id}
         columns={[

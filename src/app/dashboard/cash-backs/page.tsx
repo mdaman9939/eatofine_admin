@@ -52,6 +52,7 @@ export default async function CashBacksPage() {
       <TablePage
         title="Cashback offers"
         subtitle={`${data.cash_backs.length} offers`}
+        description="Create cashback offers that reward customers after they order — set the amount, minimum spend, validity dates and usage limit, then edit, enable or delete them."
         rows={data.cash_backs}
         rowKey={(r) => r.id}
         empty="No cashback offers yet — create one above."

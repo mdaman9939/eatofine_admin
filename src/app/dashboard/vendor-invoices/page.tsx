@@ -201,8 +201,7 @@ export default async function VendorInvoicesPage() {
             </div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">Vendor invoices</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Auto-generated monthly invoices for Commission and PPO plans. Subscription invoices are
-              issued at payment time.
+              Review the monthly billing invoices raised to each restaurant for fees and commission — open one, mark it paid, or cancel it.
             </p>
           </div>
           <div className="flex flex-col items-end gap-3">

@@ -39,7 +39,7 @@ export default async function FirebaseNotificationPage() {
             <span className="inline-block w-1 h-1 rounded-full bg-white/70" /> SYSTEM · 3RD PARTY
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Firebase Notification</h1>
-          <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">FCM credentials for sending push notifications across all apps.</p>
+          <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">Set up the Firebase keys the platform needs to send push notifications to the customer, restaurant and delivery apps.</p>
         </div>
       </div>
       <SettingsForm initial={data.settings} groups={GROUPS} />

@@ -28,6 +28,7 @@ export default async function SocialMediaPage() {
       <TablePage
         title="Social media"
         subtitle={`${data.social_media.length} links`}
+        description="Manage the social media links (Facebook, Instagram, etc.) shown to customers — add, edit, enable/disable or delete each link."
         rows={data.social_media}
         rowKey={(r) => r.id}
         columns={[

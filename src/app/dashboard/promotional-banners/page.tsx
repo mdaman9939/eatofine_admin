@@ -40,7 +40,7 @@ export default async function PromotionalBannersPage() {
             </div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">Promotional Banners</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Full-width hero placements for seasonal campaigns. Bigger than the standard home-screen carousel — used for marquee promos.
+              Create and manage the large promotional banners shown to customers — set the image, link them to a coupon, restaurant or dish, and enable, edit or remove each one.
             </p>
           </div>
           <CreateForm

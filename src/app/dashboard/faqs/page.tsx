@@ -41,6 +41,7 @@ export default async function FAQsPage() {
       <TablePage
         title="FAQs"
         subtitle={`${data.faqs.length} questions`}
+        description="Manage the help questions and answers shown in the apps for customers, restaurants and delivery men — add, edit, show or hide each one."
         rows={data.faqs}
         rowKey={(r) => r.id}
         columns={[

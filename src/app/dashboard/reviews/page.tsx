@@ -22,6 +22,7 @@ export default async function ReviewsPage() {
     <TablePage
       title="Reviews"
       subtitle={`${data.items.length} of ${data.total}`}
+      description="See the star ratings and comments customers left on food items, and post a public reply to any review."
       rows={data.items}
       rowKey={(r) => r.id}
       columns={[

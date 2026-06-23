@@ -67,6 +67,7 @@ export default async function CouponsPage() {
       <TablePage
         title="Coupons"
         subtitle={`${data.coupons.length} coupons`}
+        description="Create and manage discount coupons customers apply at checkout — set the code, discount, validity dates and usage limits."
         rows={data.coupons}
         rowKey={(r) => r.id}
         columns={[

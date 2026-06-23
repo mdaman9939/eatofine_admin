@@ -37,6 +37,7 @@ export default async function LoyaltyPointsPage() {
       <TablePage
         title="Customer loyalty point report"
         subtitle={`${data.items.length} of ${data.total} transactions`}
+        description="Review every loyalty point earned and redeemed by customers, and set the rules for how points are awarded and spent."
         rows={data.items}
         rowKey={(r) => r.id}
         columns={[

@@ -91,10 +91,7 @@ export default async function UserDeliveryChargesPage() {
             </div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">User Charges</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Customer-side delivery fee. Distance slabs + situational surcharges + free-delivery
-              threshold + surge pricing grid (weekday × hour). Per BRD §6.5{" "}
-              <span className="font-semibold text-white">GST is applied here</span> — contrast the
-              DM-side (§5.4) which is GST-exempt.
+              Set the delivery fee customers pay — distance-based rates, extra charges for busy times, surge pricing by hour, and the order value that earns free delivery.
             </p>
           </div>
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-900 bg-white/95 ring-1 ring-white/30 px-3 py-1 rounded-full">

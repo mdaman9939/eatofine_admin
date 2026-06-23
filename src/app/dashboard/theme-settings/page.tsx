@@ -64,7 +64,7 @@ export default async function ThemeSettingsPage() {
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Theme Settings</h1>
           <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">
-            Customize the brand color, logo, sidebar style, and customer-app theme. Changes save to <code className="bg-white/10 px-1.5 py-0.5 rounded text-[11px] font-mono">business_settings</code> and take effect on next page load.
+            Set your brand look across the platform — choose the logo, brand colors, sidebar style and customer-app theme so everything matches your identity.
           </p>
         </div>
       </div>

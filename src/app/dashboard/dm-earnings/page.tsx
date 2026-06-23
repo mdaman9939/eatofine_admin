@@ -22,6 +22,7 @@ export default async function DMEarningsPage() {
   return (
     <TablePage
       title="DM earnings"
+      description="See every amount credited to delivery men's wallets — delivery fees, customer tips and bonuses — so you can review what each rider has earned."
       subtitle={`${data.items.length} of ${data.total} · live wallet credits (delivery + tips + bonuses)`}
       rows={data.items}
       rowKey={(r) => r.id}

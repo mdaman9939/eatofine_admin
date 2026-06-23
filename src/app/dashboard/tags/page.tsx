@@ -13,6 +13,7 @@ export default async function TagsPage() {
     <TablePage
       title="Tags"
       subtitle={`${data.tags.length} tags`}
+      description="View the keyword tags used to label food items and help customers search and filter dishes across the platform."
       rows={data.tags}
       rowKey={(r) => r.id}
       columns={[

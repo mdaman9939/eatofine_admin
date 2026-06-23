@@ -55,6 +55,7 @@ export default async function NotificationsPage() {
       <TablePage
         title="Push notifications"
         subtitle={`${data.items.length} of ${data.total}`}
+        description="Create and send promotional push notifications to customers, delivery men or restaurants — target a zone, add a banner, and enable or remove them."
         rows={data.items}
         rowKey={(r) => r.id}
         columns={[

@@ -72,16 +72,7 @@ export default async function TDSPage({ searchParams }: { searchParams: Promise<
             </div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">TDS Deduction Reports</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Tax Deducted at Source for vendor wallet disbursements. Default
-              <span className="font-semibold text-white"> {data.tds_rate}%</span> under Section 194C,
-              threshold <span className="font-semibold text-white">₹{data.threshold.toLocaleString("en-IN")}</span>.
-              {data.financial_year_start && (
-                <> Counting delivered orders from{" "}
-                <span className="font-semibold text-white">
-                  {new Date(data.financial_year_start).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                </span>{" "}(current financial year).</>
-              )}
-              {" "}Override via URL <code className="text-xs bg-white/10 px-1.5 py-0.5 rounded ring-1 ring-white/20">?rate=2&amp;threshold=30000</code>.
+              See how much tax is held back from each restaurant&apos;s earnings before payout, with a per-vendor breakdown of orders, commission and the final amount they receive.
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">

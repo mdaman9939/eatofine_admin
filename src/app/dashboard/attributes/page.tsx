@@ -20,6 +20,7 @@ export default async function AttributesPage() {
       <TablePage
         title="Attributes"
         subtitle={`${data.attributes.length} attributes`}
+        description="Manage the attribute labels used to describe and tag food items — add, rename or delete them."
         rows={data.attributes}
         rowKey={(r) => r.id}
         columns={[

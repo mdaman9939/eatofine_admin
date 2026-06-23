@@ -36,8 +36,7 @@ export default async function BusinessSettingsPage({
             </div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">Business settings</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Raw key/value rows from the <code className="bg-white/10 px-1.5 py-0.5 rounded text-[12px]">business_settings</code> table.
-              Filter by prefix to narrow into a specific subsystem (FCM, SMS, payment gateway, app meta).
+              View and edit the platform&apos;s core configuration values in one place — search by name to quickly find and update a specific setting.
             </p>
           </div>
           <div className="rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur-sm px-4 py-3">

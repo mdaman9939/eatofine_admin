@@ -45,6 +45,7 @@ export default async function SubCategoriesPage() {
       <TablePage
         title="Sub Category"
         subtitle={`${subs.length} sub-categories`}
+        description="Manage sub-categories that sit under each main category — add, edit, re-assign their parent, enable/disable or delete them."
         rows={subs}
         rowKey={(r) => r.id}
         columns={[

@@ -22,6 +22,7 @@ export default async function WalletTransactionsPage() {
     <TablePage
       title="Wallet ledger"
       subtitle={`${data.items.length} of ${data.total}`}
+      description="View the full history of money moving in and out of customer and delivery-man wallets — every credit, debit and running balance."
       rows={data.items}
       rowKey={(r) => r.id}
       columns={[

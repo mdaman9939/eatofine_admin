@@ -58,8 +58,7 @@ export default async function ReportsPage() {
             </div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">Platform reports</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Sales rollups across delivered orders, the admin&apos;s share, and the people driving the business —
-              top restaurants, customers, and riders.
+              View your platform&apos;s sales, earnings and commission over the last 30 days, plus your best-performing restaurants, customers and delivery men.
             </p>
           </div>
           <div className="rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur-sm px-4 py-3">

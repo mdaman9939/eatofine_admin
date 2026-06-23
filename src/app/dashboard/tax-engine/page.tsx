@@ -48,9 +48,7 @@ export default async function TaxEnginePage() {
             </div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">GST Engine</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Dynamic GST master with CGST/SGST split for intra-state and IGST for inter-state
-              orders. Each charge head maps to its own HSN/SAC code so invoices stay GSTN-compliant.
-              Use the live calculator below to test the slab + GST chain end-to-end.
+              Set the GST rates the platform applies to each type of charge on orders and invoices — add, edit or enable each rate and test it with the live calculator.
             </p>
           </div>
           <CreateForm

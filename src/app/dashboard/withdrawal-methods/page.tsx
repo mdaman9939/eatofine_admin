@@ -15,6 +15,7 @@ export default async function WithdrawalMethodsPage() {
     <TablePage
       title="Withdrawal methods"
       subtitle={`${data.withdrawal_methods.length} methods`}
+      description="See the payout methods (such as bank transfer) that delivery men and restaurants can choose when requesting their money."
       rows={data.withdrawal_methods}
       rowKey={(r) => r.id}
       columns={[

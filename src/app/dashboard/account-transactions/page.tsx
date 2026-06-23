@@ -20,6 +20,7 @@ export default async function AccountTransactionsPage() {
     <TablePage
       title="Account transactions"
       subtitle={`${data.items.length} of ${data.total}`}
+      description="Review the full money-movement ledger across the platform — every credit, debit, balance and payment method, in one read-only record."
       rows={data.items}
       rowKey={(r) => r.id}
       columns={[

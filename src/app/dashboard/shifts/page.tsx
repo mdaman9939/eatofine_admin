@@ -41,6 +41,7 @@ export default async function ShiftsPage() {
       <TablePage
         title="Shifts"
         subtitle={`${data.shifts.length} shifts`}
+        description="Set up the work shifts (time windows like Morning or Evening) that staff and delivery men are assigned to — add, edit, enable/disable or delete them."
         rows={data.shifts}
         rowKey={(r) => r.id}
         columns={[

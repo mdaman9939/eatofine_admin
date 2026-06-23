@@ -78,7 +78,7 @@ export default async function PaymentGatewaysPage() {
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Payment Gateways</h1>
           <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">
-            Configure gateway credentials. Each gateway has its own group — enable, switch to live mode once tested, paste API keys.
+            Connect the online payment providers (Razorpay, Stripe, PayPal and more) that let customers pay in the app — turn each one on and enter its account keys.
           </p>
         </div>
       </div>

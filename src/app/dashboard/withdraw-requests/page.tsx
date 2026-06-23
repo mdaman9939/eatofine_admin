@@ -26,6 +26,7 @@ export default async function WithdrawRequestsPage({
     <TablePage
       title={heading}
       subtitle={`${data.items.length} of ${data.total}`}
+      description="Review payout requests raised by delivery men and restaurants, then approve or revoke each one before money is paid out."
       rows={data.items}
       rowKey={(r) => r.id}
       columns={[

@@ -29,7 +29,7 @@ export default async function EmployeesPage() {
       <div className="px-8 pt-8 flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Employees</h1>
-          <p className="text-sm text-slate-500">Staff accounts with role-based permissions.</p>
+          <p className="text-sm text-slate-500">Manage your admin staff accounts — add new team members, assign their role and zone, edit details or remove access.</p>
         </div>
         <Link
           href="/dashboard/employees/add"

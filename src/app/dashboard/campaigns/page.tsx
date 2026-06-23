@@ -89,6 +89,7 @@ export default async function CampaignsPage({
       <TablePage
         title={type === "food" ? "Food campaigns" : type === "basic" ? "Basic campaigns" : "Campaigns"}
         subtitle={`${data.items.length} of ${data.total}`}
+        description="Create and run promotional campaigns for whole restaurants or specific dishes — set the discount, zone and dates, then enable, edit or delete them."
         rows={data.items}
         rowKey={(r) => r.id}
         columns={[

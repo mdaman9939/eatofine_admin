@@ -36,6 +36,7 @@ export default async function DisbursementsPage({
   return (
     <TablePage
       title={heading}
+      description="Track and process money payouts to delivery men and restaurants — generate payouts, mark them as initiated or paid, and cancel ones that should not go out."
       subtitle={`${data.items.length} of ${data.total}`}
       rows={data.items}
       rowKey={(r) => r.id}

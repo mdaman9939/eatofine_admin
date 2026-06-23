@@ -42,7 +42,7 @@ export default async function CustomerWalletFundPage() {
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Add Fund to Customer Wallet</h1>
           <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">
-            Manually credit a customer&apos;s wallet (refunds, compensations, promotions). Every credit creates a wallet_transactions audit entry.
+            Manually add money to a customer&apos;s wallet for refunds, compensation or promotions — every credit is recorded below for your records.
           </p>
         </div>
       </div>

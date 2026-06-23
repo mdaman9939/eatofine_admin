@@ -20,6 +20,7 @@ export default async function DMReviewsPage() {
   return (
     <TablePage
       title="DM reviews"
+      description="Read the star ratings and comments customers leave for delivery men after their orders — and remove any review that is abusive or inappropriate."
       subtitle={`${data.items.length} of ${data.total}`}
       rows={data.items}
       rowKey={(r) => r.id}
