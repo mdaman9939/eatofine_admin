@@ -53,7 +53,10 @@ export default async function DmIncentivesPage() {
           </div>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Delivery Man Incentives</h1>
           <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">
-            Performance-linked incentive claims. Approve to credit the rider&apos;s wallet, reject with a reason.
+            <strong>How it works — Manual reward, you approve each one.</strong> A claim is raised for a
+            rider&apos;s performance (period, deliveries, amount) and stays <em>Pending</em> until you act:
+            <strong> Approve</strong> credits the amount to their wallet, <strong>Reject</strong> declines it
+            with a reason. Use for discretionary / case-by-case payouts.
           </p>
         </div>
       </div>

@@ -45,9 +45,11 @@ export default async function DmBonusesPage() {
               <span className="inline-block w-1 h-1 rounded-full bg-white/70" /> USER MANAGEMENT · DELIVERY MEN
             </div>
             <h1 className="mt-2 text-3xl font-bold tracking-tight">Delivery Man Bonuses</h1>
-            <p className="mt-2 text-sm text-white/80 leading-relaxed">
-              Reward riders for completing deliveries. A rule auto-credits the rider&apos;s wallet once they
-              reach <strong>N delivered orders</strong> within the chosen period — once per rider per period.
+            <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">
+              <strong>How it works — Automatic reward, no approval needed.</strong> Make a rule like
+              &ldquo;20 deliveries in a day &rarr; ₹200&rdquo;. The moment a rider completes that many
+              delivered orders within the chosen period (per day / per week / lifetime), the reward is
+              credited straight to their wallet <strong>automatically</strong> — once per rider, per period.
             </p>
           </div>
           <CreateForm
