@@ -89,7 +89,7 @@ export default async function UserDeliveryChargesPage() {
               <span className="inline-block w-1 h-1 rounded-full bg-white/70" />
               BRD §6 · Enhancements
             </div>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight">Long Distance Charge</h1>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">User Charges</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed">
               Customer-side delivery fee. Distance slabs + situational surcharges + free-delivery
               threshold + surge pricing grid (weekday × hour). Per BRD §6.5{" "}
@@ -177,7 +177,7 @@ export default async function UserDeliveryChargesPage() {
               { name: "min_km", label: "Min km", type: "number", required: true },
               { name: "max_km", label: "Max km", type: "number", required: true },
               { name: "base_charge", label: "Base ₹", type: "number", required: true },
-              { name: "extra_per_km", label: "Long-trip reward ₹", type: "number", defaultValue: 0 },
+              { name: "extra_per_km", label: "Long Distance Charge ₹", type: "number", defaultValue: 0 },
               { name: "gst_rate", label: "GST %", type: "number", defaultValue: 18 },
             ]}
           />
@@ -189,7 +189,7 @@ export default async function UserDeliveryChargesPage() {
                 <th className="px-6 py-3 font-semibold">#</th>
                 <th className="px-4 py-3 font-semibold">Range</th>
                 <th className="px-4 py-3 font-semibold text-right">Base ₹</th>
-                <th className="px-4 py-3 font-semibold text-right">Long-trip reward ₹</th>
+                <th className="px-4 py-3 font-semibold text-right">Long Distance Charge ₹</th>
                 <th className="px-4 py-3 font-semibold text-right">GST %</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold text-right">Actions</th>
@@ -222,7 +222,7 @@ export default async function UserDeliveryChargesPage() {
                         { name: "min_km", label: "Min km", type: "number" },
                         { name: "max_km", label: "Max km", type: "number" },
                         { name: "base_charge", label: "Base charge ₹", type: "number" },
-                        { name: "extra_per_km", label: "Long-trip reward ₹", type: "number" },
+                        { name: "extra_per_km", label: "Long Distance Charge ₹", type: "number" },
                         { name: "gst_rate", label: "GST %", type: "number" },
                       ]} />
                       <ToggleStatusButton basePath="/user-delivery-charges/slabs" id={s.id} currentStatus={s.status} mode="base-path" />
@@ -409,13 +409,13 @@ export default async function UserDeliveryChargesPage() {
             </div>
             <h3 className="mt-2 text-xl font-bold tracking-tight">From distance to user-facing fee</h3>
             <p className="mt-1.5 text-sm text-white/75">
-              The matched slab&apos;s base plus its flat long-trip reward is multiplied by the surge cell for
+              The matched slab&apos;s base plus its flat long distance charge is multiplied by the surge cell for
               the order time, situational surcharges stack on top, and GST is computed per-line. Free-delivery
               short-circuits everything when the order subtotal crosses the threshold.
             </p>
             <pre className="mt-4 text-xs leading-relaxed text-white/95 font-mono bg-black/25 rounded-xl p-4 ring-1 ring-white/10 overflow-x-auto">
 {`Free delivery? → return 0
-Base trip fee = (slab.base + Long-trip reward) × surge_multiplier
+Base trip fee = (slab.base + Long Distance Charge) × surge_multiplier
 Surcharges    = Σ matching (weekend / festival / late-night)
 Subtotal      = Base trip fee + Surcharges
 GST           = Σ per-line GST    // BRD §6.5
@@ -423,7 +423,7 @@ User payable  = Subtotal + GST`}
             </pre>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
               <FlowStep step="1" title="Free delivery?" body="Order ≥ threshold short-circuits to ₹0." />
-              <FlowStep step="2" title="Slab + surge" body="(Base + long-trip reward) × surge cell for that (day, hour)." />
+              <FlowStep step="2" title="Slab + surge" body="(Base + long distance charge) × surge cell for that (day, hour)." />
               <FlowStep step="3" title="Surcharges" body="Stack matching uplifts on top." />
               <FlowStep step="4" title="GST + total" body="Per-line GST → user-payable total." />
             </div>
