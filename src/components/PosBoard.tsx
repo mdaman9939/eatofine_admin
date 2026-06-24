@@ -33,7 +33,15 @@ interface CouponOpt {
 }
 interface CustomerOpt { id: number; name: string; phone: string }
 interface AddressOpt { id: number; address: string | null; latitude: string | null; longitude: string | null; address_type: string | null; is_default?: number }
-interface DeliveryQuote { distance_km: number; delivery_charge: number; delivery_gst: number; free_delivery: boolean }
+interface DeliveryQuote {
+  distance_km: number;
+  delivery_charge: number;
+  delivery_gst: number;
+  free_delivery: boolean;
+  slab_min_km?: number | null;
+  slab_max_km?: number | null;
+  priced_by?: string | null;
+}
 
 const inr = (n: number) => `₹${(n || 0).toFixed(2)}`;
 const ORDER_TYPE_LABEL: Record<string, string> = { take_away: "Take Away", dine_in: "Dine In", delivery: "Home Delivery" };
@@ -645,12 +653,30 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
             )}
 
             {/* Delivery fee — auto from distance (read-only). A failed quote shows
-                "couldn't calculate", never a misleading ₹0.00. */}
+                "couldn't calculate", never a misleading ₹0.00. The sub-line shows
+                the distance + which slab priced it, so the basis is visible. */}
             {orderType === "delivery" && (
-              <Row
-                label="Delivery fee"
-                value={quoting ? "calculating…" : !deliveryCoords ? "—" : quoteFailed ? "couldn’t calculate" : deliveryQuote?.free_delivery ? "Free" : inr(deliveryCharge)}
-              />
+              <>
+                <Row
+                  label="Delivery fee"
+                  value={quoting ? "calculating…" : !deliveryCoords ? "—" : quoteFailed ? "couldn’t calculate" : deliveryQuote?.free_delivery ? "Free" : inr(deliveryCharge)}
+                />
+                {deliveryQuote && !deliveryQuote.free_delivery && (
+                  <p className="text-[11px] text-slate-500 -mt-0.5">
+                    {deliveryQuote.distance_km} km
+                    {deliveryQuote.slab_min_km != null && deliveryQuote.slab_max_km != null && (
+                      <>
+                        {" · "}
+                        {deliveryQuote.priced_by === "extrapolated"
+                          ? `beyond ${deliveryQuote.slab_max_km} km slab — scaled by distance`
+                          : deliveryQuote.priced_by === "rounded_up"
+                            ? `${deliveryQuote.slab_min_km}–${deliveryQuote.slab_max_km} km slab (rounded up)`
+                            : `${deliveryQuote.slab_min_km}–${deliveryQuote.slab_max_km} km slab`}
+                      </>
+                    )}
+                  </p>
+                )}
+              </>
             )}
 
             {/* GST — food GST + delivery GST, applied per the admin's config. */}
