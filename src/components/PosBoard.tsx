@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { TaxBreakdownDisclosure } from "./TaxBreakdownSheet";
+import { MapPicker } from "./MapPicker";
 
 export interface PosZone { id: number; name: string }
 export interface PosRestaurant { id: number; name: string; zone_id: number | null }
@@ -31,6 +31,9 @@ interface CouponOpt {
   min_purchase: number;
   max_discount: number;
 }
+interface CustomerOpt { id: number; name: string; phone: string }
+interface AddressOpt { id: number; address: string | null; latitude: string | null; longitude: string | null; address_type: string | null; is_default?: number }
+interface DeliveryQuote { distance_km: number; delivery_charge: number; delivery_gst: number; free_delivery: boolean }
 
 const inr = (n: number) => `₹${(n || 0).toFixed(2)}`;
 const ORDER_TYPE_LABEL: Record<string, string> = { take_away: "Take Away", dine_in: "Dine In", delivery: "Home Delivery" };
@@ -48,9 +51,18 @@ function previewCouponDiscount(c: CouponOpt | undefined, base: number): number {
   return Math.min(Math.round(d * 100) / 100, base);
 }
 
-/** StackFood-style POS: Food Section (zone → restaurant → categories → search →
- *  menu) on the left, Billing Section (customer, order type, items, totals) on
- *  the right. */
+/** Parse a "lat,lng" string into a coords pair, or null if incomplete/invalid. */
+function parsePin(s: string): { lat: string; lng: string } | null {
+  const [a, b] = (s || "").split(",");
+  const lat = (a ?? "").trim(); const lng = (b ?? "").trim();
+  if (!lat || !lng || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) return null;
+  return { lat, lng };
+}
+
+/** Admin-operated POS that mirrors the CUSTOMER checkout: charges apply
+ *  automatically from config (no per-charge override list), delivery is computed
+ *  from the customer's address by distance, and the only manual control is one
+ *  switch to apply/waive the configured additional charge (Platform Fee). */
 export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, foodGstOrderTypes = ["delivery"] }: { zones: PosZone[]; restaurants: PosRestaurant[]; categories: PosCategory[]; foodGstRate?: number; foodGstOrderTypes?: string[] }) {
   const router = useRouter();
   const [zoneId, setZoneId] = useState("");
@@ -68,19 +80,29 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
   const [selectedCouponCode, setSelectedCouponCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState<Record<number, CartLine>>({});
+
+  // Customer — search & pick an existing customer, or enter a walk-in by name.
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [customerResults, setCustomerResults] = useState<CustomerOpt[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerOpt | null>(null);
+  const [walkIn, setWalkIn] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [showNewCustomer, setShowNewCustomer] = useState(false);
+
   const [orderType, setOrderType] = useState("take_away");
   const [tableNumber, setTableNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [discount, setDiscount] = useState(0);
-  const [deliveryFee, setDeliveryFee] = useState(0);
-  // Apply/waive toggles for the auto-applied charges. All default ON so the
-  // billing behaves exactly as before until the admin unticks something.
-  const [taxEnabled, setTaxEnabled] = useState(true);
-  const [packagingEnabled, setPackagingEnabled] = useState(true);
-  const [disabledCharges, setDisabledCharges] = useState<Set<number>>(new Set());
+
+  // Delivery — pick a saved address or drop a map pin; the fee auto-computes.
+  const [addresses, setAddresses] = useState<AddressOpt[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [addrMode, setAddrMode] = useState<"saved" | "map">("saved");
+  const [mapPin, setMapPin] = useState("");
+  const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
+  const [quoting, setQuoting] = useState(false);
+
+  // The one manual control: apply or waive the configured additional charge.
+  const [applyAdditional, setApplyAdditional] = useState(true);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,7 +111,7 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
     [restaurants, zoneId],
   );
 
-  // Load the platform's configured additional charges once (charges plan).
+  // Load the platform's configured additional charges once.
   useEffect(() => {
     fetch("/api/admin/additional-charges")
       .then((r) => (r.ok ? r.json() : []))
@@ -102,8 +124,6 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
               ...c,
               amount: Number(c.amount ?? 0),
               gst_rate: Number(c.gst_rate ?? 0),
-              // Only a missing/non-array field defaults to all three; an explicit
-              // empty array stays "applies to none" (matches the backend).
               order_types: Array.isArray(c.order_types) ? c.order_types : ["take_away", "dine_in", "delivery"],
             })),
         );
@@ -111,9 +131,8 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
       .catch(() => setCharges([]));
   }, []);
 
-  // Load the selected restaurant's menu + tax. The synchronous resets here are
-  // intentional (clear menu/cart + show a spinner the instant the restaurant
-  // changes), so the set-state-in-effect rule is disabled for this block.
+  // Load the selected restaurant's menu + extra-packaging. Sync resets here are
+  // intentional (clear menu/cart + show a spinner the instant it changes).
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!restaurantId) { setFoods([]); setCart({}); return; }
@@ -131,7 +150,6 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
           add_ons: Array.isArray(x.add_ons) ? (x.add_ons as unknown[]).map((v) => Number(v)).filter((n) => Number.isFinite(n)) : [],
         }));
         setFoods(rows);
-        // Map the restaurant's add-ons by id so each food's add_on ids resolve.
         const addonRows = (a?.data ?? a?.items ?? a?.add_ons ?? (Array.isArray(a) ? a : [])) as Record<string, unknown>[];
         const map: Record<number, AddOn> = {};
         for (const x of addonRows) {
@@ -140,7 +158,6 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
         }
         setAddOnMap(map);
         setTax(foodGstRate); // platform food-GST rate, independent of the restaurant's own tax
-        // Restaurant extra-packaging charge (applied to take-away orders).
         const pkgActive = d?.restaurant?.is_extra_packaging_active ?? d?.restaurant?.extra_packaging_status ?? false;
         setExtraPackaging(pkgActive ? Number(d?.restaurant?.extra_packaging_amount ?? 0) : 0);
       })
@@ -148,26 +165,62 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
   }, [restaurantId]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  // Load the coupons usable for the selected restaurant (restaurant-specific +
-  // platform-wide). The picker shows what discount each restaurant offers; the
-  // discount is recomputed authoritatively by the backend at place-order time.
+  // Restaurant-wise coupons for the picker (recomputed authoritatively on place).
   useEffect(() => {
     setSelectedCouponCode("");
     if (!restaurantId) { setCoupons([]); return; }
     let cancelled = false;
     fetch(`/api/admin/restaurants/${restaurantId}/coupons`)
       .then((r) => (r.ok ? r.json() : { coupons: [] }))
-      .then((d: { coupons?: CouponOpt[] }) => {
-        if (cancelled) return;
-        setCoupons(Array.isArray(d?.coupons) ? d.coupons : []);
-      })
+      .then((d: { coupons?: CouponOpt[] }) => { if (!cancelled) setCoupons(Array.isArray(d?.coupons) ? d.coupons : []); })
       .catch(() => { if (!cancelled) setCoupons([]); });
     return () => { cancelled = true; };
   }, [restaurantId]);
 
+  // Customer search (debounced) — only while typing in the search box.
+  useEffect(() => {
+    if (selectedCustomer || walkIn) { setCustomerResults([]); return; }
+    const q = customerQuery.trim();
+    if (q.length < 2) { setCustomerResults([]); return; }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      fetch(`/api/admin/users?q=${encodeURIComponent(q)}&limit=8`)
+        .then((r) => (r.ok ? r.json() : { users: [] }))
+        .then((d: { users?: Array<{ id: number; f_name?: string; l_name?: string; phone?: string }> }) => {
+          if (cancelled) return;
+          setCustomerResults((d.users ?? []).map((u) => ({
+            id: Number(u.id),
+            name: `${u.f_name ?? ""} ${u.l_name ?? ""}`.trim() || `#${u.id}`,
+            phone: u.phone ?? "",
+          })));
+        })
+        .catch(() => { if (!cancelled) setCustomerResults([]); });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [customerQuery, selectedCustomer, walkIn]);
+
+  // Load the selected customer's saved addresses for the delivery picker.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!selectedCustomer) { setAddresses([]); setSelectedAddressId(null); return; }
+    let cancelled = false;
+    fetch(`/api/admin/users/${selectedCustomer.id}/addresses`)
+      .then((r) => (r.ok ? r.json() : { addresses: [] }))
+      .then((d: { addresses?: AddressOpt[] }) => {
+        if (cancelled) return;
+        const list = (d.addresses ?? []).filter((a) => a.latitude && a.longitude);
+        setAddresses(list);
+        const def = list.find((a) => a.is_default) ?? list[0];
+        setSelectedAddressId(def ? def.id : null);
+        setAddrMode(list.length ? "saved" : "map");
+      })
+      .catch(() => { if (!cancelled) { setAddresses([]); setSelectedAddressId(null); setAddrMode("map"); } });
+    return () => { cancelled = true; };
+  }, [selectedCustomer]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   const usedCatIds = useMemo(() => new Set(foods.map((f) => f.category_id).filter(Boolean)), [foods]);
   const menuCategories = useMemo(() => categories.filter((c) => usedCatIds.has(c.id)), [categories, usedCatIds]);
-
   const filteredFoods = useMemo(() => foods.filter((f) => {
     if (categoryId && String(f.category_id) !== categoryId) return false;
     if (search.trim() && !(f.name ?? "").toLowerCase().includes(search.toLowerCase())) return false;
@@ -178,76 +231,87 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
   const subtotal = lines.reduce((s, l) => s + l.food.price * l.qty, 0);
   const lineAddOnTotal = (l: CartLine) => l.addOns.reduce((s, id) => s + (addOnMap[id]?.price ?? 0), 0);
   const addonTotal = lines.reduce((s, l) => s + lineAddOnTotal(l) * l.qty, 0);
-  // Coupon discount — its base mirrors the backend's POS subtotal (items +
-  // add-ons). The preview math matches validateAndComputeCoupon so the shown
-  // total equals what the backend charges + records.
+  // Coupon — base mirrors the backend's POS subtotal (items + add-ons, pre-coupon).
   const selectedCoupon = useMemo(() => coupons.find((c) => c.code === selectedCouponCode), [coupons, selectedCouponCode]);
   const couponBase = subtotal + addonTotal;
   const couponDiscount = previewCouponDiscount(selectedCoupon, couponBase);
   const couponIneligible = !!selectedCoupon && couponDiscount === 0;
-  // Manual discount + coupon both reduce the taxable food value.
-  const taxable = Math.max(0, couponBase - discount - couponDiscount);
-  // Gross GST is always computed (for display); it only feeds the total when the
-  // GST checkbox is ticked AND food GST applies to this order type.
-  const vatGross = taxable * (tax / 100);
+
+  // Coupon reduces the taxable base (no manual discount in the POS now).
+  const taxable = Math.max(0, couponBase - couponDiscount);
   // Food GST + extra packaging apply only to the order types configured on the
-  // Additional Charges screen (food_gst_order_types). The per-charge platform /
-  // convenience / packaging fees are scoped on each charge's own order_types.
+  // Additional Charges screen. The additional (platform) charge is scoped by each
+  // charge's own order_types and applies independently of GST.
   const foodGstApplies = foodGstOrderTypes.includes(orderType);
-  const vat = taxEnabled && foodGstApplies ? vatGross : 0;
+  // Unrounded so the grand total matches the backend (which sums unrounded food
+  // GST + quoted delivery GST + identically-rounded charge components, then
+  // rounds once). The display line rounds via inr() for cosmetics only.
+  const vat = foodGstApplies ? taxable * (tax / 100) : 0;
 
-  // Each configured charge that applies to THIS order type, resolved against the
-  // order's subtotal (incl. its own GST).
-  const chargeRows = useMemo(
-    () =>
-      charges
-        .filter((c) => c.order_types.includes(orderType))
-        .map((c) => {
-          const base = c.charge_type === "fixed" ? c.amount : (subtotal * c.amount) / 100;
-          const gst = c.gst_applicable ? (base * c.gst_rate) / 100 : 0;
-          // Expose the already-computed GST portion + a packaging flag so the
-          // Taxes & Charges breakdown can regroup these without recomputing tax.
-          return { id: c.id, label: c.charge_head, amount: base + gst, gst, gstRate: c.gst_rate, isPackaging: /packag/i.test(c.charge_head) };
-        }),
-    [charges, subtotal, orderType],
+  // Configured additional charge for THIS order type — FIXED charges only (+ each
+  // charge's GST), IDENTICAL to the customer flow (computeFlatAdditionalCharge).
+  // One value, gated by the single Apply switch. The backend recomputes it the
+  // same way, so the shown amount equals the charged amount.
+  const applicableCharges = useMemo(
+    () => charges.filter((c) => c.charge_type === "fixed" && c.order_types.includes(orderType)),
+    [charges, orderType],
   );
-  // Only charges left ticked contribute to the total; unticked ones are still
-  // shown (struck-through) but excluded from the bill and the placed order.
-  // Round to paise here so the SAME value feeds the displayed total AND the
-  // placed order — otherwise the display (unrounded) and the stored order_amount
-  // (built from the .toFixed(2) we send) could differ by ₹0.01.
-  const additionalChargeTotal = Math.round(chargeRows.reduce((s, r) => s + (disabledCharges.has(r.id) ? 0 : r.amount), 0) * 100) / 100;
-  // Extra packaging applies to take-away orders (StackFood behaviour), only when
-  // its checkbox is ticked, and only when food GST/packaging applies to this type.
+  const additionalChargeBase = useMemo(() => {
+    const total = applicableCharges.reduce((s, c) => {
+      const gst = c.gst_applicable ? (c.amount * c.gst_rate) / 100 : 0;
+      return s + c.amount + gst;
+    }, 0);
+    return Math.round(total * 100) / 100;
+  }, [applicableCharges]);
+  const additionalChargeName = applicableCharges.length === 1 ? applicableCharges[0].charge_head : "Additional charges";
+  const additionalChargeTotal = applyAdditional ? additionalChargeBase : 0;
+
+  // Restaurant extra packaging (take-away), gated like food GST.
   const packagingGross = orderType === "take_away" ? extraPackaging : 0;
-  const packagingAmount = Math.round((packagingEnabled && foodGstApplies ? packagingGross : 0) * 100) / 100;
+  const packagingAmount = foodGstApplies ? Math.round(packagingGross * 100) / 100 : 0;
 
-  const total =
-    taxable +
-    vat +
-    additionalChargeTotal +
-    packagingAmount +
-    (orderType === "delivery" ? deliveryFee : 0);
+  // Delivery (auto): the quote drives both the fee and its GST.
+  const deliveryCharge = orderType === "delivery" ? (deliveryQuote?.delivery_charge ?? 0) : 0;
+  const deliveryGst = orderType === "delivery" ? (deliveryQuote?.delivery_gst ?? 0) : 0;
 
-  // ── Taxes & Charges breakdown (Zomato-style) — DERIVED from the values above,
-  //    no new tax math. Restaurant GST = the food tax; each non-packaging service
-  //    charge contributes its own already-computed GST; packaging-type charges +
-  //    extra packaging are shown as Packaging Charges. POS is a walk-in counter
-  //    sale (no inter-state delivery address) → intra-state CGST/SGST. ──
-  const enabledCharges = chargeRows.filter((r) => !disabledCharges.has(r.id));
-  const serviceCharges = enabledCharges.filter((r) => !r.isPackaging && r.gst > 0);
-  const packagingChargeTotal = packagingAmount + enabledCharges.filter((r) => r.isPackaging).reduce((s, r) => s + r.amount, 0);
-  const serviceGstRates = Array.from(new Set(serviceCharges.map((r) => Number(r.gstRate)).filter((n) => n > 0)));
-  const taxBreakdown = {
-    restaurantGst: taxEnabled && vatGross > 0
-      ? { ratePct: tax, interState: false, cgst: vatGross / 2, sgst: vatGross / 2, igst: vatGross,
-          label: "GST on Food", note: "Collected by platform & paid to Govt (GST sec 9(5)) — not the restaurant" }
-      : null,
-    platformServiceGst: serviceCharges.length
-      ? { ratePct: serviceGstRates.length === 1 ? serviceGstRates[0] : null, items: serviceCharges.map((r) => ({ label: `${r.label} GST`, amount: r.gst })) }
-      : null,
-    packagingCharges: packagingChargeTotal,
-  };
+  // Drop-off coordinates: a saved address, or the map pin. Fall back to the map
+  // when there are no saved addresses (e.g. a walk-in delivery).
+  const selectedAddress = addresses.find((a) => a.id === selectedAddressId) ?? null;
+  const useMap = addrMode === "map" || addresses.length === 0;
+  const deliveryCoords = useMemo<{ lat: string; lng: string } | null>(() => {
+    if (useMap) return parsePin(mapPin);
+    if (selectedAddress?.latitude && selectedAddress?.longitude) return { lat: selectedAddress.latitude, lng: selectedAddress.longitude };
+    return null;
+  }, [useMap, mapPin, selectedAddress]);
+  const coordsKey = deliveryCoords ? `${deliveryCoords.lat},${deliveryCoords.lng}` : "";
+
+  // Quote the delivery fee whenever the drop-off or order value changes.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (orderType !== "delivery" || !restaurantId || !coordsKey) { setDeliveryQuote(null); return; }
+    let cancelled = false;
+    setQuoting(true);
+    const t = setTimeout(() => {
+      const [lat, lng] = coordsKey.split(",");
+      fetch("/api/admin/pos/delivery-quote", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ restaurant_id: Number(restaurantId), latitude: lat, longitude: lng, order_value: couponBase }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d: DeliveryQuote | null) => { if (!cancelled) setDeliveryQuote(d && typeof d.delivery_charge === "number" ? d : null); })
+        .catch(() => { if (!cancelled) setDeliveryQuote(null); })
+        .finally(() => { if (!cancelled) setQuoting(false); });
+    }, 350);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [orderType, restaurantId, coordsKey, couponBase]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Round to paise exactly like the backend's order_amount (Math.round), so the
+  // displayed total equals what is charged (toFixed alone can drift 1 paise).
+  const total = Math.round(
+    (taxable + vat + deliveryCharge + deliveryGst + additionalChargeTotal + packagingAmount) * 100,
+  ) / 100;
 
   function addItem(food: Food) {
     setCart((c) => ({ ...c, [food.id]: { food, qty: (c[food.id]?.qty ?? 0) + 1, addOns: c[food.id]?.addOns ?? [] } }));
@@ -266,14 +330,20 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
       return { ...c, [foodId]: { ...line, addOns: has ? line.addOns.filter((x) => x !== addOnId) : [...line.addOns, addOnId] } };
     });
   }
-
-  function toggleCharge(id: number) {
-    setDisabledCharges((s) => {
-      const next = new Set(s);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  function pickCustomer(c: CustomerOpt) {
+    setSelectedCustomer(c);
+    setCustomerName(c.name);
+    setCustomerPhone(c.phone.replace(/\D/g, "").slice(-10));
+    setCustomerQuery("");
+    setCustomerResults([]);
+    setWalkIn(false);
+  }
+  function clearCustomer() {
+    setSelectedCustomer(null);
+    setCustomerName("");
+    setCustomerPhone("");
+    setAddresses([]);
+    setSelectedAddressId(null);
   }
 
   function placeOrder() {
@@ -281,9 +351,12 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
     if (!restaurantId) { setError("Select a restaurant first"); return; }
     if (lines.length === 0) { setError("Cart is empty"); return; }
     if (orderType === "dine_in" && !tableNumber.trim()) { setError("Table number is required for dine in"); return; }
-    // Phone is optional, but when given it must be a valid 10-digit Indian mobile.
     if (customerPhone && !/^[6-9]\d{9}$/.test(customerPhone)) {
       setError("Enter a valid 10-digit Indian mobile number (starts with 6–9)");
+      return;
+    }
+    if (orderType === "delivery" && !deliveryCoords) {
+      setError("Pick a delivery address (saved address or a map location)");
       return;
     }
     if (couponIneligible) {
@@ -291,6 +364,7 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
       return;
     }
     setPlacing(true);
+    const usingSaved = orderType === "delivery" && !useMap && selectedAddress;
     fetch("/api/admin/pos/place-order", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -300,21 +374,23 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
           food_id: l.food.id, name: l.food.name, price: l.food.price, quantity: l.qty,
           add_ons: l.addOns.map((id) => ({ id, name: addOnMap[id]?.name ?? null, price: addOnMap[id]?.price ?? 0 })),
         })),
-        customer_name: customerName || undefined,
+        customer_id: selectedCustomer?.id ?? undefined,
+        customer_name: customerName || selectedCustomer?.name || undefined,
         customer_phone: customerPhone || undefined,
         order_type: orderType,
         table_number: orderType === "dine_in" ? tableNumber.trim() : undefined,
         payment_method: paymentMethod,
-        discount,
-        // The backend re-validates + recomputes the coupon discount (authoritative).
         coupon_code: selectedCouponCode || undefined,
-        // Send 0% GST when the tax checkbox is unticked so the backend's
-        // taxAmount is 0 — the placed order matches the displayed total.
-        tax_percent: taxEnabled ? tax : 0,
-        delivery_charge: orderType === "delivery" ? deliveryFee : 0,
-        // Already filtered to ticked charges / enabled packaging above.
-        additional_charge: Number(additionalChargeTotal.toFixed(2)),
-        extra_packaging_amount: Number(packagingAmount.toFixed(2)),
+        // GST applies per the admin's order-type config; the backend re-gates it.
+        tax_percent: foodGstApplies ? tax : 0,
+        // Delivery is computed server-side from the address / pin (auto fee).
+        customer_address_id: usingSaved ? selectedAddress!.id : undefined,
+        latitude: orderType === "delivery" && deliveryCoords ? deliveryCoords.lat : undefined,
+        longitude: orderType === "delivery" && deliveryCoords ? deliveryCoords.lng : undefined,
+        // The single Apply switch decides apply vs waive; the backend recomputes
+        // the amount server-side (never trusts a client-sent charge total).
+        apply_additional_charge: applyAdditional,
+        extra_packaging_amount: packagingAmount,
       }),
     })
       .then(async (res) => {
@@ -387,24 +463,45 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
         <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 font-semibold text-slate-800 text-sm">🧾 Billing Section</div>
         <div className="p-4 space-y-3 flex-1">
-          <div className="flex gap-2">
-            <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Select / new customer name" className={selCls} />
-            <button type="button" onClick={() => setShowNewCustomer((v) => !v)} className="shrink-0 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3">Add New</button>
-          </div>
-          {showNewCustomer && (
-            <div>
-              {/* Indian mobile only: digits, max 10, must start 6–9. Strip
-                  non-digits + cap at 10 as the user types. */}
+          {/* Customer — pick an existing customer (enables saved-address delivery)
+              or enter a walk-in by name. */}
+          {selectedCustomer ? (
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-slate-800 truncate">{selectedCustomer.name}</div>
+                {selectedCustomer.phone && <div className="text-xs text-slate-500">{selectedCustomer.phone}</div>}
+              </div>
+              <button type="button" onClick={clearCustomer} className="shrink-0 text-xs font-semibold text-emerald-700 hover:underline">Change</button>
+            </div>
+          ) : walkIn ? (
+            <div className="space-y-2">
+              <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Walk-in customer name" className={selCls} />
               <input
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                placeholder="Customer phone (10-digit Indian)"
-                inputMode="numeric"
-                maxLength={10}
-                className={selCls}
+                placeholder="Phone (optional, 10-digit Indian)"
+                inputMode="numeric" maxLength={10} className={selCls}
               />
               {customerPhone !== "" && !/^[6-9]\d{9}$/.test(customerPhone) && (
-                <p className="mt-1 text-[11px] text-rose-600">Enter a valid 10-digit Indian mobile number (starts with 6–9).</p>
+                <p className="text-[11px] text-rose-600">Enter a valid 10-digit Indian mobile number (starts with 6–9).</p>
+              )}
+              <button type="button" onClick={() => { setWalkIn(false); setCustomerName(""); setCustomerPhone(""); }} className="text-xs font-semibold text-emerald-700 hover:underline">Search an existing customer</button>
+            </div>
+          ) : (
+            <div className="relative">
+              <div className="flex gap-2">
+                <input value={customerQuery} onChange={(e) => setCustomerQuery(e.target.value)} placeholder="Search customer by name / phone" className={selCls} />
+                <button type="button" onClick={() => setWalkIn(true)} className="shrink-0 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3">Walk-in</button>
+              </div>
+              {customerResults.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg max-h-56 overflow-y-auto">
+                  {customerResults.map((c) => (
+                    <button key={c.id} type="button" onClick={() => pickCustomer(c)} className="w-full text-left px-3 py-2 text-sm hover:bg-emerald-50 border-b border-slate-50 last:border-0">
+                      <span className="font-medium text-slate-800">{c.name}</span>
+                      {c.phone && <span className="text-slate-400 ml-2">{c.phone}</span>}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -423,14 +520,41 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
               </label>
             </div>
             {orderType === "dine_in" && (
-              <input
-                value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                placeholder="Table number (required)"
-                className={`${selCls} mt-2`}
-              />
+              <input value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} placeholder="Table number (required)" className={`${selCls} mt-2`} />
             )}
           </div>
+
+          {/* Delivery address — saved addresses (auto fee) or a map pin. */}
+          {orderType === "delivery" && (
+            <div className="rounded-lg border border-slate-200 p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-600">Delivery address</span>
+                {addresses.length > 0 && (
+                  <button type="button" onClick={() => setAddrMode(addrMode === "saved" ? "map" : "saved")} className="text-xs font-semibold text-emerald-700 hover:underline">
+                    {addrMode === "saved" ? "Use a map location" : "Use a saved address"}
+                  </button>
+                )}
+              </div>
+              {!selectedCustomer && !useMap && (
+                <p className="text-[11px] text-slate-500">Select a customer to use their saved addresses, or drop a map pin below.</p>
+              )}
+              {!useMap && addresses.length > 0 ? (
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {addresses.map((a) => (
+                    <label key={a.id} className="flex items-start gap-2 text-sm cursor-pointer rounded px-1 py-1 hover:bg-slate-50">
+                      <input type="radio" className="mt-0.5" checked={selectedAddressId === a.id} onChange={() => setSelectedAddressId(a.id)} />
+                      <span className="min-w-0">
+                        <span className="font-medium text-slate-700 capitalize">{a.address_type ?? "address"}</span>
+                        <span className="text-slate-500"> — {a.address ?? `${a.latitude}, ${a.longitude}`}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <MapPicker value={mapPin} onChange={setMapPin} label="Drop the delivery location" />
+              )}
+            </div>
+          )}
 
           {/* Items table */}
           <div className="border border-slate-200 rounded-lg overflow-hidden">
@@ -458,12 +582,8 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
                       {available.map((a) => {
                         const on = l.addOns.includes(a.id);
                         return (
-                          <button
-                            key={a.id}
-                            type="button"
-                            onClick={() => toggleAddOn(l.food.id, a.id)}
-                            className={`text-[11px] px-2 py-0.5 rounded-full border transition ${on ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-600 border-slate-300 hover:border-emerald-400"}`}
-                          >
+                          <button key={a.id} type="button" onClick={() => toggleAddOn(l.food.id, a.id)}
+                            className={`text-[11px] px-2 py-0.5 rounded-full border transition ${on ? "bg-emerald-600 text-white border-emerald-600" : "bg-white text-slate-600 border-slate-300 hover:border-emerald-400"}`}>
                             {on ? "✓ " : "+ "}{a.name} ({inr(a.price)})
                           </button>
                         );
@@ -475,25 +595,17 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
             })}
           </div>
 
-          {/* Totals */}
+          {/* Totals — auto-computed from config, mirroring the customer checkout. */}
           <div className="text-sm space-y-1">
-            <Row label="Addon" value={inr(addonTotal)} />
+            {addonTotal > 0 && <Row label="Addon" value={inr(addonTotal)} />}
             <Row label="Subtotal" value={inr(subtotal)} />
-            <label className="flex justify-between items-center text-slate-600">
-              <span>Discount</span>
-              <input type="number" min={0} value={discount} onChange={(e) => setDiscount(Math.max(0, Number(e.target.value) || 0))} className="w-24 rounded border border-slate-300 px-2 py-0.5 text-right text-sm" />
-            </label>
-            {/* Coupon — restaurant-wise; shows what each restaurant offers. The
-                backend re-validates + recomputes the discount authoritatively. */}
+
+            {/* Coupon — restaurant-wise; the backend revalidates authoritatively. */}
             {restaurantId && coupons.length > 0 && (
-              <div className="space-y-1">
+              <>
                 <label className="flex justify-between items-center gap-2 text-slate-600">
                   <span className="shrink-0">Coupon</span>
-                  <select
-                    value={selectedCouponCode}
-                    onChange={(e) => setSelectedCouponCode(e.target.value)}
-                    className="flex-1 min-w-0 max-w-[15rem] rounded border border-slate-300 px-2 py-0.5 text-sm"
-                  >
+                  <select value={selectedCouponCode} onChange={(e) => setSelectedCouponCode(e.target.value)} className="flex-1 min-w-0 max-w-[15rem] rounded border border-slate-300 px-2 py-0.5 text-sm">
                     <option value="">No coupon</option>
                     {coupons.map((c) => (
                       <option key={c.id} value={c.code}>
@@ -503,63 +615,36 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
                   </select>
                 </label>
                 {selectedCouponCode && !couponIneligible && (
-                  <div className="flex justify-between text-emerald-700">
-                    <span>Coupon ({selectedCouponCode})</span>
-                    <span className="tabular-nums">− {inr(couponDiscount)}</span>
-                  </div>
+                  <div className="flex justify-between text-emerald-700"><span>Coupon ({selectedCouponCode})</span><span className="tabular-nums">− {inr(couponDiscount)}</span></div>
                 )}
                 {couponIneligible && (
-                  <p className="text-[11px] text-amber-600">
-                    Add {inr((selectedCoupon?.min_purchase ?? 0) - couponBase)} more to use {selectedCouponCode}.
-                  </p>
+                  <p className="text-[11px] text-amber-600">Add {inr((selectedCoupon?.min_purchase ?? 0) - couponBase)} more to use {selectedCouponCode}.</p>
                 )}
-              </div>
+              </>
             )}
+
+            {/* Delivery fee — auto from distance (read-only). */}
             {orderType === "delivery" && (
-              <label className="flex justify-between items-center text-slate-600">
-                <span>Delivery fee</span>
-                <input type="number" min={0} value={deliveryFee} onChange={(e) => setDeliveryFee(Math.max(0, Number(e.target.value) || 0))} className="w-24 rounded border border-slate-300 px-2 py-0.5 text-right text-sm" />
+              <Row label="Delivery fee" value={quoting ? "…" : !deliveryCoords ? "—" : deliveryQuote?.free_delivery ? "Free" : inr(deliveryCharge)} />
+            )}
+
+            {/* GST — food GST + delivery GST, applied per the admin's config. */}
+            {(vat > 0 || deliveryGst > 0) && <Row label={`GST (${tax}%)`} value={inr(vat + deliveryGst)} />}
+
+            {/* The one manual control: apply / waive the configured platform fee. */}
+            {additionalChargeBase > 0 && (
+              <label className="flex justify-between items-center text-slate-600 cursor-pointer select-none">
+                <span className="flex items-center gap-2">
+                  <input type="checkbox" checked={applyAdditional} onChange={(e) => setApplyAdditional(e.target.checked)} className="accent-emerald-600 cursor-pointer" />
+                  <span className={applyAdditional ? "" : "line-through text-slate-400"}>{additionalChargeName}</span>
+                </span>
+                <span className={`tabular-nums ${applyAdditional ? "" : "line-through text-slate-400"}`}>{inr(additionalChargeBase)}</span>
               </label>
             )}
-            {/* Food GST — applies only to the order types configured on the
-                Additional Charges screen (food_gst_order_types). */}
-            {foodGstApplies && (
-              <ChargeToggleRow
-                label={`GST (${tax}%)`}
-                value={inr(vatGross)}
-                checked={taxEnabled}
-                onChange={setTaxEnabled}
-              />
-            )}
-            {/* Configured platform charges that apply to THIS order type. Tick to
-                apply, untick to waive — affects the total and the placed order. */}
-            {chargeRows.map((c) => (
-              <ChargeToggleRow
-                key={c.id}
-                label={c.label}
-                value={inr(c.amount)}
-                checked={!disabledCharges.has(c.id)}
-                onChange={() => toggleCharge(c.id)}
-              />
-            ))}
-            {/* Extra packaging — bundled with food GST's order-type scope. */}
-            {foodGstApplies && packagingGross > 0 && (
-              <ChargeToggleRow
-                label="Extra Packaging Amount"
-                value={inr(packagingGross)}
-                checked={packagingEnabled}
-                onChange={setPackagingEnabled}
-              />
-            )}
-            {!foodGstApplies && chargeRows.length === 0 && (
-              <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded px-2 py-1.5">
-                No GST or additional charges are configured for {ORDER_TYPE_LABEL[orderType] ?? orderType} orders.
-                Manage these on the <span className="font-medium">Additional Charges</span> screen.
-              </p>
-            )}
-            {(foodGstApplies || chargeRows.length > 0) && (
-              <TaxBreakdownDisclosure data={taxBreakdown} className="mt-1.5" />
-            )}
+
+            {/* Extra packaging — applied per config (take-away). */}
+            {packagingAmount > 0 && <Row label="Extra packaging" value={inr(packagingAmount)} />}
+
             <div className="flex justify-between font-bold text-base pt-1 border-t border-slate-100">
               <span>Total</span><span className="tabular-nums">{inr(total)}</span>
             </div>
@@ -593,35 +678,5 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between text-slate-600">
       <span>{label}</span><span className="tabular-nums">{value}</span>
     </div>
-  );
-}
-
-/** A billing line with an apply/waive checkbox. When unticked, the row is shown
- *  struck-through and its amount is excluded from the total and the order. */
-function ChargeToggleRow({
-  label,
-  value,
-  checked,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  const strike = checked ? "" : "line-through text-slate-400";
-  return (
-    <label className="flex justify-between items-center text-slate-600 cursor-pointer select-none">
-      <span className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          className="accent-emerald-600 cursor-pointer"
-        />
-        <span className={strike}>{label}</span>
-      </span>
-      <span className={`tabular-nums ${strike}`}>{value}</span>
-    </label>
   );
 }

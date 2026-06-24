@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
-import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
-import { GstOrderTypesPanel } from "../../../components/GstOrderTypesPanel";
+import { ChargeMatrixPanel } from "../../../components/ChargeMatrixPanel";
 
 interface Charge {
   id: number;
@@ -17,11 +15,6 @@ interface Charge {
   order_types: string[];
 }
 
-const ORDER_TYPE_LABELS: Record<string, string> = {
-  take_away: "Take Away",
-  dine_in: "Dine In",
-  delivery: "Home Delivery",
-};
 
 const SAMPLE_ORDER_VALUE = 500;
 
@@ -39,6 +32,14 @@ export default async function AdditionalChargesPage() {
   const togglesRes = await adminFetch<{ settings: Array<{ key: string; value: string | null }> }>(
     "/admin/business-settings?prefix=charges_on_takeaway_dinein",
   ).catch(() => ({ settings: [] as Array<{ key: string; value: string | null }> }));
+  const gstRateRes = await adminFetch<{ settings: Array<{ key: string; value: string | null }> }>(
+    "/admin/business-settings?prefix=food_gst_rate",
+  ).catch(() => ({ settings: [] as Array<{ key: string; value: string | null }> }));
+  const foodGstRate = (() => {
+    const v = gstRateRes.settings.find((s) => s.key === "food_gst_rate")?.value;
+    const n = v != null ? parseFloat(v) : NaN;
+    return Number.isFinite(n) && n >= 0 ? n : 5;
+  })();
 
   // Coerce numeric fields + order_types — MongoDB returns null for absent values.
   for (const c of charges) {
@@ -144,8 +145,8 @@ export default async function AdditionalChargesPage() {
         } />
       </div>
 
-      {/* ── GST / extra-packaging order-type scope (centralized) ── */}
-      <GstOrderTypesPanel initial={gstInitial} />
+      {/* ── Unified per-service charge configuration (single source) ── */}
+      <ChargeMatrixPanel charges={charges} foodGstRate={foodGstRate} gstInitial={gstInitial} />
 
       {/* ── Sample order impact preview ────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -232,101 +233,6 @@ export default async function AdditionalChargesPage() {
               </div>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* ── Charges table ──────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">All charges</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Each active row applies to the order types ticked on it.</p>
-          </div>
-          <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md font-mono">
-            {charges.length} {charges.length === 1 ? "row" : "rows"}
-          </span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Charge head</th>
-                <th className="px-4 py-3 font-semibold">Type</th>
-                <th className="px-4 py-3 font-semibold text-right">Amount</th>
-                <th className="px-4 py-3 font-semibold">GST</th>
-                <th className="px-4 py-3 font-semibold">Order types</th>
-                <th className="px-4 py-3 font-semibold">HSN / SAC</th>
-                <th className="px-4 py-3 font-semibold">Description</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {charges.map((c) => (
-                <tr key={c.id} className="hover:bg-emerald-50/40 transition-colors">
-                  <td className="px-6 py-4 font-mono text-xs text-slate-400">#{c.id}</td>
-                  <td className="px-4 py-4 font-medium text-slate-800">{c.charge_head}</td>
-                  <td className="px-4 py-4">
-                    <TypeChip type={c.charge_type} />
-                  </td>
-                  <td className="px-4 py-4 text-right font-semibold text-slate-900 tabular-nums">
-                    {c.charge_type === "fixed" ? `₹${c.amount.toFixed(2)}` : `${c.amount}%`}
-                  </td>
-                  <td className="px-4 py-4">
-                    {c.gst_applicable ? (
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold ring-1 ring-emerald-200">
-                        <span className="w-1 h-1 rounded-full bg-emerald-500" />
-                        {c.gst_rate}% GST
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-400">Exempt</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-4">
-                    {c.order_types.length === 3 ? (
-                      <span className="text-xs text-slate-400">All</span>
-                    ) : c.order_types.length === 0 ? (
-                      <span className="text-xs text-rose-400">None</span>
-                    ) : (
-                      <span className="inline-flex flex-wrap gap-1">
-                        {c.order_types.map((t) => (
-                          <span key={t} className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-medium ring-1 ring-slate-200">
-                            {ORDER_TYPE_LABELS[t] ?? t}
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-4 font-mono text-xs text-slate-600">{c.hsn_sac ?? <span className="text-slate-300">—</span>}</td>
-                  <td className="px-4 py-4 text-xs text-slate-600 max-w-xs truncate">{c.description ?? <span className="text-slate-300">—</span>}</td>
-                  <td className="px-4 py-4">
-                    <StatusPill active={c.status} />
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <span className="inline-flex gap-2">
-                      <Link href={`/dashboard/additional-charges/${c.id}/edit`} className="cursor-pointer rounded-md px-3 py-1.5 text-xs font-semibold tracking-wide bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">Edit</Link>
-                      <ToggleStatusButton basePath="/additional-charges" id={c.id} currentStatus={c.status} mode="base-path" />
-                      <DeleteButton basePath="/additional-charges" id={c.id} />
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {charges.length === 0 && (
-                <tr>
-                  <td colSpan={10} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-sm font-medium">No additional charges configured</p>
-                      <p className="text-xs">Click &quot;+ New additional charge&quot; above to add your first one.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
         </div>
       </div>
 
@@ -427,40 +333,6 @@ function FlowStep({ step, title, body }: { step: string; title: string; body: st
       </div>
       <p className="mt-2 text-xs text-white/70 leading-relaxed">{body}</p>
     </div>
-  );
-}
-
-function TypeChip({ type }: { type: "fixed" | "percentage" }) {
-  if (type === "fixed") {
-    return (
-      <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 ring-1 ring-emerald-200 px-2 py-0.5 rounded-md">
-        <span className="font-mono">₹</span>
-        Fixed
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 text-xs font-semibold text-violet-700 bg-violet-50 ring-1 ring-violet-200 px-2 py-0.5 rounded-md">
-      %
-      <span>Percentage</span>
-    </span>
-  );
-}
-
-function StatusPill({ active }: { active: boolean }) {
-  if (active) {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
-        Active
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold border border-slate-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-      Inactive
-    </span>
   );
 }
 
