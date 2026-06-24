@@ -100,6 +100,7 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
   const [mapPin, setMapPin] = useState("");
   const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
   const [quoting, setQuoting] = useState(false);
+  const [quoteFailed, setQuoteFailed] = useState(false);
 
   // The one manual control: apply or waive the configured additional charge.
   const [applyAdditional, setApplyAdditional] = useState(true);
@@ -285,24 +286,36 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
   }, [useMap, mapPin, selectedAddress]);
   const coordsKey = deliveryCoords ? `${deliveryCoords.lat},${deliveryCoords.lng}` : "";
 
-  // Quote the delivery fee whenever the drop-off or order value changes.
+  // Quote the delivery fee whenever the drop-off or order value changes. Retries
+  // a few times because the API can be cold-starting (a single failed fetch must
+  // never silently leave the fee at ₹0). `quoteFailed` distinguishes "couldn't
+  // calculate" from a genuine ₹0 so the UI doesn't read a transient error as free.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    if (orderType !== "delivery" || !restaurantId || !coordsKey) { setDeliveryQuote(null); return; }
+    if (orderType !== "delivery" || !restaurantId || !coordsKey) { setDeliveryQuote(null); setQuoteFailed(false); setQuoting(false); return; }
     let cancelled = false;
     setQuoting(true);
-    const t = setTimeout(() => {
-      const [lat, lng] = coordsKey.split(",");
-      fetch("/api/admin/pos/delivery-quote", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ restaurant_id: Number(restaurantId), latitude: lat, longitude: lng, order_value: couponBase }),
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d: DeliveryQuote | null) => { if (!cancelled) setDeliveryQuote(d && typeof d.delivery_charge === "number" ? d : null); })
-        .catch(() => { if (!cancelled) setDeliveryQuote(null); })
-        .finally(() => { if (!cancelled) setQuoting(false); });
-    }, 350);
+    setQuoteFailed(false);
+    const [lat, lng] = coordsKey.split(",");
+    const attempt = async (n: number): Promise<void> => {
+      try {
+        const res = await fetch("/api/admin/pos/delivery-quote", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ restaurant_id: Number(restaurantId), latitude: lat, longitude: lng, order_value: couponBase }),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        const d = (await res.json()) as DeliveryQuote | null;
+        if (cancelled) return;
+        if (d && typeof d.delivery_charge === "number") { setDeliveryQuote(d); setQuoteFailed(false); setQuoting(false); return; }
+        throw new Error("bad-shape");
+      } catch {
+        if (cancelled) return;
+        if (n < 3) { setTimeout(() => { if (!cancelled) void attempt(n + 1); }, 1500 * (n + 1)); return; }
+        setDeliveryQuote(null); setQuoteFailed(true); setQuoting(false);
+      }
+    };
+    const t = setTimeout(() => { void attempt(0); }, 350);
     return () => { cancelled = true; clearTimeout(t); };
   }, [orderType, restaurantId, coordsKey, couponBase]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -357,6 +370,14 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
     }
     if (orderType === "delivery" && !deliveryCoords) {
       setError("Pick a delivery address (saved address or a map location)");
+      return;
+    }
+    // The backend recomputes the delivery fee on placement; block until the
+    // preview has resolved so the shown total can't differ from what's charged.
+    if (orderType === "delivery" && deliveryCoords && !deliveryQuote) {
+      setError(quoteFailed
+        ? "Couldn't calculate the delivery fee — re-select the address or try again in a moment."
+        : "Delivery fee is still calculating — please wait a second.");
       return;
     }
     if (couponIneligible) {
@@ -623,9 +644,13 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
               </>
             )}
 
-            {/* Delivery fee — auto from distance (read-only). */}
+            {/* Delivery fee — auto from distance (read-only). A failed quote shows
+                "couldn't calculate", never a misleading ₹0.00. */}
             {orderType === "delivery" && (
-              <Row label="Delivery fee" value={quoting ? "…" : !deliveryCoords ? "—" : deliveryQuote?.free_delivery ? "Free" : inr(deliveryCharge)} />
+              <Row
+                label="Delivery fee"
+                value={quoting ? "calculating…" : !deliveryCoords ? "—" : quoteFailed ? "couldn’t calculate" : deliveryQuote?.free_delivery ? "Free" : inr(deliveryCharge)}
+              />
             )}
 
             {/* GST — food GST + delivery GST, applied per the admin's config. */}
