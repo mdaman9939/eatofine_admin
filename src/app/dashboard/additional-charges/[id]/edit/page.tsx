@@ -14,6 +14,7 @@ interface Charge {
   hsn_sac: string | null;
   description: string | null;
   status: boolean;
+  order_types: string[];
 }
 
 export default async function EditAdditionalChargePage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,7 +32,13 @@ export default async function EditAdditionalChargePage({ params }: { params: Pro
     { name: "hsn_sac", label: "HSN / SAC code", type: "text", placeholder: "998599" },
     { name: "description", label: "Description", type: "textarea" },
     { name: "status", label: "Active", type: "checkbox" },
+    { name: "ot_heading", label: "Applies to order types", type: "heading" },
+    { name: "apply_take_away", label: "Take Away", type: "checkbox" },
+    { name: "apply_dine_in", label: "Dine In", type: "checkbox" },
+    { name: "apply_delivery", label: "Home Delivery", type: "checkbox" },
   ];
+
+  const ot = Array.isArray(c.order_types) ? c.order_types : ["take_away", "dine_in", "delivery"];
 
   return (
     <div className="relative p-8 space-y-6">
@@ -69,6 +76,9 @@ export default async function EditAdditionalChargePage({ params }: { params: Pro
             hsn_sac: c.hsn_sac ?? "",
             description: c.description ?? "",
             status: !!c.status,
+            apply_take_away: ot.includes("take_away"),
+            apply_dine_in: ot.includes("dine_in"),
+            apply_delivery: ot.includes("delivery"),
           }}
         />
       </div>

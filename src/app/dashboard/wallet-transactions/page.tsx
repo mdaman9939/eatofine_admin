@@ -26,7 +26,7 @@ export default async function WalletTransactionsPage() {
       rows={data.items}
       rowKey={(r) => r.id}
       columns={[
-        { header: "Tx", cell: (r) => <span className="font-mono text-xs">{r.transaction_id.slice(0, 8)}</span> },
+        { header: "Tx", cell: (r) => <span className="font-mono text-xs">{(r.transaction_id ?? String(r.id)).slice(0, 8)}</span> },
         { header: "Who", cell: (r) => r.user_id ? `customer #${r.user_id}` : r.delivery_man_id ? `DM #${r.delivery_man_id}` : "—" },
         { header: "Type", cell: (r) => r.transaction_type ?? "—" },
         { header: "Credit", cell: (r) => fmtMoney(r.credit) },

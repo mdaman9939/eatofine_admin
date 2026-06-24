@@ -2,6 +2,7 @@ import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
+import { GstOrderTypesPanel } from "../../../components/GstOrderTypesPanel";
 
 interface Charge {
   id: number;
@@ -13,7 +14,14 @@ interface Charge {
   hsn_sac: string | null;
   description: string | null;
   status: boolean;
+  order_types: string[];
 }
+
+const ORDER_TYPE_LABELS: Record<string, string> = {
+  take_away: "Take Away",
+  dine_in: "Dine In",
+  delivery: "Home Delivery",
+};
 
 const SAMPLE_ORDER_VALUE = 500;
 
@@ -21,13 +29,35 @@ const SAMPLE_ORDER_VALUE = 500;
 const PIE_COLORS = ["#10B981", "#14B8A6", "#22C55E", "#06B6D4", "#84CC16", "#0EA5E9"];
 
 export default async function AdditionalChargesPage() {
-  const charges = await adminFetch<Charge[]>("/admin/additional-charges");
+  const [charges, gstSettings] = await Promise.all([
+    adminFetch<Charge[]>("/admin/additional-charges"),
+    adminFetch<{ settings: Array<{ key: string; value: string | null }> }>(
+      "/admin/business-settings?prefix=food_gst_order_types",
+    ).catch(() => ({ settings: [] as Array<{ key: string; value: string | null }> })),
+    // Legacy toggle fetched only to derive the default when the new key is unset.
+  ]);
+  const togglesRes = await adminFetch<{ settings: Array<{ key: string; value: string | null }> }>(
+    "/admin/business-settings?prefix=charges_on_takeaway_dinein",
+  ).catch(() => ({ settings: [] as Array<{ key: string; value: string | null }> }));
 
-  // Coerce numeric fields — MongoDB returns null for absent values.
+  // Coerce numeric fields + order_types — MongoDB returns null for absent values.
   for (const c of charges) {
     c.amount = Number(c.amount ?? 0);
     c.gst_rate = Number(c.gst_rate ?? 0);
+    c.order_types = Array.isArray(c.order_types) && c.order_types.length
+      ? c.order_types
+      : ["take_away", "dine_in", "delivery"];
   }
+
+  // GST/extra-packaging order types: the new key wins; else default from the
+  // legacy charges_on_takeaway_dinein toggle (ON → all three, OFF → delivery).
+  const gstRaw = gstSettings.settings.find((s) => s.key === "food_gst_order_types")?.value ?? "";
+  const toggleOn = /^(1|true|yes|on)$/i.test(
+    (togglesRes.settings.find((s) => s.key === "charges_on_takeaway_dinein")?.value ?? "").trim(),
+  );
+  const gstInitial = gstRaw.trim()
+    ? gstRaw.split(",").map((s) => s.trim()).filter((s) => ["take_away", "dine_in", "delivery"].includes(s))
+    : (toggleOn ? ["take_away", "dine_in", "delivery"] : ["delivery"]);
 
   const active = charges.filter((c) => c.status);
   const activeCount = active.length;
@@ -80,6 +110,10 @@ export default async function AdditionalChargesPage() {
               { name: "gst_rate", label: "GST %", type: "number", defaultValue: 18 },
               { name: "hsn_sac", label: "HSN / SAC code", type: "text", placeholder: "998599" },
               { name: "description", label: "Description", type: "textarea" },
+              { name: "ot_heading", label: "Applies to order types", type: "heading" },
+              { name: "apply_take_away", label: "Take Away", type: "checkbox", defaultValue: true },
+              { name: "apply_dine_in", label: "Dine In", type: "checkbox", defaultValue: true },
+              { name: "apply_delivery", label: "Home Delivery", type: "checkbox", defaultValue: true },
             ]}
           />
         </div>
@@ -108,6 +142,9 @@ export default async function AdditionalChargesPage() {
           </svg>
         } />
       </div>
+
+      {/* ── GST / extra-packaging order-type scope (centralized) ── */}
+      <GstOrderTypesPanel initial={gstInitial} />
 
       {/* ── Sample order impact preview ────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -202,7 +239,7 @@ export default async function AdditionalChargesPage() {
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h2 className="text-base font-semibold text-slate-900">All charges</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Each active row applies to every customer order.</p>
+            <p className="text-xs text-slate-500 mt-0.5">Each active row applies to the order types ticked on it.</p>
           </div>
           <span className="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md font-mono">
             {charges.length} {charges.length === 1 ? "row" : "rows"}
@@ -217,6 +254,7 @@ export default async function AdditionalChargesPage() {
                 <th className="px-4 py-3 font-semibold">Type</th>
                 <th className="px-4 py-3 font-semibold text-right">Amount</th>
                 <th className="px-4 py-3 font-semibold">GST</th>
+                <th className="px-4 py-3 font-semibold">Order types</th>
                 <th className="px-4 py-3 font-semibold">HSN / SAC</th>
                 <th className="px-4 py-3 font-semibold">Description</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
@@ -244,6 +282,21 @@ export default async function AdditionalChargesPage() {
                       <span className="text-xs text-slate-400">Exempt</span>
                     )}
                   </td>
+                  <td className="px-4 py-4">
+                    {c.order_types.length === 3 ? (
+                      <span className="text-xs text-slate-400">All</span>
+                    ) : c.order_types.length === 0 ? (
+                      <span className="text-xs text-rose-400">None</span>
+                    ) : (
+                      <span className="inline-flex flex-wrap gap-1">
+                        {c.order_types.map((t) => (
+                          <span key={t} className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-medium ring-1 ring-slate-200">
+                            {ORDER_TYPE_LABELS[t] ?? t}
+                          </span>
+                        ))}
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-4 font-mono text-xs text-slate-600">{c.hsn_sac ?? <span className="text-slate-300">—</span>}</td>
                   <td className="px-4 py-4 text-xs text-slate-600 max-w-xs truncate">{c.description ?? <span className="text-slate-300">—</span>}</td>
                   <td className="px-4 py-4">
@@ -260,7 +313,7 @@ export default async function AdditionalChargesPage() {
               ))}
               {charges.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
+                  <td colSpan={10} className="px-6 py-12 text-center">
                     <div className="inline-flex flex-col items-center gap-2 text-slate-400">
                       <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />

@@ -19,14 +19,39 @@ interface AdditionalCharge {
   gst_applicable: boolean;
   gst_rate: number;
   status: boolean;
+  order_types: string[];
+}
+/** A coupon usable for the selected restaurant (POS coupon picker). */
+interface CouponOpt {
+  id: number;
+  code: string;
+  title: string;
+  discount: number;
+  discount_type: string;
+  min_purchase: number;
+  max_discount: number;
 }
 
 const inr = (n: number) => `₹${(n || 0).toFixed(2)}`;
+const ORDER_TYPE_LABEL: Record<string, string> = { take_away: "Take Away", dine_in: "Dine In", delivery: "Home Delivery" };
+
+/** Preview a coupon's discount on a known order base — MIRRORS the backend
+ *  validateAndComputeCoupon math so the displayed total equals what's charged.
+ *  Returns 0 when the min-purchase isn't met (backend would reject it). */
+function previewCouponDiscount(c: CouponOpt | undefined, base: number): number {
+  if (!c) return 0;
+  if (c.min_purchase && base < c.min_purchase) return 0;
+  let d = c.discount_type === "percent" || c.discount_type === "percentage"
+    ? (base * c.discount) / 100
+    : c.discount;
+  if (c.max_discount > 0) d = Math.min(d, c.max_discount);
+  return Math.min(Math.round(d * 100) / 100, base);
+}
 
 /** StackFood-style POS: Food Section (zone → restaurant → categories → search →
  *  menu) on the left, Billing Section (customer, order type, items, totals) on
  *  the right. */
-export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, chargesOnTakeawayDinein = false }: { zones: PosZone[]; restaurants: PosRestaurant[]; categories: PosCategory[]; foodGstRate?: number; chargesOnTakeawayDinein?: boolean }) {
+export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, foodGstOrderTypes = ["delivery"] }: { zones: PosZone[]; restaurants: PosRestaurant[]; categories: PosCategory[]; foodGstRate?: number; foodGstOrderTypes?: string[] }) {
   const router = useRouter();
   const [zoneId, setZoneId] = useState("");
   const [restaurantId, setRestaurantId] = useState("");
@@ -39,6 +64,8 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, char
   const [tax, setTax] = useState(foodGstRate);
   const [extraPackaging, setExtraPackaging] = useState(0);
   const [charges, setCharges] = useState<AdditionalCharge[]>([]);
+  const [coupons, setCoupons] = useState<CouponOpt[]>([]);
+  const [selectedCouponCode, setSelectedCouponCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useState<Record<number, CartLine>>({});
   const [customerName, setCustomerName] = useState("");
@@ -71,7 +98,12 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, char
         setCharges(
           list
             .filter((c) => c.status)
-            .map((c) => ({ ...c, amount: Number(c.amount ?? 0), gst_rate: Number(c.gst_rate ?? 0) })),
+            .map((c) => ({
+              ...c,
+              amount: Number(c.amount ?? 0),
+              gst_rate: Number(c.gst_rate ?? 0),
+              order_types: Array.isArray(c.order_types) && c.order_types.length ? c.order_types : ["take_away", "dine_in", "delivery"],
+            })),
         );
       })
       .catch(() => setCharges([]));
@@ -114,6 +146,23 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, char
   }, [restaurantId]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  // Load the coupons usable for the selected restaurant (restaurant-specific +
+  // platform-wide). The picker shows what discount each restaurant offers; the
+  // discount is recomputed authoritatively by the backend at place-order time.
+  useEffect(() => {
+    setSelectedCouponCode("");
+    if (!restaurantId) { setCoupons([]); return; }
+    let cancelled = false;
+    fetch(`/api/admin/restaurants/${restaurantId}/coupons`)
+      .then((r) => (r.ok ? r.json() : { coupons: [] }))
+      .then((d: { coupons?: CouponOpt[] }) => {
+        if (cancelled) return;
+        setCoupons(Array.isArray(d?.coupons) ? d.coupons : []);
+      })
+      .catch(() => { if (!cancelled) setCoupons([]); });
+    return () => { cancelled = true; };
+  }, [restaurantId]);
+
   const usedCatIds = useMemo(() => new Set(foods.map((f) => f.category_id).filter(Boolean)), [foods]);
   const menuCategories = useMemo(() => categories.filter((c) => usedCatIds.has(c.id)), [categories, usedCatIds]);
 
@@ -127,37 +176,46 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, char
   const subtotal = lines.reduce((s, l) => s + l.food.price * l.qty, 0);
   const lineAddOnTotal = (l: CartLine) => l.addOns.reduce((s, id) => s + (addOnMap[id]?.price ?? 0), 0);
   const addonTotal = lines.reduce((s, l) => s + lineAddOnTotal(l) * l.qty, 0);
-  // Add-ons are part of the taxable food value.
-  const taxable = Math.max(0, subtotal + addonTotal - discount);
+  // Coupon discount — its base mirrors the backend's POS subtotal (items +
+  // add-ons). The preview math matches validateAndComputeCoupon so the shown
+  // total equals what the backend charges + records.
+  const selectedCoupon = useMemo(() => coupons.find((c) => c.code === selectedCouponCode), [coupons, selectedCouponCode]);
+  const couponBase = subtotal + addonTotal;
+  const couponDiscount = previewCouponDiscount(selectedCoupon, couponBase);
+  const couponIneligible = !!selectedCoupon && couponDiscount === 0;
+  // Manual discount + coupon both reduce the taxable food value.
+  const taxable = Math.max(0, couponBase - discount - couponDiscount);
   // Gross GST is always computed (for display); it only feeds the total when the
-  // GST checkbox is ticked.
+  // GST checkbox is ticked AND food GST applies to this order type.
   const vatGross = taxable * (tax / 100);
-  // Extra charges (GST + platform/service/packaging fees + extra packaging) are
-  // taken on Home Delivery always; on Take Away / Dine In only when the admin has
-  // enabled `charges_on_takeaway_dinein` in Order Settings. Otherwise the bill is
-  // just food − discount (matches the customer app + the order API).
-  const chargesApply = orderType === "delivery" || chargesOnTakeawayDinein;
-  const vat = taxEnabled && chargesApply ? vatGross : 0;
+  // Food GST + extra packaging apply only to the order types configured on the
+  // Additional Charges screen (food_gst_order_types). The per-charge platform /
+  // convenience / packaging fees are scoped on each charge's own order_types.
+  const foodGstApplies = foodGstOrderTypes.includes(orderType);
+  const vat = taxEnabled && foodGstApplies ? vatGross : 0;
 
-  // Each configured charge, resolved against this order's subtotal (incl. GST).
+  // Each configured charge that applies to THIS order type, resolved against the
+  // order's subtotal (incl. its own GST).
   const chargeRows = useMemo(
     () =>
-      charges.map((c) => {
-        const base = c.charge_type === "fixed" ? c.amount : (subtotal * c.amount) / 100;
-        const gst = c.gst_applicable ? (base * c.gst_rate) / 100 : 0;
-        // Expose the already-computed GST portion + a packaging flag so the
-        // Taxes & Charges breakdown can regroup these without recomputing tax.
-        return { id: c.id, label: c.charge_head, amount: base + gst, gst, gstRate: c.gst_rate, isPackaging: /packag/i.test(c.charge_head) };
-      }),
-    [charges, subtotal],
+      charges
+        .filter((c) => c.order_types.includes(orderType))
+        .map((c) => {
+          const base = c.charge_type === "fixed" ? c.amount : (subtotal * c.amount) / 100;
+          const gst = c.gst_applicable ? (base * c.gst_rate) / 100 : 0;
+          // Expose the already-computed GST portion + a packaging flag so the
+          // Taxes & Charges breakdown can regroup these without recomputing tax.
+          return { id: c.id, label: c.charge_head, amount: base + gst, gst, gstRate: c.gst_rate, isPackaging: /packag/i.test(c.charge_head) };
+        }),
+    [charges, subtotal, orderType],
   );
   // Only charges left ticked contribute to the total; unticked ones are still
   // shown (struck-through) but excluded from the bill and the placed order.
-  const additionalChargeTotal = chargesApply ? chargeRows.reduce((s, r) => s + (disabledCharges.has(r.id) ? 0 : r.amount), 0) : 0;
-  // Extra packaging applies to take-away orders (StackFood behaviour), and only
-  // when its checkbox is ticked — and only when charges apply for this order type.
+  const additionalChargeTotal = chargeRows.reduce((s, r) => s + (disabledCharges.has(r.id) ? 0 : r.amount), 0);
+  // Extra packaging applies to take-away orders (StackFood behaviour), only when
+  // its checkbox is ticked, and only when food GST/packaging applies to this type.
   const packagingGross = orderType === "take_away" ? extraPackaging : 0;
-  const packagingAmount = packagingEnabled && chargesApply ? packagingGross : 0;
+  const packagingAmount = packagingEnabled && foodGstApplies ? packagingGross : 0;
 
   const total =
     taxable +
@@ -223,6 +281,10 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, char
       setError("Enter a valid 10-digit Indian mobile number (starts with 6–9)");
       return;
     }
+    if (couponIneligible) {
+      setError(`Coupon ${selectedCouponCode} needs a minimum order of ₹${selectedCoupon?.min_purchase}. Remove it or add items.`);
+      return;
+    }
     setPlacing(true);
     fetch("/api/admin/pos/place-order", {
       method: "POST",
@@ -239,6 +301,8 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, char
         table_number: orderType === "dine_in" ? tableNumber.trim() : undefined,
         payment_method: paymentMethod,
         discount,
+        // The backend re-validates + recomputes the coupon discount (authoritative).
+        coupon_code: selectedCouponCode || undefined,
         // Send 0% GST when the tax checkbox is unticked so the backend's
         // taxAmount is 0 — the placed order matches the displayed total.
         tax_percent: taxEnabled ? tax : 0,
@@ -414,44 +478,82 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, char
               <span>Discount</span>
               <input type="number" min={0} value={discount} onChange={(e) => setDiscount(Math.max(0, Number(e.target.value) || 0))} className="w-24 rounded border border-slate-300 px-2 py-0.5 text-right text-sm" />
             </label>
+            {/* Coupon — restaurant-wise; shows what each restaurant offers. The
+                backend re-validates + recomputes the discount authoritatively. */}
+            {restaurantId && coupons.length > 0 && (
+              <div className="space-y-1">
+                <label className="flex justify-between items-center gap-2 text-slate-600">
+                  <span className="shrink-0">Coupon</span>
+                  <select
+                    value={selectedCouponCode}
+                    onChange={(e) => setSelectedCouponCode(e.target.value)}
+                    className="flex-1 min-w-0 max-w-[15rem] rounded border border-slate-300 px-2 py-0.5 text-sm"
+                  >
+                    <option value="">No coupon</option>
+                    {coupons.map((c) => (
+                      <option key={c.id} value={c.code}>
+                        {c.code} — {c.discount_type === "percent" || c.discount_type === "percentage" ? `${c.discount}%` : inr(c.discount)}{c.min_purchase ? ` (min ₹${c.min_purchase})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {selectedCouponCode && !couponIneligible && (
+                  <div className="flex justify-between text-emerald-700">
+                    <span>Coupon ({selectedCouponCode})</span>
+                    <span className="tabular-nums">− {inr(couponDiscount)}</span>
+                  </div>
+                )}
+                {couponIneligible && (
+                  <p className="text-[11px] text-amber-600">
+                    Add {inr((selectedCoupon?.min_purchase ?? 0) - couponBase)} more to use {selectedCouponCode}.
+                  </p>
+                )}
+              </div>
+            )}
             {orderType === "delivery" && (
               <label className="flex justify-between items-center text-slate-600">
                 <span>Delivery fee</span>
                 <input type="number" min={0} value={deliveryFee} onChange={(e) => setDeliveryFee(Math.max(0, Number(e.target.value) || 0))} className="w-24 rounded border border-slate-300 px-2 py-0.5 text-right text-sm" />
               </label>
             )}
-            {chargesApply ? (
-              <>
-                <ChargeToggleRow
-                  label={`GST (${tax}%)`}
-                  value={inr(vatGross)}
-                  checked={taxEnabled}
-                  onChange={setTaxEnabled}
-                />
-                {/* Configured platform charges (Additional Charges plan). Tick to
-                    apply, untick to waive — affects the total and the placed order. */}
-                {chargeRows.map((c) => (
-                  <ChargeToggleRow
-                    key={c.id}
-                    label={c.label}
-                    value={inr(c.amount)}
-                    checked={!disabledCharges.has(c.id)}
-                    onChange={() => toggleCharge(c.id)}
-                  />
-                ))}
-                <ChargeToggleRow
-                  label="Extra Packaging Amount"
-                  value={inr(packagingGross)}
-                  checked={packagingEnabled}
-                  onChange={setPackagingEnabled}
-                />
-                <TaxBreakdownDisclosure data={taxBreakdown} className="mt-1.5" />
-              </>
-            ) : (
+            {/* Food GST — applies only to the order types configured on the
+                Additional Charges screen (food_gst_order_types). */}
+            {foodGstApplies && (
+              <ChargeToggleRow
+                label={`GST (${tax}%)`}
+                value={inr(vatGross)}
+                checked={taxEnabled}
+                onChange={setTaxEnabled}
+              />
+            )}
+            {/* Configured platform charges that apply to THIS order type. Tick to
+                apply, untick to waive — affects the total and the placed order. */}
+            {chargeRows.map((c) => (
+              <ChargeToggleRow
+                key={c.id}
+                label={c.label}
+                value={inr(c.amount)}
+                checked={!disabledCharges.has(c.id)}
+                onChange={() => toggleCharge(c.id)}
+              />
+            ))}
+            {/* Extra packaging — bundled with food GST's order-type scope. */}
+            {foodGstApplies && packagingGross > 0 && (
+              <ChargeToggleRow
+                label="Extra Packaging Amount"
+                value={inr(packagingGross)}
+                checked={packagingEnabled}
+                onChange={setPackagingEnabled}
+              />
+            )}
+            {!foodGstApplies && chargeRows.length === 0 && (
               <p className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded px-2 py-1.5">
-                GST & extra charges are not applied to {orderType === "dine_in" ? "Dine In" : "Take Away"} orders.
-                Enable them in <span className="font-medium">Order Settings → “Charge GST & fees on Take Away / Dine In”</span>.
+                No GST or additional charges are configured for {ORDER_TYPE_LABEL[orderType] ?? orderType} orders.
+                Manage these on the <span className="font-medium">Additional Charges</span> screen.
               </p>
+            )}
+            {(foodGstApplies || chargeRows.length > 0) && (
+              <TaxBreakdownDisclosure data={taxBreakdown} className="mt-1.5" />
             )}
             <div className="flex justify-between font-bold text-base pt-1 border-t border-slate-100">
               <span>Total</span><span className="tabular-nums">{inr(total)}</span>
