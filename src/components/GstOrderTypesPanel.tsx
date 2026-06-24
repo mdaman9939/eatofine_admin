@@ -34,7 +34,10 @@ export function GstOrderTypesPanel({ initial }: { initial: string[] }) {
   const save = () => {
     setError(null);
     setSaved(false);
-    const csv = TYPES.map((t) => t.key).filter((k) => sel.has(k)).join(",");
+    // Write an explicit "none" sentinel for an empty selection so readers can
+    // tell "GST applies to no order type" apart from "never configured" (which
+    // falls back to the legacy toggle). sanitizeOrderTypes("none") → [].
+    const csv = sel.size === 0 ? "none" : TYPES.map((t) => t.key).filter((k) => sel.has(k)).join(",");
     startTransition(async () => {
       const res = await fetch("/api/admin/business-settings", {
         method: "PATCH",

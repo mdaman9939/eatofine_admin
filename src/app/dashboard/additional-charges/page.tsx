@@ -44,7 +44,8 @@ export default async function AdditionalChargesPage() {
   for (const c of charges) {
     c.amount = Number(c.amount ?? 0);
     c.gst_rate = Number(c.gst_rate ?? 0);
-    c.order_types = Array.isArray(c.order_types) && c.order_types.length
+    // Missing/non-array → all three (legacy default); explicit [] stays "none".
+    c.order_types = Array.isArray(c.order_types)
       ? c.order_types
       : ["take_away", "dine_in", "delivery"];
   }

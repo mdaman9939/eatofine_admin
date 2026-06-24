@@ -102,7 +102,9 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
               ...c,
               amount: Number(c.amount ?? 0),
               gst_rate: Number(c.gst_rate ?? 0),
-              order_types: Array.isArray(c.order_types) && c.order_types.length ? c.order_types : ["take_away", "dine_in", "delivery"],
+              // Only a missing/non-array field defaults to all three; an explicit
+              // empty array stays "applies to none" (matches the backend).
+              order_types: Array.isArray(c.order_types) ? c.order_types : ["take_away", "dine_in", "delivery"],
             })),
         );
       })
@@ -211,11 +213,14 @@ export function PosBoard({ zones, restaurants, categories, foodGstRate = 5, food
   );
   // Only charges left ticked contribute to the total; unticked ones are still
   // shown (struck-through) but excluded from the bill and the placed order.
-  const additionalChargeTotal = chargeRows.reduce((s, r) => s + (disabledCharges.has(r.id) ? 0 : r.amount), 0);
+  // Round to paise here so the SAME value feeds the displayed total AND the
+  // placed order — otherwise the display (unrounded) and the stored order_amount
+  // (built from the .toFixed(2) we send) could differ by ₹0.01.
+  const additionalChargeTotal = Math.round(chargeRows.reduce((s, r) => s + (disabledCharges.has(r.id) ? 0 : r.amount), 0) * 100) / 100;
   // Extra packaging applies to take-away orders (StackFood behaviour), only when
   // its checkbox is ticked, and only when food GST/packaging applies to this type.
   const packagingGross = orderType === "take_away" ? extraPackaging : 0;
-  const packagingAmount = packagingEnabled && foodGstApplies ? packagingGross : 0;
+  const packagingAmount = Math.round((packagingEnabled && foodGstApplies ? packagingGross : 0) * 100) / 100;
 
   const total =
     taxable +
