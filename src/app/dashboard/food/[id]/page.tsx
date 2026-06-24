@@ -100,7 +100,6 @@ export default async function FoodDetailPage({
         <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-5">
           <h2 className="text-sm font-semibold uppercase text-zinc-500 mb-3">Pricing</h2>
           <KV label="Price" value={`₹${f.price.toFixed(2)}`} />
-          <KV label="GST" value={`${f.tax}%`} />
           <KV label="Discount" value={f.discount ? `${f.discount}${f.discount_type === "percent" ? "%" : "₹"}` : "—"} />
         </div>
         <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-5">

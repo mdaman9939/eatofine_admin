@@ -81,7 +81,8 @@ export function buildFoodFields(
       { value: "percent", label: "Percent (%)" },
       { value: "amount", label: "Amount (₹)" },
     ] },
-    { name: "tax", label: "GST %", type: "number", defaultValue: 5 },
+    // Food GST is platform-collected at one admin-configured rate (Invoice Setup,
+    // GST sec 9(5)) and frozen onto each order — it is NOT set per food here.
 
     { name: "stock_type", label: "Stock type", type: "select", defaultValue: "unlimited", options: [
       { value: "unlimited", label: "Unlimited" },
