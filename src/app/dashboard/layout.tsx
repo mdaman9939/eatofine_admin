@@ -322,16 +322,16 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/zones?for=deliveryman", label: "Zone Setup", icon: "zone" },
           { href: "/dashboard/vehicles", label: "Vehicle Category Setup", icon: "car" },
           { href: "/dashboard/shifts", label: "Shift Setup", icon: "clock" },
+          // Single rewards config; the request → approval → disbursement views
+          // live under Reports (Delivery Men Withdrawal Request + DM Disbursement),
+          // so the old Incentives / Incentives History / DM Disbursement /
+          // DM Withdraw Requests entries are removed here to avoid duplicates.
           { href: "/dashboard/dm-bonuses", label: "Bonuses & Incentives", icon: "star" },
-          { href: "/dashboard/dm-incentives", label: "Incentives", icon: "currency" },
-          { href: "/dashboard/dm-incentives/history", label: "Incentives History", icon: "ledger" },
           { href: "/dashboard/dm-reviews", label: "Reviews", icon: "star" },
-          { href: "/dashboard/disbursements?type=deliveryman", label: "DM Disbursement", icon: "bank" },
           // "DM Earnings" hidden from the menu — its live wallet-credit ledger now
           // lives under Reports → Deliveryman Earning. The /dashboard/dm-earnings
           // route + /admin/dm-earnings endpoint stay intact (nothing breaks).
           { href: "/dashboard/dm-payouts", label: "DM Payouts (net)", icon: "currency" },
-          { href: "/dashboard/withdraw-requests?type=deliveryman", label: "DM Withdraw Requests", icon: "cash" },
         ],
       },
       {
