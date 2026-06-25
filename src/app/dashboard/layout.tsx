@@ -322,7 +322,7 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/zones?for=deliveryman", label: "Zone Setup", icon: "zone" },
           { href: "/dashboard/vehicles", label: "Vehicle Category Setup", icon: "car" },
           { href: "/dashboard/shifts", label: "Shift Setup", icon: "clock" },
-          { href: "/dashboard/dm-bonuses", label: "Bonuses", icon: "star" },
+          { href: "/dashboard/dm-bonuses", label: "Bonuses & Incentives", icon: "star" },
           { href: "/dashboard/dm-incentives", label: "Incentives", icon: "currency" },
           { href: "/dashboard/dm-incentives/history", label: "Incentives History", icon: "ledger" },
           { href: "/dashboard/dm-reviews", label: "Reviews", icon: "star" },
@@ -417,6 +417,8 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/reports/admin-earning", label: "Admin Earning", icon: "currency" },
           { href: "/dashboard/reports/restaurant-earning", label: "Restaurant Earning", icon: "currency" },
           { href: "/dashboard/reports/deliveryman-earning", label: "Deliveryman Earning", icon: "currency" },
+          { href: "/dashboard/reports/dm-withdrawal-requests", label: "Delivery Men Withdrawal Request", icon: "cash" },
+          { href: "/dashboard/reports/dm-disbursement", label: "DM Disbursement", icon: "bank" },
         ],
       },
       {

@@ -18,13 +18,22 @@ interface Bonus {
 }
 
 const PERIOD_OPTIONS = [
-  { value: "daily", label: "Per day" },
-  { value: "weekly", label: "Per week" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
   { value: "lifetime", label: "Lifetime (one-time)" },
+];
+
+const TYPE_OPTIONS = [
+  { value: "bonus", label: "Bonus" },
+  { value: "incentive", label: "Incentive" },
 ];
 
 function periodLabel(p: string): string {
   return PERIOD_OPTIONS.find((o) => o.value === p)?.label ?? p;
+}
+function typeLabel(t: string): string {
+  return TYPE_OPTIONS.find((o) => o.value === t)?.label ?? "Bonus";
 }
 
 export default async function DmBonusesPage() {
@@ -44,21 +53,23 @@ export default async function DmBonusesPage() {
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-white/70 font-semibold">
               <span className="inline-block w-1 h-1 rounded-full bg-white/70" /> USER MANAGEMENT · DELIVERY MEN
             </div>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight">Delivery Man Bonuses</h1>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight">Bonuses &amp; Incentives</h1>
             <p className="mt-2 text-sm text-white/80 leading-relaxed max-w-2xl">
-              <strong>How it works — Automatic reward, no approval needed.</strong> Make a rule like
-              &ldquo;20 deliveries in a day &rarr; ₹200&rdquo;. The moment a rider completes that many
-              delivered orders within the chosen period (per day / per week / lifetime), the reward is
-              credited straight to their wallet <strong>automatically</strong> — once per rider, per period.
+              <strong>One place to configure rider rewards.</strong> Make a rule like &ldquo;20 deliveries
+              this week &rarr; ₹200&rdquo;, choose <strong>Bonus</strong> or <strong>Incentive</strong> and a
+              <strong> Daily / Weekly / Monthly</strong> period. Riders get notified, and when one hits the
+              target they raise a <strong>claim</strong> — it lands in <em>Reports → DM Withdrawal Request</em>;
+              on your approval the reward is paid to their wallet and shows in <em>Reports → DM Disbursement</em>.
             </p>
           </div>
           <CreateForm
             path="/dm-bonuses"
-            title="New bonus"
+            title="New reward"
             fields={[
-              { name: "name", label: "Bonus name", type: "text", required: true, placeholder: "20 orders → ₹200" },
+              { name: "name", label: "Reward name", type: "text", required: true, placeholder: "20 orders → ₹200" },
+              { name: "type", label: "Type", type: "select", options: TYPE_OPTIONS, defaultValue: "bonus" },
               { name: "threshold", label: "Deliveries needed", type: "number", required: true, defaultValue: 20 },
-              { name: "period", label: "Within", type: "select", options: PERIOD_OPTIONS, defaultValue: "daily" },
+              { name: "period", label: "Within", type: "select", options: PERIOD_OPTIONS, defaultValue: "weekly" },
               { name: "amount", label: "Reward ₹", type: "number", required: true, defaultValue: 200 },
               { name: "trigger", label: "Note (optional)", type: "text", placeholder: "e.g. weekend push" },
             ]}
@@ -77,14 +88,15 @@ export default async function DmBonusesPage() {
         <h2 className="text-base font-semibold text-slate-900">All bonus rules</h2>
       </div>
       <PaginatedTable
-        colCount={8}
+        colCount={9}
         pageSize={10}
         searchable
-        empty="No bonuses configured."
+        empty="No rewards configured."
         headerRow={
           <tr>
             <th className="px-6 py-3 font-semibold">#</th>
-            <th className="px-4 py-3 font-semibold">Bonus</th>
+            <th className="px-4 py-3 font-semibold">Name</th>
+            <th className="px-4 py-3 font-semibold">Type</th>
             <th className="px-4 py-3 font-semibold">Rule</th>
             <th className="px-4 py-3 font-semibold text-right">Reward</th>
             <th className="px-4 py-3 font-semibold">Note</th>
@@ -100,6 +112,9 @@ export default async function DmBonusesPage() {
           <tr key={b.id} className="hover:bg-emerald-50/40">
             <td className="px-6 py-3 font-mono text-xs text-slate-400">#{b.id}</td>
             <td className="px-4 py-3 font-semibold text-slate-900">{b.name}</td>
+            <td className="px-4 py-3">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${b.type === "incentive" ? "bg-indigo-50 text-indigo-700 border-indigo-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>{typeLabel(b.type)}</span>
+            </td>
             <td className="px-4 py-3 text-xs text-slate-700">
               {b.threshold > 0 ? (
                 <span className="inline-flex items-center gap-1 font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5">
@@ -123,8 +138,9 @@ export default async function DmBonusesPage() {
             </td>
             <td className="px-4 py-3 text-right">
               <span className="inline-flex gap-2">
-                <EditRecordButton basePath="/dm-bonuses" id={b.id} title="Edit bonus" values={b as unknown as Record<string, unknown>} fields={[
-                  { name: "name", label: "Bonus name" },
+                <EditRecordButton basePath="/dm-bonuses" id={b.id} title="Edit reward" values={b as unknown as Record<string, unknown>} fields={[
+                  { name: "name", label: "Reward name" },
+                  { name: "type", label: "Type", type: "select", options: TYPE_OPTIONS },
                   { name: "threshold", label: "Deliveries needed", type: "number" },
                   { name: "period", label: "Within", type: "select", options: PERIOD_OPTIONS },
                   { name: "amount", label: "Reward ₹", type: "number" },
