@@ -14,6 +14,7 @@ export interface TxnRow {
   discounted_amount: number;
   vat_tax: number;
   delivery_charge: number;
+  tips: number;
   order_amount: number;
   admin_discount: number;
   restaurant_discount: number;
@@ -41,6 +42,7 @@ const COLS: Array<{ key: keyof TxnRow; label: string; money?: boolean }> = [
   { key: "discounted_amount", label: "Discounted Amount", money: true },
   { key: "vat_tax", label: "GST", money: true },
   { key: "delivery_charge", label: "Delivery Charge", money: true },
+  { key: "tips", label: "Tips (to rider)", money: true },
   { key: "order_amount", label: "Order Amount", money: true },
   { key: "admin_discount", label: "Admin Discount", money: true },
   { key: "restaurant_discount", label: "Restaurant Discount", money: true },
