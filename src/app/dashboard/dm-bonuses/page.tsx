@@ -35,6 +35,12 @@ function periodLabel(p: string): string {
 function typeLabel(t: string): string {
   return TYPE_OPTIONS.find((o) => o.value === t)?.label ?? "Bonus";
 }
+function fmtDate(s: string | null): string {
+  if (!s) return "—";
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
 
 export default async function DmBonusesPage() {
   const data = await adminFetch<{ total: number; items: Bonus[] }>("/admin/dm-bonuses");
@@ -88,7 +94,7 @@ export default async function DmBonusesPage() {
         <h2 className="text-base font-semibold text-slate-900">All bonus rules</h2>
       </div>
       <PaginatedTable
-        colCount={9}
+        colCount={10}
         pageSize={10}
         searchable
         empty="No rewards configured."
@@ -101,6 +107,7 @@ export default async function DmBonusesPage() {
             <th className="px-4 py-3 font-semibold text-right">Reward</th>
             <th className="px-4 py-3 font-semibold">Note</th>
             <th className="px-4 py-3 font-semibold text-right">Claims (30d)</th>
+            <th className="px-4 py-3 font-semibold">Created</th>
             <th className="px-4 py-3 font-semibold">Status</th>
             <th className="px-4 py-3 font-semibold text-right">Actions</th>
           </tr>
@@ -127,6 +134,7 @@ export default async function DmBonusesPage() {
             <td className="px-4 py-3 text-right font-semibold text-slate-900 tabular-nums">₹{b.amount}</td>
             <td className="px-4 py-3 text-slate-600 text-xs">{b.trigger}</td>
             <td className="px-4 py-3 text-right text-slate-700 tabular-nums">{b.claims_30d}</td>
+            <td className="px-4 py-3 text-xs text-slate-500">{fmtDate(b.created_at)}</td>
             <td className="px-4 py-3">
               {b.status ? (
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
