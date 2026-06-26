@@ -1,6 +1,7 @@
 import { adminFetch } from "../../../../lib/api";
 import { PaginatedTable } from "../../../../components/PaginatedTable";
 import { ApproveRejectButtons } from "../../../../components/ApproveRejectButtons";
+import { CsvExportButton } from "../../../../components/CsvExportButton";
 
 interface Claim {
   id: number;
@@ -67,7 +68,40 @@ export default async function DmWithdrawalRequestsPage() {
         <StatTile label="Total claims" value={claims.length.toString()} accent="slate" />
       </div>
 
-      <h2 className="text-base font-semibold text-slate-900">All claims</h2>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-base font-semibold text-slate-900">All claims</h2>
+        <CsvExportButton
+          filename="dm-reward-claims"
+          columns={[
+            { key: "id", label: "Claim #" },
+            { key: "rider", label: "Rider" },
+            { key: "dm_id", label: "Rider ID" },
+            { key: "reward", label: "Reward" },
+            { key: "type", label: "Type" },
+            { key: "period", label: "Period" },
+            { key: "achieved", label: "Achieved" },
+            { key: "amount", label: "Amount" },
+            { key: "status", label: "Status" },
+            { key: "reason", label: "Reason" },
+            { key: "requested", label: "Requested" },
+            { key: "credited", label: "Credited" },
+          ]}
+          rows={claims.map((c) => ({
+            id: c.id,
+            rider: c.dm_name ?? `Rider #${c.dm_id}`,
+            dm_id: c.dm_id,
+            reward: c.bonus_name ?? "",
+            type: c.type,
+            period: c.period ?? "",
+            achieved: `${c.deliveries}/${c.threshold}`,
+            amount: c.amount.toFixed(2),
+            status: c.status,
+            reason: c.reason ?? "",
+            requested: fmtDate(c.requested_at),
+            credited: c.status === "approved" ? fmtDate(c.credited_at) : "",
+          }))}
+        />
+      </div>
       <PaginatedTable
         colCount={8}
         pageSize={10}

@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../../lib/api";
 import { PaginatedTable } from "../../../../components/PaginatedTable";
+import { CsvExportButton } from "../../../../components/CsvExportButton";
 
 interface Row {
   kind: string;       // 'bonus' | 'incentive' | 'tip'
@@ -58,7 +59,30 @@ export default async function DmDisbursementReportPage() {
         <StatTile label="Entries" value={rows.length.toString()} accent="slate" />
       </div>
 
-      <h2 className="text-base font-semibold text-slate-900">Disbursement log</h2>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="text-base font-semibold text-slate-900">Disbursement log</h2>
+        <CsvExportButton
+          filename="dm-disbursement"
+          columns={[
+            { key: "rider", label: "Rider" },
+            { key: "dm_id", label: "Rider ID" },
+            { key: "type", label: "Type" },
+            { key: "reference", label: "Reference" },
+            { key: "order", label: "Order" },
+            { key: "amount", label: "Amount" },
+            { key: "credited_at", label: "Credited At" },
+          ]}
+          rows={rows.map((r) => ({
+            rider: r.dm_name ?? `Rider #${r.dm_id}`,
+            dm_id: r.dm_id,
+            type: KIND_PILL[r.kind]?.label ?? r.kind,
+            reference: r.reference ?? "",
+            order: r.order_id ? `#${r.order_id}` : "",
+            amount: r.amount.toFixed(2),
+            credited_at: fmtDate(r.at),
+          }))}
+        />
+      </div>
       <PaginatedTable
         colCount={6}
         pageSize={12}

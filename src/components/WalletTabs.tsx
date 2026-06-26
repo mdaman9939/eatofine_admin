@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { PageButton, PageWindow } from "./PaginatedTable";
+import { CsvExportButton } from "./CsvExportButton";
 
 export interface WalletRow {
   id: number;
@@ -49,6 +50,20 @@ export function WalletTabs({ tabs }: { tabs: WalletTab[] }) {
   const startIdx = (safePage - 1) * PAGE_SIZE;
   const pageRows = rows.slice(startIdx, startIdx + PAGE_SIZE);
 
+  // CSV = the active tab's FILTERED rows (all pages), with that tab's columns.
+  const csvColumns = [
+    { key: "id", label: "ID" },
+    { key: "name", label: "Name" },
+    { key: "phone", label: "Phone" },
+    ...tab.extraCols.map((c) => ({ key: c.key, label: c.label })),
+    { key: "balance", label: "Wallet Balance" },
+  ];
+  const csvRows = rows.map((r) => {
+    const rec: Record<string, string | number> = { id: r.id, name: r.name, phone: r.phone ?? "", balance: r.balance };
+    for (const c of tab.extraCols) rec[c.key] = Number((r as unknown as Record<string, unknown>)[c.key] ?? 0);
+    return rec;
+  });
+
   return (
     <div className="space-y-5">
       {/* Sub-component switcher */}
@@ -83,12 +98,15 @@ export function WalletTabs({ tabs }: { tabs: WalletTab[] }) {
             <h2 className="text-base font-semibold text-slate-900">{tab.label}</h2>
             <p className="text-xs text-slate-500 mt-0.5">{rows.length} of {tab.rows.length} accounts</p>
           </div>
-          <input
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="🔍 Name / ID / phone…"
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[220px]"
-          />
+          <div className="flex items-center gap-3">
+            <input
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              placeholder="🔍 Name / ID / phone…"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[220px]"
+            />
+            <CsvExportButton filename={`wallets-${tab.key}`} columns={csvColumns} rows={csvRows} />
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm whitespace-nowrap">
