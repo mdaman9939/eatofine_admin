@@ -160,7 +160,7 @@ const NAV: NavGroup[] = [
         icon: "bank",
         children: [
           { href: "/dashboard/disbursements?type=restaurant", label: "Restaurant Disbursement", icon: "bank" },
-          { href: "/dashboard/withdraw-requests?type=restaurant", label: "Withdraw Requests", icon: "cash" },
+          { href: "/dashboard/withdraw-requests?type=restaurant", label: "Restaurant Withdraw Requests", icon: "cash" },
           { href: "/dashboard/withdrawal-methods", label: "Withdrawal Methods", icon: "bank" },
         ],
       },
