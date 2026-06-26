@@ -6,6 +6,7 @@ interface WR {
   id: number;
   vendor_id: number | null;
   delivery_man_id: number | null;
+  requester_name: string | null;
   amount: number;
   approved: boolean;
   transaction_note: string | null;
@@ -31,7 +32,21 @@ export default async function WithdrawRequestsPage({
       rowKey={(r) => r.id}
       columns={[
         { header: "#", cell: (r) => r.id, className: "font-mono" },
-        { header: "Requester", cell: (r) => r.vendor_id ? `vendor #${r.vendor_id}` : r.delivery_man_id ? `DM #${r.delivery_man_id}` : "—" },
+        {
+          header: "Requester",
+          cell: (r) => (
+            <div>
+              <div className="font-medium text-zinc-800">
+                {r.requester_name ?? (r.vendor_id ? `Restaurant #${r.vendor_id}` : r.delivery_man_id ? `Rider #${r.delivery_man_id}` : "—")}
+              </div>
+              {(r.vendor_id || r.delivery_man_id) && (
+                <div className="text-[10px] font-mono text-zinc-400">
+                  {r.vendor_id ? `vendor #${r.vendor_id}` : `DM #${r.delivery_man_id}`}
+                </div>
+              )}
+            </div>
+          ),
+        },
         { header: "Amount", cell: (r) => `₹${Number(r.amount ?? 0).toFixed(2)}` },
         { header: "Type", cell: (r) => r.type },
         { header: "Status", cell: (r) => <span className={`text-xs ${r.approved ? "text-emerald-600" : "text-amber-600"}`}>{r.approved ? "approved" : "pending"}</span> },
