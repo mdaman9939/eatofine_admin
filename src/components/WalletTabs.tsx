@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageButton, PageWindow } from "./PaginatedTable";
 
 export interface WalletRow {
   id: number;
@@ -25,9 +26,12 @@ const inr = (n: number) => `₹${(Number(n) || 0).toLocaleString("en-IN", { mini
 /** Admin "Wallets" — one component, three sub-tabs (Customer / Restaurant /
  *  Delivery-Man). Each tab shows total balance held, how many accounts hold a
  *  balance, and a searchable per-account table. */
+const PAGE_SIZE = 10;
+
 export function WalletTabs({ tabs }: { tabs: WalletTab[] }) {
   const [active, setActive] = useState(0);
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const tab = tabs[active];
 
   const rows = useMemo(() => {
@@ -38,6 +42,13 @@ export function WalletTabs({ tabs }: { tabs: WalletTab[] }) {
     );
   }, [tab, search]);
 
+  // Paginate the (filtered) rows; clamp the page so a shrunk filter never lands
+  // on an empty page.
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const startIdx = (safePage - 1) * PAGE_SIZE;
+  const pageRows = rows.slice(startIdx, startIdx + PAGE_SIZE);
+
   return (
     <div className="space-y-5">
       {/* Sub-component switcher */}
@@ -46,7 +57,7 @@ export function WalletTabs({ tabs }: { tabs: WalletTab[] }) {
           <button
             key={t.key}
             type="button"
-            onClick={() => { setActive(i); setSearch(""); }}
+            onClick={() => { setActive(i); setSearch(""); setPage(1); }}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
               i === active
                 ? "bg-gradient-to-b from-emerald-600 to-emerald-700 text-white shadow-sm shadow-emerald-500/25"
@@ -74,7 +85,7 @@ export function WalletTabs({ tabs }: { tabs: WalletTab[] }) {
           </div>
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="🔍 Name / ID / phone…"
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[220px]"
           />
@@ -95,7 +106,7 @@ export function WalletTabs({ tabs }: { tabs: WalletTab[] }) {
             <tbody className="divide-y divide-slate-100">
               {rows.length === 0 ? (
                 <tr><td colSpan={4 + tab.extraCols.length} className="px-6 py-12 text-center text-slate-400 text-sm">No wallets to show.</td></tr>
-              ) : rows.map((r) => (
+              ) : pageRows.map((r) => (
                 <tr key={r.id} className="hover:bg-emerald-50/40 transition-colors">
                   <td className="px-6 py-3 font-mono text-xs text-slate-400">#{r.id}</td>
                   <td className="px-4 py-3 font-semibold text-slate-900">{r.name}</td>
@@ -111,6 +122,25 @@ export function WalletTabs({ tabs }: { tabs: WalletTab[] }) {
             </tbody>
           </table>
         </div>
+        {rows.length > PAGE_SIZE && (
+          <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/40 flex items-center justify-between flex-wrap gap-3">
+            <div className="text-xs text-slate-500">
+              Showing <span className="font-semibold text-slate-700 tabular-nums">{startIdx + 1}</span>
+              {" – "}
+              <span className="font-semibold text-slate-700 tabular-nums">{Math.min(startIdx + PAGE_SIZE, rows.length)}</span>
+              {" of "}
+              <span className="font-semibold text-slate-700 tabular-nums">{rows.length}</span>
+              {search.trim() && <span className="text-slate-400"> (filtered)</span>}
+            </div>
+            <div className="inline-flex items-center gap-1">
+              <PageButton disabled={safePage === 1} onClick={() => setPage(1)} label="« First" />
+              <PageButton disabled={safePage === 1} onClick={() => setPage(safePage - 1)} label="‹ Prev" />
+              <PageWindow current={safePage} total={totalPages} onJump={setPage} />
+              <PageButton disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)} label="Next ›" />
+              <PageButton disabled={safePage === totalPages} onClick={() => setPage(totalPages)} label="Last »" />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

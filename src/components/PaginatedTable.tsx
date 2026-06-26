@@ -100,7 +100,7 @@ export function PaginatedTable({
   );
 }
 
-function PageButton({ disabled, onClick, label, active }: { disabled?: boolean; onClick: () => void; label: string; active?: boolean }) {
+export function PageButton({ disabled, onClick, label, active }: { disabled?: boolean; onClick: () => void; label: string; active?: boolean }) {
   const base = "cursor-pointer rounded-md px-2.5 py-1 text-xs font-semibold transition-all duration-150 disabled:cursor-not-allowed";
   const variant = active
     ? "bg-gradient-to-b from-emerald-600 to-emerald-700 text-white shadow-sm hover:from-emerald-500 hover:to-emerald-600"
@@ -114,7 +114,7 @@ function PageButton({ disabled, onClick, label, active }: { disabled?: boolean; 
   );
 }
 
-function PageWindow({ current, total, onJump }: { current: number; total: number; onJump: (p: number) => void }) {
+export function PageWindow({ current, total, onJump }: { current: number; total: number; onJump: (p: number) => void }) {
   const window: number[] = [];
   const left = Math.max(1, current - 2);
   const right = Math.min(total, current + 2);
