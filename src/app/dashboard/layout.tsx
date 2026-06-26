@@ -348,6 +348,8 @@ const NAV: NavGroup[] = [
   {
     section: "FINANCIAL MANAGEMENT",
     items: [
+      // One Wallets hub — Customer / Restaurant / Delivery-Man balances in tabs.
+      { href: "/dashboard/wallets", label: "Wallets", icon: "wallet" },
       {
         href: "#fin-transactions",
         label: "Transactions",
