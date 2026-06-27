@@ -94,6 +94,8 @@ function YesNo({ yes, tone }: { yes: boolean; tone: "emerald" | "rose" | "fuchsi
 
 export function OrderReportTable({ rows, statusCounts }: { rows: OrderReportRow[]; statusCounts: Record<string, number> }) {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -105,6 +107,10 @@ export function OrderReportTable({ rows, statusCounts }: { rows: OrderReportRow[
         (r.customer_name ?? "").toLowerCase().includes(q),
     );
   }, [rows, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const csv = useMemo(() => {
     const headers = [
@@ -148,7 +154,7 @@ export function OrderReportTable({ rows, statusCounts }: { rows: OrderReportRow[
             Order Report <span className="ml-1 text-xs font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{filtered.length}</span>
           </h2>
           <div className="flex items-center gap-3 flex-wrap">
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 Order ID / restaurant / customer…" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[220px]" />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="🔍 Order ID / restaurant / customer…" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[220px]" />
             <a href={`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`} download="order-report.csv" className="rounded-lg bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 text-white text-sm font-semibold px-4 py-2 whitespace-nowrap">⬇ Export</a>
           </div>
         </div>
@@ -172,12 +178,12 @@ export function OrderReportTable({ rows, statusCounts }: { rows: OrderReportRow[
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
-                <tr><td colSpan={MONEY.length + 9} className="px-6 py-12 text-center text-slate-400 text-sm">No orders in this window.</td></tr>
-              ) : filtered.map((r, i) => {
+                <tr><td colSpan={MONEY.length + 10} className="px-6 py-12 text-center text-slate-400 text-sm">No orders in this window.</td></tr>
+              ) : pageRows.map((r, i) => {
                 const ot = ORDER_TYPE[r.order_type] ?? { label: r.order_type, tone: "bg-slate-100 text-slate-600 ring-slate-200" };
                 return (
                   <tr key={r.order_id} className="hover:bg-emerald-50/40 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-400 sticky left-0 bg-white z-10">{i + 1}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-400 sticky left-0 bg-white z-10">{(safePage - 1) * pageSize + i + 1}</td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-700">#{r.order_id}</td>
                     <td className="px-4 py-3"><span className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold ring-1 ${ot.tone}`}>{ot.label}</span></td>
                     <td className="px-4 py-3 text-slate-800">{r.restaurant ?? "—"}</td>
@@ -196,6 +202,16 @@ export function OrderReportTable({ rows, statusCounts }: { rows: OrderReportRow[
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between text-sm">
+            <span className="text-slate-500">Page {safePage} of {totalPages} · {filtered.length} orders</span>
+            <div className="flex items-center gap-1.5">
+              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage <= 1} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 hover:bg-slate-50">Prev</button>
+              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 hover:bg-slate-50">Next</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
