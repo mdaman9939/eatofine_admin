@@ -26,9 +26,12 @@ export default async function OrderReportPage({
   if (sp.zone_id) qs.set("zone_id", sp.zone_id);
   if (sp.restaurant_id) qs.set("restaurant_id", sp.restaurant_id);
 
-  // Regular report → exclude campaign orders (campaign=0).
+  // Order-report fetch carries the extra filters; the Category filter drives
+  // campaign scope ("campaign" → campaign orders only, else → all orders).
   const orderQs = new URLSearchParams(qs);
-  orderQs.set("campaign", "0");
+  if (sp.order_type) orderQs.set("order_type", sp.order_type);
+  if (sp.order_status) orderQs.set("order_status", sp.order_status);
+  if (sp.category === "campaign") orderQs.set("campaign", "1");
 
   const [sales, orderRep, zonesRes, restaurantsRes] = await Promise.all([
     adminFetch<Sales>(`/admin/reports/sales-summary?${qs.toString()}`),
@@ -44,10 +47,10 @@ export default async function OrderReportPage({
   return (
     <>
     <ReportTemplate
-      badge="SYSTEM · REPORTS · REGULAR"
-      title="Regular Order Report"
-      description="Non-campaign orders only. Day-wise order volume + revenue trend. Filter by date range, zone or restaurant; export to CSV."
-      filterBar={<ReportFilterBar zones={zoneOptions} restaurants={restOptions} showZone showRestaurant />}
+      badge="SYSTEM · REPORTS"
+      title="Order Report"
+      description="Every order with its full money breakdown — discounts, GST per component (item / additional / delivery), charges, deliverymen tip, net payable, and delivered/canceled/refunded status. Filter by period, zone, restaurant, order type, category (all / campaign) and status; export to CSV."
+      filterBar={<ReportFilterBar zones={zoneOptions} restaurants={restOptions} showZone showRestaurant showOrderType showCategory showStatus />}
       stats={[
         { label: "Days in range", value: sales.series.length.toString(), accent: "slate" },
         { label: "Total orders", value: sales.total_orders.toString(), accent: "blue" },

@@ -83,8 +83,11 @@ function YesNo({ v }: { v: string }) {
   );
 }
 
+const PAGE_SIZE = 25;
+
 export function TransactionReportTable({ rows }: { rows: TxnReportRow[] }) {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -96,6 +99,12 @@ export function TransactionReportTable({ rows }: { rows: TxnReportRow[] }) {
         (r.customer_name ?? "").toLowerCase().includes(q),
     );
   }, [rows, search]);
+
+  // Client-side pagination over the fetched window (API returns up to 1000 rows).
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const start = (safePage - 1) * PAGE_SIZE;
+  const pageRows = filtered.slice(start, start + PAGE_SIZE);
 
   const csv = useMemo(() => {
     const cols: Array<keyof TxnReportRow> = [
@@ -127,7 +136,7 @@ export function TransactionReportTable({ rows }: { rows: TxnReportRow[] }) {
         <div className="flex items-center gap-3">
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="🔍 Order id / restaurant / customer…"
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[240px]"
           />
@@ -166,9 +175,9 @@ export function TransactionReportTable({ rows }: { rows: TxnReportRow[] }) {
           <tbody className="divide-y divide-slate-100">
             {filtered.length === 0 ? (
               <tr><td colSpan={totalColumns} className="px-6 py-12 text-center text-slate-400 text-sm">No transactions for this filter.</td></tr>
-            ) : filtered.map((r, i) => (
+            ) : pageRows.map((r, i) => (
               <tr key={r.order_id} className="hover:bg-emerald-50/40 transition-colors">
-                <td className="px-4 py-3 font-mono text-xs text-slate-400 sticky left-0 bg-white z-10">{i + 1}</td>
+                <td className="px-4 py-3 font-mono text-xs text-slate-400 sticky left-0 bg-white z-10">{start + i + 1}</td>
                 <td className="px-4 py-3 font-mono text-xs text-slate-700">#{r.order_id}</td>
                 <td className="px-4 py-3 text-slate-800">{niceType(r.order_type)}</td>
                 <td className="px-4 py-3 text-slate-800">{r.restaurant ?? "—"}</td>
@@ -191,6 +200,41 @@ export function TransactionReportTable({ rows }: { rows: TxnReportRow[] }) {
           </tbody>
         </table>
       </div>
+
+      {filtered.length > 0 && (
+        <div className="px-6 py-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <div className="text-slate-500">
+            Showing <span className="font-semibold text-slate-700">{start + 1}–{Math.min(start + PAGE_SIZE, filtered.length)}</span> of <span className="font-semibold text-slate-700">{filtered.length}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPage(1)}
+              disabled={safePage === 1}
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+            >« First</button>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+            >‹ Prev</button>
+            <span className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold">{safePage} / {totalPages}</span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+            >Next ›</button>
+            <button
+              type="button"
+              onClick={() => setPage(totalPages)}
+              disabled={safePage === totalPages}
+              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+            >Last »</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
