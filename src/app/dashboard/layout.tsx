@@ -407,7 +407,7 @@ const NAV: NavGroup[] = [
         icon: "chart",
         children: [
           { href: "/dashboard/reports", label: "Overview", icon: "chart" },
-          { href: "/dashboard/reports/transaction", label: "Transaction", icon: "transactions" },
+          { href: "/dashboard/reports/transaction", label: "Transaction Report", icon: "transactions" },
           { href: "/dashboard/reports/expense", label: "Expense", icon: "currency" },
           { href: "/dashboard/reports/disbursement", label: "Disbursement", icon: "bank" },
           { href: "/dashboard/reports/food", label: "Food", icon: "food" },

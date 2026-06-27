@@ -15,11 +15,17 @@ export function ReportFilterBar({
   restaurants = [],
   showZone = false,
   showRestaurant = false,
+  showOrderType = false,
+  showCategory = false,
+  showStatus = false,
 }: {
   zones?: Option[];
   restaurants?: Option[];
   showZone?: boolean;
   showRestaurant?: boolean;
+  showOrderType?: boolean;
+  showCategory?: boolean;
+  showStatus?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,6 +45,9 @@ export function ReportFilterBar({
   const to = params.get("to") ?? "";
   const zone = params.get("zone_id") ?? "";
   const restaurant = params.get("restaurant_id") ?? "";
+  const orderType = params.get("order_type") ?? "";
+  const category = params.get("category") ?? "";
+  const orderStatus = params.get("order_status") ?? "";
 
   const presets = [
     { label: "7d", value: "7" },
@@ -95,7 +104,46 @@ export function ReportFilterBar({
         </label>
       )}
 
-      {(days || from || to || zone || restaurant) && (
+      {showOrderType && (
+        <label className="block">
+          <div className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold mb-1">Order Type</div>
+          <select value={orderType} onChange={(e) => setParam({ order_type: e.target.value })} className={cls}>
+            <option value="">All order types</option>
+            <option value="delivery">Home Delivery</option>
+            <option value="take_away">Take Away</option>
+            <option value="dine_in">Dine In</option>
+          </select>
+        </label>
+      )}
+      {showCategory && (
+        <label className="block">
+          <div className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold mb-1">Category Type</div>
+          <select value={category} onChange={(e) => setParam({ category: e.target.value })} className={cls}>
+            <option value="">All orders</option>
+            <option value="campaign">Campaign orders</option>
+          </select>
+        </label>
+      )}
+      {showStatus && (
+        <label className="block">
+          <div className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold mb-1">Order Status</div>
+          <select value={orderStatus} onChange={(e) => setParam({ order_status: e.target.value })} className={cls}>
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="accepted">Accepted</option>
+            <option value="processing">Processing</option>
+            <option value="handover">Handover</option>
+            <option value="picked_up">Picked up</option>
+            <option value="delivered">Delivered</option>
+            <option value="canceled">Canceled</option>
+            <option value="refunded">Refunded</option>
+            <option value="failed">Failed</option>
+          </select>
+        </label>
+      )}
+
+      {(days || from || to || zone || restaurant || orderType || category || orderStatus) && (
         <button
           type="button"
           onClick={() => router.push(pathname)}

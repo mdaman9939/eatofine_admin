@@ -1,7 +1,7 @@
 import { adminFetch } from "../../../../lib/api";
 import { ReportTemplate } from "../../../../components/ReportTemplate";
 import { ReportFilterBar } from "../../../../components/ReportFilterBar";
-import { TransactionDetailsTable, type TxnRow } from "../../../../components/TransactionDetailsTable";
+import { TransactionReportTable, type TxnReportRow } from "../../../../components/TransactionReportTable";
 
 interface Sales {
   days: number;
@@ -25,10 +25,15 @@ export default async function TransactionReportPage({
   if (!sp.from && !sp.days) qs.set("days", "30");
   if (sp.zone_id) qs.set("zone_id", sp.zone_id);
   if (sp.restaurant_id) qs.set("restaurant_id", sp.restaurant_id);
+  // Detailed per-order report query carries the extra filters too.
+  const rqs = new URLSearchParams(qs.toString());
+  if (sp.order_type) rqs.set("order_type", sp.order_type);
+  if (sp.category) rqs.set("category", sp.category);
+  if (sp.order_status) rqs.set("order_status", sp.order_status);
 
   const [sales, txn, zonesRes, restaurantsRes] = await Promise.all([
     adminFetch<Sales>(`/admin/reports/sales-summary?${qs.toString()}`),
-    adminFetch<{ total: number; rows: TxnRow[] }>(`/admin/reports/transaction-details?${qs.toString()}`).catch(() => ({ total: 0, rows: [] as TxnRow[] })),
+    adminFetch<{ total: number; rows: TxnReportRow[] }>(`/admin/reports/transaction-report?${rqs.toString()}`).catch(() => ({ total: 0, rows: [] as TxnReportRow[] })),
     adminFetch<{ zones: Array<{ id: number; name: string | null }> }>("/admin/zones").catch(() => ({ zones: [] })),
     adminFetch<{ restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> }>("/admin/restaurants?limit=200").catch(() => ({} as { restaurants?: Array<{ id: number; name: string | null }>; items?: Array<{ id: number; name: string | null }> })),
   ]);
@@ -42,8 +47,8 @@ export default async function TransactionReportPage({
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Transaction Report"
-      description="Day-wise transactions — gross sales, tax, delivery charges, order count. Filter by date range, zone or restaurant; export to CSV."
-      filterBar={<ReportFilterBar zones={zoneOptions} restaurants={restOptions} showZone showRestaurant />}
+      description="Full money breakdown for every order — item cost, all discounts, GST split (item / additional charge / delivery / situational), tips, restaurant income, TDS, and admin income from restaurant & user. Filter by period, zone, restaurant, order type, category (all / campaign) or order status; export the whole table to CSV. The summary below the filters stays day-wise for a quick trend view."
+      filterBar={<ReportFilterBar zones={zoneOptions} restaurants={restOptions} showZone showRestaurant showOrderType showCategory showStatus />}
       stats={[
         { label: "Days in range", value: sales.series.length.toString(), accent: "slate" },
         { label: "Total revenue", value: inr(sales.total_revenue), accent: "emerald" },
@@ -67,7 +72,7 @@ export default async function TransactionReportPage({
       }))}
     />
     <div className="px-8 pb-8 -mt-2">
-      <TransactionDetailsTable rows={txn.rows} />
+      <TransactionReportTable rows={txn.rows} />
     </div>
     </>
   );
