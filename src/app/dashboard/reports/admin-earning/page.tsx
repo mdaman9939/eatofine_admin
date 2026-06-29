@@ -4,6 +4,7 @@ import { ReportFilterBar } from "../../../../components/ReportFilterBar";
 import { reportQuery, reportFilterOptions } from "../../../../lib/reportFilters";
 import { AdminEarningDetailed, type AdminEarningData } from "../../../../components/AdminEarningDetailed";
 import { AdminEarningOrdersTable, type AdminEarningOrderRow } from "../../../../components/AdminEarningOrdersTable";
+import { AdminExpenseOrdersTable, type AdminExpenseOrderRow } from "../../../../components/AdminExpenseOrdersTable";
 
 interface AdminEarning {
   delivered_orders: number;
@@ -26,10 +27,11 @@ export default async function AdminEarningReportPage({
   // Order-wise earning fetch also carries the Order Type filter.
   const earnQs = new URLSearchParams(qs);
   if (sp.order_type) earnQs.set("order_type", sp.order_type);
-  const [data, detailed, earnOrders, { zones, restaurants }] = await Promise.all([
+  const [data, detailed, earnOrders, expenseOrders, { zones, restaurants }] = await Promise.all([
     adminFetch<AdminEarning>(`/admin/reports/admin-earnings?${qs.toString()}`),
     adminFetch<AdminEarningData>(`/admin/reports/admin-earning-detailed`).catch(() => null),
     adminFetch<{ total: number; rows: AdminEarningOrderRow[] }>(`/admin/reports/admin-earning-orders?${earnQs.toString()}`).catch(() => ({ total: 0, rows: [] as AdminEarningOrderRow[] })),
+    adminFetch<{ total: number; rows: AdminExpenseOrderRow[] }>(`/admin/reports/admin-expense-orders?${earnQs.toString()}`).catch(() => ({ total: 0, rows: [] as AdminExpenseOrderRow[] })),
     reportFilterOptions(),
   ]);
 
@@ -62,6 +64,9 @@ export default async function AdminEarningReportPage({
     />
     <div className="px-8 pb-4 -mt-2">
       <AdminEarningOrdersTable rows={earnOrders.rows} />
+    </div>
+    <div className="px-8 pb-4">
+      <AdminExpenseOrdersTable rows={expenseOrders.rows} />
     </div>
     {detailed && (
       <div className="px-8 pb-8">
