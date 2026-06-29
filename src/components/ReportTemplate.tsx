@@ -1,5 +1,6 @@
 import React from "react";
 import { CsvExportButton } from "./CsvExportButton";
+import { PaginatedTable } from "./PaginatedTable";
 
 interface ReportTemplateProps {
   badge?: string;
@@ -16,6 +17,8 @@ interface ReportTemplateProps {
   filterBar?: React.ReactNode;
   /** Descriptive title for the detail table (defaults to "Details"). */
   detailsTitle?: string;
+  /** Rows per page for the detail table (default 15). */
+  pageSize?: number;
 }
 
 const PALETTE: Record<string, string> = {
@@ -29,7 +32,7 @@ const PALETTE: Record<string, string> = {
 /** Consistent layout for the 11 sub-report pages — same hero + stats + table
  *  shape, no copy-pasted boilerplate per page. Each report passes its
  *  own KPIs, columns, and rows. */
-export function ReportTemplate({ badge, title, description, stats, columns, rows, csvHref, filterBar, detailsTitle }: ReportTemplateProps) {
+export function ReportTemplate({ badge, title, description, stats, columns, rows, csvHref, filterBar, detailsTitle, pageSize = 15 }: ReportTemplateProps) {
   return (
     <div className="relative p-8 space-y-6">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.06),transparent_60%)]" />
@@ -73,47 +76,42 @@ export function ReportTemplate({ badge, title, description, stats, columns, rows
       )}
 
       {columns && rows && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-semibold text-slate-900">{detailsTitle ?? "Details"}</h2>
-              <p className="text-xs text-slate-500 mt-0.5">{rows.length} row{rows.length === 1 ? "" : "s"}.</p>
-            </div>
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">{detailsTitle ?? "Details"}</h2>
+            <p className="text-xs text-slate-500 mt-0.5">{rows.length} row{rows.length === 1 ? "" : "s"}.</p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
-                <tr>
-                  {columns.map((c) => (
-                    <th
-                      key={c.key}
-                      className={`px-4 py-3 font-semibold ${c.align === "right" ? "text-right" : c.align === "center" ? "text-center" : ""}`}
-                    >
-                      {c.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {rows.length === 0 ? (
-                  <tr>
-                    <td colSpan={columns.length} className="px-6 py-12 text-center text-slate-400">No data yet for this report.</td>
-                  </tr>
-                ) : rows.map((r, i) => (
-                  <tr key={i} className="hover:bg-emerald-50/40">
-                    {columns.map((c) => (
-                      <td
-                        key={c.key}
-                        className={`px-4 py-3 text-slate-700 ${c.align === "right" ? "text-right tabular-nums" : c.align === "center" ? "text-center" : ""}`}
-                      >
-                        {r[c.key] === null || r[c.key] === undefined ? "—" : String(r[c.key])}
-                      </td>
-                    ))}
-                  </tr>
+          <PaginatedTable
+            headerRow={
+              <tr>
+                {columns.map((c) => (
+                  <th
+                    key={c.key}
+                    className={`px-4 py-3 font-semibold ${c.align === "right" ? "text-right" : c.align === "center" ? "text-center" : ""}`}
+                  >
+                    {c.label}
+                  </th>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </tr>
+            }
+            bodyRows={rows.map((r, i) => (
+              <tr key={i} className="hover:bg-emerald-50/40">
+                {columns.map((c) => (
+                  <td
+                    key={c.key}
+                    className={`px-4 py-3 text-slate-700 ${c.align === "right" ? "text-right tabular-nums" : c.align === "center" ? "text-center" : ""}`}
+                  >
+                    {r[c.key] === null || r[c.key] === undefined ? "—" : String(r[c.key])}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            searchTexts={rows.map((r) => columns.map((c) => String(r[c.key] ?? "")).join(" ").toLowerCase())}
+            searchable
+            pageSize={pageSize}
+            colCount={columns.length}
+            empty="No data yet for this report."
+          />
         </div>
       )}
     </div>
