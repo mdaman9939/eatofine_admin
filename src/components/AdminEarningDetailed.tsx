@@ -40,6 +40,8 @@ function BreakdownGrid({ title, items }: { title: string; items: BreakdownItem[]
 export function AdminEarningDetailed({ data }: { data: AdminEarningData }) {
   const [tab, setTab] = useState<"earnings" | "subscription" | "expenses">("earnings");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
 
   const list = tab === "earnings" ? data.transactions.earnings : tab === "subscription" ? data.transactions.subscription : data.transactions.expenses;
   const filtered = useMemo(() => {
@@ -47,6 +49,10 @@ export function AdminEarningDetailed({ data }: { data: AdminEarningData }) {
     if (!q) return list;
     return list.filter((t) => t.txn_id.toLowerCase().includes(q) || t.earning_source.toLowerCase().includes(q) || (t.source ?? "").toLowerCase().includes(q));
   }, [list, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const csv = useMemo(() => {
     const head = "sl,transaction_id,date,source,earning_source,amount";
@@ -82,13 +88,13 @@ export function AdminEarningDetailed({ data }: { data: AdminEarningData }) {
         <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-base font-semibold text-slate-900">Recent Transactions</h3>
           <div className="flex items-center gap-3">
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 Search by Txn ID or Order…" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[220px]" />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="🔍 Search by Txn ID or Order…" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[220px]" />
             <a href={`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`} download={`admin-${tab}.csv`} className="rounded-lg bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 text-white text-sm font-semibold px-4 py-2 whitespace-nowrap">⬇ Export</a>
           </div>
         </div>
         <div className="px-6 pt-4 flex gap-2">
           {([["earnings", "Earnings"], ["subscription", "Subscription Earnings"], ["expenses", "Expenses"]] as const).map(([k, label]) => (
-            <button key={k} onClick={() => { setTab(k); setSearch(""); }} className={`px-4 py-2 rounded-lg text-sm font-semibold ${tab === k ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{label}</button>
+            <button key={k} onClick={() => { setTab(k); setSearch(""); setPage(1); }} className={`px-4 py-2 rounded-lg text-sm font-semibold ${tab === k ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{label}</button>
           ))}
         </div>
 
@@ -107,9 +113,9 @@ export function AdminEarningDetailed({ data }: { data: AdminEarningData }) {
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">No transactions.</td></tr>
-              ) : filtered.map((t, i) => (
+              ) : pageRows.map((t, i) => (
                 <tr key={`${t.txn_id}-${i}`} className="hover:bg-emerald-50/40 transition-colors">
-                  <td className="px-6 py-3 font-mono text-xs text-slate-400">{i + 1}</td>
+                  <td className="px-6 py-3 font-mono text-xs text-slate-400">{(safePage - 1) * pageSize + i + 1}</td>
                   <td className="px-4 py-3 font-mono text-xs text-slate-700">#{t.txn_id}</td>
                   <td className="px-4 py-3 text-slate-600 text-xs">{fmtDate(t.date)}</td>
                   <td className="px-4 py-3">
@@ -123,6 +129,16 @@ export function AdminEarningDetailed({ data }: { data: AdminEarningData }) {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between text-sm">
+            <span className="text-slate-500">Page {safePage} of {totalPages} · {filtered.length} transactions</span>
+            <div className="flex items-center gap-1.5">
+              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage <= 1} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 hover:bg-slate-50">Prev</button>
+              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 hover:bg-slate-50">Next</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
