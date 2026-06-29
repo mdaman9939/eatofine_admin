@@ -414,7 +414,7 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/reports/order", label: "Order Report", icon: "orders" },
           { href: "/dashboard/reports/restaurant", label: "Restaurant", icon: "restaurant" },
           { href: "/dashboard/reports/customer", label: "Customer", icon: "user" },
-          { href: "/dashboard/reports/tax", label: "GST", icon: "tax" },
+          { href: "/dashboard/reports/tax", label: "GST Report", icon: "tax" },
           { href: "/dashboard/reports/admin-earning", label: "Admin Earning", icon: "currency" },
           { href: "/dashboard/reports/restaurant-earning", label: "Restaurant Earning", icon: "currency" },
           { href: "/dashboard/reports/deliveryman-earning", label: "Deliveryman Earning", icon: "currency" },
