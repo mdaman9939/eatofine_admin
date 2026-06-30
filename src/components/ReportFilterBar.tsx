@@ -13,16 +13,20 @@ interface Option { value: string; label: string }
 export function ReportFilterBar({
   zones = [],
   restaurants = [],
+  deliverymen = [],
   showZone = false,
   showRestaurant = false,
+  showDeliveryman = false,
   showOrderType = false,
   showCategory = false,
   showStatus = false,
 }: {
   zones?: Option[];
   restaurants?: Option[];
+  deliverymen?: Option[];
   showZone?: boolean;
   showRestaurant?: boolean;
+  showDeliveryman?: boolean;
   showOrderType?: boolean;
   showCategory?: boolean;
   showStatus?: boolean;
@@ -45,6 +49,7 @@ export function ReportFilterBar({
   const to = params.get("to") ?? "";
   const zone = params.get("zone_id") ?? "";
   const restaurant = params.get("restaurant_id") ?? "";
+  const deliveryMan = params.get("delivery_man_id") ?? "";
   const orderType = params.get("order_type") ?? "";
   const category = params.get("category") ?? "";
   const orderStatus = params.get("order_status") ?? "";
@@ -103,6 +108,15 @@ export function ReportFilterBar({
           </select>
         </label>
       )}
+      {showDeliveryman && (
+        <label className="block">
+          <div className="text-[11px] uppercase tracking-wide text-slate-500 font-semibold mb-1">Deliverymen</div>
+          <select value={deliveryMan} onChange={(e) => setParam({ delivery_man_id: e.target.value })} className={cls}>
+            <option value="">All deliverymen</option>
+            {deliverymen.map((d) => <option key={d.value} value={d.value}>{d.label}</option>)}
+          </select>
+        </label>
+      )}
 
       {showOrderType && (
         <label className="block">
@@ -143,7 +157,7 @@ export function ReportFilterBar({
         </label>
       )}
 
-      {(days || from || to || zone || restaurant || orderType || category || orderStatus) && (
+      {(days || from || to || zone || restaurant || deliveryMan || orderType || category || orderStatus) && (
         <button
           type="button"
           onClick={() => router.push(pathname)}
