@@ -1,5 +1,6 @@
 import { adminFetch } from "../../../lib/api";
 import { SettingsForm, type FieldGroup } from "../../../components/SettingsForm";
+import { CommissionAllCard } from "../../../components/CommissionAllCard";
 
 const GROUPS: FieldGroup[] = [
   {
@@ -61,12 +62,14 @@ const EMPTY_SETTINGS: SettingsRes = { settings: [] };
 export default async function InvoiceSetupPage() {
   // invoice.* keys + the raw GST-rate keys (food_gst_rate / service_invoice_*),
   // which live without a prefix, so they're fetched and merged separately.
-  const [invRes, foodRes, svcRes] = await Promise.all([
+  const [invRes, foodRes, svcRes, commRes] = await Promise.all([
     adminFetch<SettingsRes>("/admin/business-settings?prefix=invoice."),
     adminFetch<SettingsRes>("/admin/business-settings?prefix=food_gst").catch(() => EMPTY_SETTINGS),
     adminFetch<SettingsRes>("/admin/business-settings?prefix=service_invoice").catch(() => EMPTY_SETTINGS),
+    adminFetch<SettingsRes>("/admin/business-settings?prefix=admin_commission").catch(() => EMPTY_SETTINGS),
   ]);
   const data = { settings: [...invRes.settings, ...foodRes.settings, ...svcRes.settings] };
+  const currentCommission = Number(commRes.settings.find((s) => s.key === "admin_commission")?.value ?? 9) || 9;
 
   return (
     <div className="relative p-8 space-y-6">
@@ -84,6 +87,8 @@ export default async function InvoiceSetupPage() {
           </p>
         </div>
       </div>
+
+      <CommissionAllCard current={currentCommission} />
 
       <SettingsForm initial={data.settings} groups={GROUPS} />
     </div>
