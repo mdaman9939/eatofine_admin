@@ -7,10 +7,10 @@ export interface AdminEarningOrderRow {
   customer_name: string | null;
   restaurant: string | null;
   order_type: string;
-  earning_restaurant: number;
-  earning_delivery: number;
+  commission: number;
+  commission_gst: number;
   earning_additional: number;
-  earning_situational: number;
+  admin_discount: number;
   total_earning: number;
 }
 
@@ -29,12 +29,14 @@ const ORDER_TYPE: Record<string, { label: string; tone: string }> = {
   dine_in: { label: "Dine In", tone: "bg-indigo-50 text-indigo-700 ring-indigo-200" },
 };
 
+// Admin income components ONLY — delivery fee + situational/surge are the
+// delivery man's earning (shown in the Deliveryman report), never admin income.
 const MONEY: Array<{ key: keyof AdminEarningOrderRow; label: string }> = [
-  { key: "earning_restaurant", label: "Earning from Restaurant (PPO / Commission)" },
-  { key: "earning_delivery", label: "Earning from Delivery Fee" },
-  { key: "earning_additional", label: "Earning from Additional Charge" },
-  { key: "earning_situational", label: "Earning from Situational Charge" },
-  { key: "total_earning", label: "Total Earning" },
+  { key: "commission", label: "Commission / PPO" },
+  { key: "commission_gst", label: "GST on Commission (18%)" },
+  { key: "earning_additional", label: "Additional Charge (Platform/Packaging)" },
+  { key: "admin_discount", label: "Admin Discount (−)" },
+  { key: "total_earning", label: "Total Admin Income" },
 ];
 
 export function AdminEarningOrdersTable({ rows }: { rows: AdminEarningOrderRow[] }) {
@@ -59,12 +61,12 @@ export function AdminEarningOrdersTable({ rows }: { rows: AdminEarningOrderRow[]
 
   // "Total as per filter" — category sums over the filtered set.
   const t = useMemo(() => {
-    const s = { restaurant: 0, delivery: 0, additional: 0, situational: 0, total: 0 };
+    const s = { commission: 0, commissionGst: 0, additional: 0, adminDiscount: 0, total: 0 };
     for (const r of filtered) {
-      s.restaurant += Number(r.earning_restaurant) || 0;
-      s.delivery += Number(r.earning_delivery) || 0;
+      s.commission += Number(r.commission) || 0;
+      s.commissionGst += Number(r.commission_gst) || 0;
       s.additional += Number(r.earning_additional) || 0;
-      s.situational += Number(r.earning_situational) || 0;
+      s.adminDiscount += Number(r.admin_discount) || 0;
       s.total += Number(r.total_earning) || 0;
     }
     return s;
@@ -94,29 +96,29 @@ export function AdminEarningOrdersTable({ rows }: { rows: AdminEarningOrderRow[]
             <div className="text-lg font-bold text-slate-900">{filtered.length}</div>
           </div>
           <div className="rounded-xl border border-slate-100 p-3">
-            <div className="text-[11px] text-slate-500">Earning from Restaurant (PPO / Commission)</div>
-            <div className="text-lg font-bold text-slate-900">{inr(t.restaurant)}</div>
-            <div className="text-[10px] text-slate-400">{pctOf(t.restaurant, t.total)}</div>
+            <div className="text-[11px] text-slate-500">Commission / PPO</div>
+            <div className="text-lg font-bold text-slate-900">{inr(t.commission)}</div>
+            <div className="text-[10px] text-slate-400">{pctOf(t.commission, t.total)}</div>
           </div>
           <div className="rounded-xl border border-slate-100 p-3">
-            <div className="text-[11px] text-slate-500">Earning from Delivery Fee</div>
-            <div className="text-lg font-bold text-slate-900">{inr(t.delivery)}</div>
-            <div className="text-[10px] text-slate-400">{pctOf(t.delivery, t.total)}</div>
+            <div className="text-[11px] text-slate-500">GST on Commission (18%)</div>
+            <div className="text-lg font-bold text-slate-900">{inr(t.commissionGst)}</div>
+            <div className="text-[10px] text-slate-400">{pctOf(t.commissionGst, t.total)}</div>
           </div>
           <div className="rounded-xl border border-slate-100 p-3">
-            <div className="text-[11px] text-slate-500">Earning from Additional Charge</div>
+            <div className="text-[11px] text-slate-500">Additional Charge (Platform/Packaging)</div>
             <div className="text-lg font-bold text-slate-900">{inr(t.additional)}</div>
             <div className="text-[10px] text-slate-400">{pctOf(t.additional, t.total)}</div>
           </div>
           <div className="rounded-xl border border-slate-100 p-3">
-            <div className="text-[11px] text-slate-500">Earning from Situational Charge</div>
-            <div className="text-lg font-bold text-slate-900">{inr(t.situational)}</div>
-            <div className="text-[10px] text-slate-400">{pctOf(t.situational, t.total)}</div>
+            <div className="text-[11px] text-slate-500">Admin Discount (−)</div>
+            <div className="text-lg font-bold text-rose-600">{inr(t.adminDiscount)}</div>
+            <div className="text-[10px] text-slate-400">deducted</div>
           </div>
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-            <div className="text-[11px] text-emerald-700">Total Earning</div>
+            <div className="text-[11px] text-emerald-700">Total Admin Income</div>
             <div className="text-lg font-bold text-emerald-700">{inr(t.total)}</div>
-            <div className="text-[10px] text-emerald-600/70">100% of total</div>
+            <div className="text-[10px] text-emerald-600/70">commission + GST + additional − discount</div>
           </div>
         </div>
       </div>

@@ -33,7 +33,7 @@ export default async function AdminEarningReportPage({
       <ReportTemplate
         badge="SYSTEM · REPORTS"
         title="Admin Earning & Expenses Report"
-        description="Order-wise platform earning (commission/PPO, delivery, additional & situational) and expense (discount, delivery, bonus/incentive & situational). Toggle Earnings / Expenses; filter by period, zone, restaurant or order type."
+        description="Order-wise platform income — commission/PPO + 18% GST on commission + additional (platform/packaging) charges, minus admin-funded discounts. (Delivery fee & situational/surge are the rider's earning — see the Deliveryman report.) Toggle Earnings / Expenses; filter by period, zone, restaurant or order type."
         filterBar={<ReportFilterBar zones={zones} restaurants={restaurants} showZone showRestaurant showOrderType />}
       />
 

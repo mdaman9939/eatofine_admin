@@ -25,6 +25,7 @@ interface ExpRow {
   date: string | null;
   admin_fee: number;
   discount: number;
+  tds: number;
   total_expense: number;
 }
 
@@ -37,6 +38,7 @@ export interface RestaurantEarningExpenseData {
     total_earning: number;
     admin_fee: number;
     discount: number;
+    tds: number;
     total_expense: number;
   };
 }
@@ -80,8 +82,9 @@ export function RestaurantEarningExpense({ data }: { data: RestaurantEarningExpe
     { key: "restaurant", label: "Restaurant Name" },
     { key: "customer", label: "Customer Name" },
     { key: "date", label: "Date" },
-    { key: "admin_fee", label: "Admin Fee" },
+    { key: "admin_fee", label: "Admin Fee (PPO + GST)" },
     { key: "discount", label: "Spent on Discount" },
+    { key: "tds", label: "TDS" },
     { key: "total_expense", label: "Total Expense" },
   ];
   const expCsvRows = expenses.map((r) => ({ ...r, date: fmtDate(r.date) }));
@@ -146,7 +149,7 @@ export function RestaurantEarningExpense({ data }: { data: RestaurantEarningExpe
         <PaginatedTable
           searchable
           pageSize={15}
-          colCount={9}
+          colCount={10}
           headerRow={
             <tr>
               <th className={TH}>Sr</th>
@@ -155,8 +158,9 @@ export function RestaurantEarningExpense({ data }: { data: RestaurantEarningExpe
               <th className={TH}>Restaurant Name</th>
               <th className={TH}>Customer Name</th>
               <th className={TH}>Date</th>
-              <th className={`${TH} text-right`}>Admin Fee</th>
+              <th className={`${TH} text-right`}>Admin Fee (PPO + GST)</th>
               <th className={`${TH} text-right`}>Spent on Discount</th>
+              <th className={`${TH} text-right`}>TDS</th>
               <th className={`${TH} text-right`}>Total Expense</th>
             </tr>
           }
@@ -170,6 +174,7 @@ export function RestaurantEarningExpense({ data }: { data: RestaurantEarningExpe
               <td className={`${TD} text-xs text-slate-500`}>{fmtDate(r.date)}</td>
               <td className={`${TD} text-right tabular-nums`}>{inr(r.admin_fee)}</td>
               <td className={`${TD} text-right tabular-nums`}>{inr(r.discount)}</td>
+              <td className={`${TD} text-right tabular-nums`}>{inr(r.tds)}</td>
               <td className={`${TD} text-right tabular-nums font-semibold text-rose-700`}>{inr(r.total_expense)}</td>
             </tr>
           ))}
@@ -178,8 +183,9 @@ export function RestaurantEarningExpense({ data }: { data: RestaurantEarningExpe
         />
         <TotalsStrip
           items={[
-            { label: "Total Admin Fee", value: inr(totals.admin_fee), accent: "slate" },
+            { label: "Total Admin Fee (PPO + GST)", value: inr(totals.admin_fee), accent: "slate" },
             { label: "Total Spent on Discount", value: inr(totals.discount), accent: "amber" },
+            { label: "Total TDS", value: inr(totals.tds), accent: "amber" },
             { label: "Total Expense", value: inr(totals.total_expense), accent: "rose" },
           ]}
         />

@@ -9,7 +9,7 @@ function inr(n: number) { return `₹${Math.round(n).toLocaleString("en-IN")}`; 
 const EMPTY: RestaurantEarningExpenseData = {
   earnings: [],
   expenses: [],
-  totals: { orders: 0, item_value: 0, total_earning: 0, admin_fee: 0, discount: 0, total_expense: 0 },
+  totals: { orders: 0, item_value: 0, total_earning: 0, admin_fee: 0, discount: 0, tds: 0, total_expense: 0 },
 };
 
 export default async function RestaurantEarningReportPage({
@@ -30,7 +30,7 @@ export default async function RestaurantEarningReportPage({
       <ReportTemplate
         badge="SYSTEM · REPORTS"
         title="Restaurant Earning & Expense Report"
-        description="Per-order earning (net to restaurant) and expense (admin fee + discount funded by the restaurant), split into two tables. Filter by date range, zone or restaurant."
+        description="Per-order restaurant income — net item value MINUS admin fee (PPO/commission + 18% GST) MINUS restaurant-funded discount MINUS TDS. (Food GST is the government's, sec 9(5) — never the restaurant's.) Earning + Expense split into two tables. Filter by date range, zone or restaurant."
         filterBar={<ReportFilterBar zones={zones} restaurants={restaurants} showZone showRestaurant />}
         stats={[
           { label: "Orders", value: t.orders.toLocaleString("en-IN"), accent: "blue" },
