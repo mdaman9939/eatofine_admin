@@ -322,16 +322,18 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/zones?for=deliveryman", label: "Zone Setup", icon: "zone" },
           { href: "/dashboard/vehicles", label: "Vehicle Category Setup", icon: "car" },
           { href: "/dashboard/shifts", label: "Shift Setup", icon: "clock" },
-          // Single rewards config; the request → approval → disbursement views
-          // live under Reports (Delivery Men Withdrawal Request + DM Disbursement),
-          // so the old Incentives / Incentives History / DM Disbursement /
-          // DM Withdraw Requests entries are removed here to avoid duplicates.
+          // Single rewards config (Bonuses & Incentives). Per client, the
+          // Withdrawal-Request + Disbursement views now live HERE under Delivery
+          // Men (moved out of Reports). Pages still resolve from /dashboard/reports/*,
+          // so the routes are unchanged — only their menu placement moved.
           { href: "/dashboard/dm-bonuses", label: "Bonuses & Incentives", icon: "star" },
           { href: "/dashboard/dm-reviews", label: "Reviews", icon: "star" },
           // "DM Earnings" hidden from the menu — its live wallet-credit ledger now
           // lives under Reports → Deliveryman Earning. The /dashboard/dm-earnings
           // route + /admin/dm-earnings endpoint stay intact (nothing breaks).
           { href: "/dashboard/dm-payouts", label: "DM Payouts (net)", icon: "currency" },
+          { href: "/dashboard/reports/dm-withdrawal-requests", label: "Delivery Men Withdrawal Request", icon: "cash" },
+          { href: "/dashboard/reports/dm-disbursement", label: "DM Disbursement", icon: "bank" },
         ],
       },
       {
@@ -409,7 +411,7 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/reports", label: "Overview", icon: "chart" },
           { href: "/dashboard/reports/transaction", label: "Transaction Report", icon: "transactions" },
           { href: "/dashboard/reports/expense", label: "Expense", icon: "currency" },
-          { href: "/dashboard/reports/disbursement", label: "Disbursement", icon: "bank" },
+          { href: "/dashboard/reports/disbursement", label: "Disbursement Report", icon: "bank" },
           { href: "/dashboard/reports/food", label: "Food", icon: "food" },
           { href: "/dashboard/reports/order", label: "Order Report", icon: "orders" },
           { href: "/dashboard/reports/restaurant", label: "Restaurant", icon: "restaurant" },
@@ -418,8 +420,6 @@ const NAV: NavGroup[] = [
           { href: "/dashboard/reports/admin-earning", label: "Admin Earning", icon: "currency" },
           { href: "/dashboard/reports/restaurant-earning", label: "Restaurant Earning", icon: "currency" },
           { href: "/dashboard/reports/deliveryman-earning", label: "Deliveryman Earning", icon: "currency" },
-          { href: "/dashboard/reports/dm-withdrawal-requests", label: "Delivery Men Withdrawal Request", icon: "cash" },
-          { href: "/dashboard/reports/dm-disbursement", label: "DM Disbursement", icon: "bank" },
         ],
       },
       {

@@ -3,10 +3,42 @@ import { ReportTemplate } from "../../../../components/ReportTemplate";
 import { DisbursementDetailsTable, type DisbRow } from "../../../../components/DisbursementDetailsTable";
 
 function inr(n: number) { return `₹${Math.round(n).toLocaleString("en-IN")}`; }
-function fmtDate(iso: string | null): string {
-  if (!iso) return "—";
-  try { return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); }
-  catch { return "—"; }
+
+const COMPLETED = new Set(["disbursed", "completed"]);
+
+/** Per-scope KPI totals — amounts by status + counts. */
+function breakdown(rows: DisbRow[]) {
+  const sum = (pred: (r: DisbRow) => boolean) => rows.filter(pred).reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  return {
+    count: rows.length,
+    total: rows.reduce((s, r) => s + (Number(r.amount) || 0), 0),
+    disbursed: sum((r) => COMPLETED.has(r.status)),
+    pending: sum((r) => r.status === "pending"),
+    inProcess: sum((r) => r.status === "processing"),
+  };
+}
+
+function BreakdownSection({ title, b }: { title: string; b: ReturnType<typeof breakdown> }) {
+  const tiles = [
+    { label: "Total Number of disbursement", value: b.count.toString() },
+    { label: "Total Amount", value: inr(b.total) },
+    { label: "Disbursed Amount", value: inr(b.disbursed) },
+    { label: "Pending amount", value: inr(b.pending) },
+    { label: "In process amount", value: inr(b.inProcess) },
+  ];
+  return (
+    <section className="space-y-3">
+      <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {tiles.map((t) => (
+          <div key={t.label} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">{t.label}</div>
+            <div className="mt-2 text-2xl font-bold text-slate-900 tabular-nums">{t.value}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export default async function DisbursementReportPage() {
@@ -16,45 +48,29 @@ export default async function DisbursementReportPage() {
   ]);
   const restaurant = restRes.items ?? [];
   const deliveryman = dmRes.items ?? [];
-  const rows = [...restaurant, ...deliveryman];
-
-  const total = rows.reduce((s, r) => s + (Number(r.amount) || 0), 0);
-  const completed = rows.filter((r) => r.status === "completed" || r.status === "disbursed").length;
-  const pending = rows.filter((r) => r.status === "pending").length;
+  const overall = breakdown([...restaurant, ...deliveryman]);
 
   return (
     <>
-    <ReportTemplate
-      badge="SYSTEM · REPORTS"
-      title="Disbursement Report"
-      description="History of payouts to restaurants and delivery men. Status, amount, recipient."
-      stats={[
-        { label: "Total disbursements", value: rows.length.toString(), accent: "blue" },
-        { label: "Total paid out", value: inr(total), accent: "emerald" },
-        { label: "Completed", value: completed.toString(), accent: "amber" },
-        { label: "Pending", value: pending.toString(), accent: "rose" },
-      ]}
-      detailsTitle="Disbursement details"
-      columns={[
-        { key: "id", label: "#" },
-        { key: "recipient", label: "Recipient" },
-        { key: "type", label: "Type" },
-        { key: "amount", label: "Amount", align: "right" },
-        { key: "status", label: "Status" },
-        { key: "date", label: "Date" },
-      ]}
-      rows={rows.map((r) => ({
-        id: r.id,
-        recipient: r.recipient ?? "—",
-        type: r.type ?? "—",
-        amount: inr(Number(r.amount) || 0),
-        status: r.status,
-        date: fmtDate(r.created_at),
-      }))}
-    />
-    <div className="px-8 pb-8 -mt-2">
-      <DisbursementDetailsTable restaurant={restaurant} deliveryman={deliveryman} />
-    </div>
+      <ReportTemplate
+        badge="SYSTEM · REPORTS"
+        title="Disbursement Report"
+        description="History of payouts to restaurants and delivery men. Status, amount, recipient."
+        stats={[
+          { label: "Total Number of disbursement", value: overall.count.toString(), accent: "blue" },
+          { label: "Total Amount", value: inr(overall.total), accent: "slate" },
+          { label: "Disbursed Amount", value: inr(overall.disbursed), accent: "emerald" },
+          { label: "Pending amount", value: inr(overall.pending), accent: "rose" },
+          { label: "In process amount", value: inr(overall.inProcess), accent: "amber" },
+        ]}
+      />
+      <div className="px-8 -mt-2 space-y-6">
+        <BreakdownSection title="Restaurant Disbursement Breakdown" b={breakdown(restaurant)} />
+        <BreakdownSection title="Deliveryman Disbursement Breakdown" b={breakdown(deliveryman)} />
+      </div>
+      <div className="px-8 pb-8 pt-6">
+        <DisbursementDetailsTable restaurant={restaurant} deliveryman={deliveryman} />
+      </div>
     </>
   );
 }

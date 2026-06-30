@@ -29,6 +29,16 @@ const PALETTE: Record<string, string> = {
   slate: "from-slate-50/60 ring-slate-200",
 };
 
+// Static (literal) grid classes per stat count so Tailwind's scanner picks them
+// up — a runtime-interpolated `md:grid-cols-${n}` is never seen by the JIT.
+const STAT_COLS: Record<number, string> = {
+  1: "md:grid-cols-1",
+  2: "md:grid-cols-2",
+  3: "md:grid-cols-3",
+  4: "md:grid-cols-4",
+  5: "md:grid-cols-3 lg:grid-cols-5",
+};
+
 /** Consistent layout for the 11 sub-report pages — same hero + stats + table
  *  shape, no copy-pasted boilerplate per page. Each report passes its
  *  own KPIs, columns, and rows. */
@@ -64,7 +74,7 @@ export function ReportTemplate({ badge, title, description, stats, columns, rows
       {filterBar}
 
       {stats && stats.length > 0 && (
-        <div className={`grid grid-cols-2 md:grid-cols-${Math.min(4, stats.length)} gap-4`}>
+        <div className={`grid grid-cols-2 ${STAT_COLS[Math.min(5, stats.length)] ?? "md:grid-cols-4"} gap-4`}>
           {stats.map((s) => (
             <div key={s.label} className={`bg-gradient-to-b ${PALETTE[s.accent ?? "emerald"]} to-white rounded-2xl border border-slate-200 shadow-sm p-5`}>
               <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold">{s.label}</div>
