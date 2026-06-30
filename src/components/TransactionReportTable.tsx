@@ -28,6 +28,8 @@ export interface TxnReportRow {
   restaurant_income: number;
   tds: number;
   restaurant_net_income: number;
+  commission: number;
+  commission_gst: number;
   admin_income_from_restaurant: number;
   admin_income_from_user: number;
   order_delivered: string;
@@ -63,7 +65,11 @@ const MONEY_AFTER_PAYMODE: Array<{ key: keyof TxnReportRow; label: string; tint?
   { key: "restaurant_income", label: "Restaurant Income", tint: "green" },
   { key: "tds", label: "TDS" },
   { key: "restaurant_net_income", label: "Restaurant Net Income (After TDS)", tint: "green" },
-  { key: "admin_income_from_restaurant", label: "Admin Income From Restaurant (PPO/Commission)", tint: "amber" },
+  // Admin-income breakdown so the client can verify: Commission + GST on
+  // Commission = "Admin Income From Restaurant".
+  { key: "commission", label: "Commission (PPO)", tint: "amber" },
+  { key: "commission_gst", label: "GST on Commission (18%)", tint: "amber" },
+  { key: "admin_income_from_restaurant", label: "Admin Income From Restaurant (= PPO + GST)", tint: "amber" },
   { key: "admin_income_from_user", label: "Admin Income from User", tint: "amber" },
 ];
 const FLAGS: Array<{ key: keyof TxnReportRow; label: string }> = [
