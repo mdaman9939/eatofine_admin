@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageButton, PageWindow } from "./PaginatedTable";
 
 export interface DisbRow {
   id: number;
@@ -30,6 +31,7 @@ function fmtDate(iso: string | null): string {
 const COMPLETED = new Set(["disbursed", "completed"]);
 const CANCELED = new Set(["canceled", "cancelled"]);
 const PERIOD_DAYS: Record<string, number> = { "7d": 7, "30d": 30, "90d": 90, "1y": 365 };
+const PAGE_SIZE = 15;
 type Period = "all" | "7d" | "30d" | "90d" | "1y";
 
 function StatCard({ label, value, tone }: { label: string; value: string; tone: "emerald" | "amber" | "rose" | "blue" | "slate" }) {
@@ -51,6 +53,7 @@ export function DisbursementDetailsTable({ restaurant, deliveryman }: { restaura
   const [recipient, setRecipient] = useState(""); // selected restaurant / delivery-man name
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
 
   const all = tab === "restaurant" ? restaurant : deliveryman;
 
@@ -114,6 +117,12 @@ export function DisbursementDetailsTable({ restaurant, deliveryman }: { restaura
     );
   }, [base, search, status]);
 
+  // Pagination over the filtered report rows.
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const startIdx = (safePage - 1) * PAGE_SIZE;
+  const pageRows = rows.slice(startIdx, startIdx + PAGE_SIZE);
+
   const csv = useMemo(() => {
     const head = "sl,id,recipient,zone,created_at,amount,payment_method,status";
     const body = rows.map((r, i) =>
@@ -128,10 +137,10 @@ export function DisbursementDetailsTable({ restaurant, deliveryman }: { restaura
   }, [rows]);
 
   // Mutual-exclusivity handlers for the date controls.
-  const pickPeriod = (p: Period) => { setPeriod(p); setFromDate(""); setToDate(""); };
-  const onFrom = (v: string) => { setFromDate(v); setPeriod("all"); };
-  const onTo = (v: string) => { setToDate(v); setPeriod("all"); };
-  const resetFilters = () => { setPeriod("all"); setFromDate(""); setToDate(""); setZone(""); setRecipient(""); setStatus(""); setSearch(""); };
+  const pickPeriod = (p: Period) => { setPeriod(p); setFromDate(""); setToDate(""); setPage(1); };
+  const onFrom = (v: string) => { setFromDate(v); setPeriod("all"); setPage(1); };
+  const onTo = (v: string) => { setToDate(v); setPeriod("all"); setPage(1); };
+  const resetFilters = () => { setPeriod("all"); setFromDate(""); setToDate(""); setZone(""); setRecipient(""); setStatus(""); setSearch(""); setPage(1); };
   const hasFilters = period !== "all" || !!fromDate || !!toDate || !!zone || !!recipient || !!status || !!search;
 
   const inputCls = "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500";
@@ -182,14 +191,14 @@ export function DisbursementDetailsTable({ restaurant, deliveryman }: { restaura
         </div>
         <div>
           <label className={fieldLabel}>Zone</label>
-          <select value={zone} onChange={(e) => setZone(e.target.value)} className={inputCls}>
+          <select value={zone} onChange={(e) => { setZone(e.target.value); setPage(1); }} className={inputCls}>
             <option value="">All Zones</option>
             {zoneOptions.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
           </select>
         </div>
         <div>
           <label className={fieldLabel}>{tab === "restaurant" ? "Restaurant" : "Delivery Man"}</label>
-          <select value={recipient} onChange={(e) => setRecipient(e.target.value)} className={`${inputCls} max-w-[220px]`}>
+          <select value={recipient} onChange={(e) => { setRecipient(e.target.value); setPage(1); }} className={`${inputCls} max-w-[220px]`}>
             <option value="">{tab === "restaurant" ? "All Restaurants" : "All Delivery Men"}</option>
             {recipientOptions.map((r) => <option key={r} value={r}>{r}</option>)}
           </select>
@@ -217,11 +226,11 @@ export function DisbursementDetailsTable({ restaurant, deliveryman }: { restaura
             Total Disbursements <span className="ml-1 text-xs font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{rows.length}</span>
           </h2>
           <div className="flex items-center gap-3 flex-wrap">
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputCls}>
+            <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className={inputCls}>
               <option value="">All status</option>
               {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 Search by id / name…" className={`${inputCls} min-w-[200px]`} />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="🔍 Search by id / name…" className={`${inputCls} min-w-[200px]`} />
             <a href={`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`} download={`disbursements-${tab}.csv`} className="rounded-lg bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 text-white text-sm font-semibold px-4 py-2 whitespace-nowrap">⬇ Export</a>
           </div>
         </div>
@@ -242,9 +251,9 @@ export function DisbursementDetailsTable({ restaurant, deliveryman }: { restaura
             <tbody className="divide-y divide-slate-100">
               {rows.length === 0 ? (
                 <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">No disbursements found.</td></tr>
-              ) : rows.map((r, i) => (
+              ) : pageRows.map((r, i) => (
                 <tr key={r.id} className="hover:bg-emerald-50/40 transition-colors">
-                  <td className="px-6 py-3 font-mono text-xs text-slate-400">{i + 1}</td>
+                  <td className="px-6 py-3 font-mono text-xs text-slate-400">{startIdx + i + 1}</td>
                   <td className="px-4 py-3 font-mono text-xs text-slate-700">{r.disbursement_id ?? `#${r.id}`}</td>
                   <td className="px-4 py-3 text-slate-800 font-medium">{r.recipient ?? "—"}</td>
                   <td className="px-4 py-3 text-slate-600 text-xs">{fmtDate(r.created_at)}</td>
@@ -260,6 +269,25 @@ export function DisbursementDetailsTable({ restaurant, deliveryman }: { restaura
             </tbody>
           </table>
         </div>
+
+        {rows.length > PAGE_SIZE && (
+          <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/40 flex items-center justify-between flex-wrap gap-3">
+            <div className="text-xs text-slate-500">
+              Showing <span className="font-semibold text-slate-700 tabular-nums">{startIdx + 1}</span>
+              {" – "}
+              <span className="font-semibold text-slate-700 tabular-nums">{Math.min(startIdx + PAGE_SIZE, rows.length)}</span>
+              {" of "}
+              <span className="font-semibold text-slate-700 tabular-nums">{rows.length}</span>
+            </div>
+            <div className="inline-flex items-center gap-1">
+              <PageButton disabled={safePage === 1} onClick={() => setPage(1)} label="« First" />
+              <PageButton disabled={safePage === 1} onClick={() => setPage(safePage - 1)} label="‹ Prev" />
+              <PageWindow current={safePage} total={totalPages} onJump={setPage} />
+              <PageButton disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)} label="Next ›" />
+              <PageButton disabled={safePage === totalPages} onClick={() => setPage(totalPages)} label="Last »" />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
