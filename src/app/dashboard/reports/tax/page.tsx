@@ -96,12 +96,14 @@ export default async function GstReportPage({
         description="GST collected per order, split by component — food items (sec 9(5)), PPO/commission, additional charges, delivery fee and situational charges. Filter by date range, zone or restaurant."
         filterBar={<ReportFilterBar zones={zones} restaurants={restaurants} showZone showRestaurant />}
         stats={[
-          { label: "Total Orders", value: String(s.total_orders), accent: "slate" },
-          { label: `GST on Food Items (${foodRate}%)`, value: inr(s.food), accent: "emerald" },
-          { label: "GST on PPO Charges (18%)", value: inr(s.ppo), accent: "blue" },
+          // Client GST Report mockup: all component metrics in one colour
+          // (orange/amber), the grand total highlighted green.
+          { label: "Total Orders", value: String(s.total_orders), accent: "amber" },
+          { label: `GST on Food Items (${foodRate}%)`, value: inr(s.food), accent: "amber" },
+          { label: "GST on PPO/Commission Charges (18%)", value: inr(s.ppo), accent: "amber" },
           { label: "GST on Additional Charges (18%)", value: inr(s.additional), accent: "amber" },
-          { label: "GST on Delivery Fee (18%)", value: inr(s.delivery), accent: "blue" },
-          { label: "GST on Situational Charges (18%)", value: inr(s.situational), accent: "rose" },
+          { label: "GST on Delivery Fee (18%)", value: inr(s.delivery), accent: "amber" },
+          { label: "GST on Situational Charges (18%)", value: inr(s.situational), accent: "amber" },
           { label: "Total GST Collected", value: inr(s.total), accent: "emerald", hint: "all components" },
         ]}
       />
