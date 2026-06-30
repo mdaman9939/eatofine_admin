@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PageButton, PageWindow } from "./PaginatedTable";
 
 export interface EarningRow {
   sr: number;
@@ -21,6 +22,8 @@ export interface BonusRow {
   note: string;
   amount: number;
 }
+
+const PAGE_SIZE = 15;
 
 function inr(n: number) {
   return `₹${(Number(n) || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -54,6 +57,7 @@ function StatCard({ label, value, tone }: { label: string; value: string; tone: 
 export function DeliverymanEarningTransactions({ earnings, bonusIncentive }: { earnings: EarningRow[]; bonusIncentive: BonusRow[] }) {
   const [tab, setTab] = useState<"earnings" | "bonus">("earnings");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   // ── Earnings tab ─────────────────────────────────────────────────────────
   const earnRows = useMemo(() => {
@@ -80,6 +84,14 @@ export function DeliverymanEarningTransactions({ earnings, bonusIncentive }: { e
     total: bonusRows.reduce((s, r) => s + r.amount, 0),
   }), [bonusRows]);
 
+  // ── Pagination over the active tab's filtered rows ────────────────────────
+  const activeCount = tab === "earnings" ? earnRows.length : bonusRows.length;
+  const totalPages = Math.max(1, Math.ceil(activeCount / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const startIdx = (safePage - 1) * PAGE_SIZE;
+  const earnPage = earnRows.slice(startIdx, startIdx + PAGE_SIZE);
+  const bonusPage = bonusRows.slice(startIdx, startIdx + PAGE_SIZE);
+
   const csv = useMemo(() => {
     if (tab === "earnings") {
       const head = "sr,order_id,deliveryman,date,delivery_fee,tips,situational_fee,total_earned";
@@ -91,6 +103,9 @@ export function DeliverymanEarningTransactions({ earnings, bonusIncentive }: { e
     const body = bonusRows.map((r, i) => [i + 1, r.dm_name, r.date ?? "", r.note, r.amount].map(csvCell).join(","));
     return [head, ...body].join("\n");
   }, [tab, earnRows, bonusRows]);
+
+  const switchTab = (t: "earnings" | "bonus") => { setTab(t); setSearch(""); setPage(1); };
+  const onSearch = (v: string) => { setSearch(v); setPage(1); };
 
   const inputCls = "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500";
   const th = "px-4 py-3 font-semibold";
@@ -105,7 +120,7 @@ export function DeliverymanEarningTransactions({ earnings, bonusIncentive }: { e
         {(["earnings", "bonus"] as const).map((t) => (
           <button
             key={t}
-            onClick={() => { setTab(t); setSearch(""); }}
+            onClick={() => switchTab(t)}
             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${tab === t ? "bg-emerald-600 text-white shadow" : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"}`}
           >
             {t === "earnings" ? "Earnings" : "Bonus / Incentive"}
@@ -134,10 +149,10 @@ export function DeliverymanEarningTransactions({ earnings, bonusIncentive }: { e
         <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-base font-semibold text-slate-900">
             {tab === "earnings" ? "Earnings" : "Bonus / Incentive"}
-            <span className="ml-1 text-xs font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{tab === "earnings" ? earnRows.length : bonusRows.length}</span>
+            <span className="ml-1 text-xs font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{activeCount}</span>
           </h3>
           <div className="flex items-center gap-3 flex-wrap">
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={tab === "earnings" ? "🔍 Search name / order id…" : "🔍 Search name / note…"} className={`${inputCls} min-w-[220px]`} />
+            <input value={search} onChange={(e) => onSearch(e.target.value)} placeholder={tab === "earnings" ? "🔍 Search name / order id…" : "🔍 Search name / note…"} className={`${inputCls} min-w-[220px]`} />
             <a href={`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`} download={`deliveryman-${tab}.csv`} className="rounded-lg bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 text-white text-sm font-semibold px-4 py-2 whitespace-nowrap">⬇ Export</a>
           </div>
         </div>
@@ -158,11 +173,11 @@ export function DeliverymanEarningTransactions({ earnings, bonusIncentive }: { e
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {earnRows.length === 0 ? (
+                {earnPage.length === 0 ? (
                   <tr><td colSpan={8} className="px-6 py-12 text-center text-slate-400 text-sm">No earnings for this filter.</td></tr>
-                ) : earnRows.map((r, i) => (
+                ) : earnPage.map((r, i) => (
                   <tr key={r.order_id} className="hover:bg-emerald-50/40 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-400">{i + 1}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-400">{startIdx + i + 1}</td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-700">#{r.order_id}</td>
                     <td className="px-4 py-3 text-slate-800 font-medium">{r.dm_name}</td>
                     <td className="px-4 py-3 text-slate-600 text-xs">{fmtDate(r.date)}</td>
@@ -186,11 +201,11 @@ export function DeliverymanEarningTransactions({ earnings, bonusIncentive }: { e
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {bonusRows.length === 0 ? (
+                {bonusPage.length === 0 ? (
                   <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-400 text-sm">No bonus / incentive for this filter.</td></tr>
-                ) : bonusRows.map((r, i) => (
-                  <tr key={`${r.dm_id}-${i}`} className="hover:bg-emerald-50/40 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-400">{i + 1}</td>
+                ) : bonusPage.map((r, i) => (
+                  <tr key={`${r.dm_id}-${startIdx + i}`} className="hover:bg-emerald-50/40 transition-colors">
+                    <td className="px-4 py-3 font-mono text-xs text-slate-400">{startIdx + i + 1}</td>
                     <td className="px-4 py-3 text-slate-800 font-medium">{r.dm_name}</td>
                     <td className="px-4 py-3 text-slate-600 text-xs">{fmtDate(r.date)}</td>
                     <td className="px-4 py-3 text-slate-600">{r.note}</td>
@@ -201,6 +216,26 @@ export function DeliverymanEarningTransactions({ earnings, bonusIncentive }: { e
             </table>
           )}
         </div>
+
+        {activeCount > PAGE_SIZE && (
+          <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/40 flex items-center justify-between flex-wrap gap-3">
+            <div className="text-xs text-slate-500">
+              Showing <span className="font-semibold text-slate-700 tabular-nums">{startIdx + 1}</span>
+              {" – "}
+              <span className="font-semibold text-slate-700 tabular-nums">{Math.min(startIdx + PAGE_SIZE, activeCount)}</span>
+              {" of "}
+              <span className="font-semibold text-slate-700 tabular-nums">{activeCount}</span>
+              {search && <span className="text-slate-400"> (filtered)</span>}
+            </div>
+            <div className="inline-flex items-center gap-1">
+              <PageButton disabled={safePage === 1} onClick={() => setPage(1)} label="« First" />
+              <PageButton disabled={safePage === 1} onClick={() => setPage(safePage - 1)} label="‹ Prev" />
+              <PageWindow current={safePage} total={totalPages} onJump={setPage} />
+              <PageButton disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)} label="Next ›" />
+              <PageButton disabled={safePage === totalPages} onClick={() => setPage(totalPages)} label="Last »" />
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
