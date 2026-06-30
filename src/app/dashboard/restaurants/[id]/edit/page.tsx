@@ -42,11 +42,18 @@ interface RestaurantDetail {
   };
 }
 
-/** Parse Laravel's "min-max-type" delivery_time string into [min, max]. */
-function parseDeliveryTime(dt: string | null | undefined): [number | "", number | ""] {
-  if (!dt) return ["", ""];
-  const [min, max] = dt.split("-");
-  return [min ? Number(min) : "", max ? Number(max) : ""];
+/** Parse the stored delivery_time into [min, max]. Stored formats vary —
+ *  "30-40 min", "11-16-min", "9-30-minute" — so we use parseInt (NOT Number),
+ *  which turns a unit suffix like "40 min" into 40 instead of NaN. Always returns
+ *  valid positive numbers (max ≥ min) so the Max field is never blank/NaN, which
+ *  would otherwise trip the "Max delivery time must be a valid number" validation. */
+function parseDeliveryTime(dt: string | null | undefined): [number, number] {
+  const parts = String(dt ?? "").split("-");
+  const min = parseInt(parts[0], 10);
+  const max = parseInt(parts[1], 10);
+  const minOk = Number.isFinite(min) && min > 0 ? min : 10;
+  const maxOk = Number.isFinite(max) && max >= minOk ? max : minOk + 15;
+  return [minOk, maxOk];
 }
 
 export default async function EditRestaurantPage({ params }: { params: Promise<{ id: string }> }) {
