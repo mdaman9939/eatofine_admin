@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { PageButton, PageWindow } from "./PaginatedTable";
 
 /** One row of the detailed Transaction Report (client spec: 29 columns). */
 export interface TxnReportRow {
@@ -201,37 +202,21 @@ export function TransactionReportTable({ rows }: { rows: TxnReportRow[] }) {
         </table>
       </div>
 
-      {filtered.length > 0 && (
-        <div className="px-6 py-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-sm">
-          <div className="text-slate-500">
-            Showing <span className="font-semibold text-slate-700">{start + 1}–{Math.min(start + PAGE_SIZE, filtered.length)}</span> of <span className="font-semibold text-slate-700">{filtered.length}</span>
+      {filtered.length > PAGE_SIZE && (
+        <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/40 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-xs text-slate-500">
+            Showing <span className="font-semibold text-slate-700 tabular-nums">{start + 1}</span>
+            {" – "}
+            <span className="font-semibold text-slate-700 tabular-nums">{Math.min(start + PAGE_SIZE, filtered.length)}</span>
+            {" of "}
+            <span className="font-semibold text-slate-700 tabular-nums">{filtered.length}</span> transactions
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setPage(1)}
-              disabled={safePage === 1}
-              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
-            >« First</button>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={safePage === 1}
-              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
-            >‹ Prev</button>
-            <span className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 font-semibold">{safePage} / {totalPages}</span>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage === totalPages}
-              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
-            >Next ›</button>
-            <button
-              type="button"
-              onClick={() => setPage(totalPages)}
-              disabled={safePage === totalPages}
-              className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
-            >Last »</button>
+          <div className="inline-flex items-center gap-1">
+            <PageButton disabled={safePage === 1} onClick={() => setPage(1)} label="« First" />
+            <PageButton disabled={safePage === 1} onClick={() => setPage(safePage - 1)} label="‹ Prev" />
+            <PageWindow current={safePage} total={totalPages} onJump={setPage} />
+            <PageButton disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)} label="Next ›" />
+            <PageButton disabled={safePage === totalPages} onClick={() => setPage(totalPages)} label="Last »" />
           </div>
         </div>
       )}

@@ -55,23 +55,9 @@ export default async function TransactionReportPage({
         { label: "Total orders", value: sales.total_orders.toString(), accent: "blue" },
         { label: "GST + delivery", value: inr(totalTax + totalDelivery), accent: "amber" },
       ]}
-      detailsTitle="Transaction details — day-wise"
-      columns={[
-        { key: "day", label: "Date" },
-        { key: "orders", label: "Orders", align: "right" },
-        { key: "revenue", label: "Revenue", align: "right" },
-        { key: "tax", label: "GST", align: "right" },
-        { key: "delivery", label: "Delivery", align: "right" },
-      ]}
-      rows={sales.series.map((r) => ({
-        day: r.day,
-        orders: r.orders,
-        revenue: inr(r.revenue),
-        tax: inr(r.tax),
-        delivery: inr(r.delivery),
-      }))}
     />
     <div className="px-8 pb-8 -mt-2">
+      {/* Per-order detailed table — the client's Excel "Transaction Report" format. */}
       <TransactionReportTable rows={txn.rows} />
     </div>
     </>
