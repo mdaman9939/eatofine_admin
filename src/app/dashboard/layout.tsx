@@ -410,7 +410,8 @@ const NAV: NavGroup[] = [
         children: [
           { href: "/dashboard/reports", label: "Overview", icon: "chart" },
           { href: "/dashboard/reports/transaction", label: "Transaction Report", icon: "transactions" },
-          { href: "/dashboard/reports/expense", label: "Expense", icon: "currency" },
+          // Standalone Expense report removed per client — admin expense now lives
+          // under Admin Earning → Expenses tab (/dashboard/reports/admin-earning).
           { href: "/dashboard/reports/disbursement", label: "Disbursement Report", icon: "bank" },
           { href: "/dashboard/reports/food", label: "Food", icon: "food" },
           { href: "/dashboard/reports/order", label: "Order Report", icon: "orders" },

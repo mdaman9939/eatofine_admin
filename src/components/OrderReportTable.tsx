@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { PageButton, PageWindow } from "./PaginatedTable";
 
 export interface OrderReportRow {
   order_id: number;
@@ -203,12 +204,21 @@ export function OrderReportTable({ rows, statusCounts }: { rows: OrderReportRow[
           </table>
         </div>
 
-        {totalPages > 1 && (
-          <div className="px-6 py-3 border-t border-slate-100 flex items-center justify-between text-sm">
-            <span className="text-slate-500">Page {safePage} of {totalPages} · {filtered.length} orders</span>
-            <div className="flex items-center gap-1.5">
-              <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage <= 1} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 hover:bg-slate-50">Prev</button>
-              <button type="button" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage >= totalPages} className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 disabled:opacity-40 hover:bg-slate-50">Next</button>
+        {filtered.length > pageSize && (
+          <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/40 flex items-center justify-between flex-wrap gap-3">
+            <div className="text-xs text-slate-500">
+              Showing <span className="font-semibold text-slate-700 tabular-nums">{(safePage - 1) * pageSize + 1}</span>
+              {" – "}
+              <span className="font-semibold text-slate-700 tabular-nums">{Math.min(safePage * pageSize, filtered.length)}</span>
+              {" of "}
+              <span className="font-semibold text-slate-700 tabular-nums">{filtered.length}</span> orders
+            </div>
+            <div className="inline-flex items-center gap-1">
+              <PageButton disabled={safePage === 1} onClick={() => setPage(1)} label="« First" />
+              <PageButton disabled={safePage === 1} onClick={() => setPage(safePage - 1)} label="‹ Prev" />
+              <PageWindow current={safePage} total={totalPages} onJump={setPage} />
+              <PageButton disabled={safePage === totalPages} onClick={() => setPage(safePage + 1)} label="Next ›" />
+              <PageButton disabled={safePage === totalPages} onClick={() => setPage(totalPages)} label="Last »" />
             </div>
           </div>
         )}

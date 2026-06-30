@@ -49,7 +49,7 @@ export default async function OrderReportPage({
     <ReportTemplate
       badge="SYSTEM · REPORTS"
       title="Order Report"
-      description="Every order with its full money breakdown — discounts, GST per component (item / additional / delivery), charges, deliverymen tip, net payable, and delivered/canceled/refunded status. Filter by period, zone, restaurant, order type, category (all / campaign) and status; export to CSV."
+      description="Every order with its full money breakdown — discounts, GST per component (item / additional / delivery / situational), charges, deliverymen tip, net payable, mode of payment, and delivered/canceled/refunded status. Filter by period, zone, restaurant, order type, category (all / campaign) and status; export to CSV."
       filterBar={<ReportFilterBar zones={zoneOptions} restaurants={restOptions} showZone showRestaurant showOrderType showCategory showStatus />}
       stats={[
         { label: "Days in range", value: sales.series.length.toString(), accent: "slate" },
@@ -57,21 +57,9 @@ export default async function OrderReportPage({
         { label: "Avg orders/day", value: avgOrders.toFixed(1), accent: "amber" },
         { label: "Avg order value", value: inr(aov), accent: "emerald" },
       ]}
-      detailsTitle="Order details — day-wise"
-      columns={[
-        { key: "day", label: "Date" },
-        { key: "orders", label: "Orders", align: "right" },
-        { key: "revenue", label: "Revenue", align: "right" },
-        { key: "aov", label: "AOV", align: "right" },
-      ]}
-      rows={sales.series.map((r) => ({
-        day: r.day,
-        orders: r.orders,
-        revenue: inr(r.revenue),
-        aov: inr(r.orders ? r.revenue / r.orders : 0),
-      }))}
     />
     <div className="px-8 pb-8 -mt-2">
+      {/* Per-order detailed table — the client's Excel "Order Report" format. */}
       <OrderReportTable rows={orderRep.rows} statusCounts={orderRep.status_counts} />
     </div>
     </>
