@@ -33,7 +33,7 @@ const ORDER_TYPE: Record<string, { label: string; tone: string }> = {
 // delivery man's earning (shown in the Deliveryman report), never admin income.
 const MONEY: Array<{ key: keyof AdminEarningOrderRow; label: string }> = [
   { key: "commission", label: "Commission / PPO" },
-  { key: "commission_gst", label: "GST on Commission (18%)" },
+  { key: "commission_gst", label: "GST on Commission → Govt" },
   { key: "earning_additional", label: "Additional Charge (Platform/Packaging)" },
   { key: "admin_discount", label: "Admin Discount (−)" },
   { key: "total_earning", label: "Total Admin Income" },
@@ -101,9 +101,9 @@ export function AdminEarningOrdersTable({ rows }: { rows: AdminEarningOrderRow[]
             <div className="text-[10px] text-slate-400">{pctOf(t.commission, t.total)}</div>
           </div>
           <div className="rounded-xl border border-slate-100 p-3">
-            <div className="text-[11px] text-slate-500">GST on Commission (18%)</div>
-            <div className="text-lg font-bold text-slate-900">{inr(t.commissionGst)}</div>
-            <div className="text-[10px] text-slate-400">{pctOf(t.commissionGst, t.total)}</div>
+            <div className="text-[11px] text-slate-500">GST on Commission → Govt</div>
+            <div className="text-lg font-bold text-slate-500">{inr(t.commissionGst)}</div>
+            <div className="text-[10px] text-slate-400">not admin income · see GST Report</div>
           </div>
           <div className="rounded-xl border border-slate-100 p-3">
             <div className="text-[11px] text-slate-500">Additional Charge (Platform/Packaging)</div>
@@ -118,7 +118,7 @@ export function AdminEarningOrdersTable({ rows }: { rows: AdminEarningOrderRow[]
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
             <div className="text-[11px] text-emerald-700">Total Admin Income</div>
             <div className="text-lg font-bold text-emerald-700">{inr(t.total)}</div>
-            <div className="text-[10px] text-emerald-600/70">commission + GST + additional − discount</div>
+            <div className="text-[10px] text-emerald-600/70">commission + additional − discount (GST → Govt)</div>
           </div>
         </div>
       </div>
