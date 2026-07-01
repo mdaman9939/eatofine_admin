@@ -65,12 +65,12 @@ const MONEY_AFTER_PAYMODE: Array<{ key: keyof TxnReportRow; label: string; tint?
   { key: "restaurant_income", label: "Restaurant Income", tint: "green" },
   { key: "tds", label: "TDS" },
   { key: "restaurant_net_income", label: "Restaurant Net Income (After TDS)", tint: "green" },
-  // Admin-income breakdown so the client can verify: Commission + GST on
-  // Commission = "Admin Income From Restaurant".
+  // Admin-income breakdown. GST is the GOVERNMENT's — the "GST on Commission"
+  // column is shown for reference only and is NOT part of admin income.
   { key: "commission", label: "Commission (PPO)", tint: "amber" },
-  { key: "commission_gst", label: "GST on Commission (18%)", tint: "amber" },
-  { key: "admin_income_from_restaurant", label: "Admin Income From Restaurant (= PPO + GST)", tint: "amber" },
-  { key: "admin_income_from_user", label: "Admin Income from User", tint: "amber" },
+  { key: "commission_gst", label: "GST on Commission (18%) → Govt", tint: "amber" },
+  { key: "admin_income_from_restaurant", label: "Admin Income From Restaurant (PPO only)", tint: "amber" },
+  { key: "admin_income_from_user", label: "Admin Income from User (Delivery + Additional)", tint: "amber" },
 ];
 const FLAGS: Array<{ key: keyof TxnReportRow; label: string }> = [
   { key: "order_delivered", label: "Order Delivered" },
