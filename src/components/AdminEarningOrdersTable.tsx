@@ -11,6 +11,7 @@ export interface AdminEarningOrderRow {
   commission_gst: number;
   earning_additional: number;
   admin_discount: number;
+  earning_from_delivery: number;
   total_earning: number;
 }
 
@@ -29,14 +30,16 @@ const ORDER_TYPE: Record<string, { label: string; tone: string }> = {
   dine_in: { label: "Dine In", tone: "bg-indigo-50 text-indigo-700 ring-indigo-200" },
 };
 
-// Admin income components ONLY — delivery fee + situational/surge are the
-// delivery man's earning (shown in the Deliveryman report), never admin income.
+// Admin income columns. "from Restaurant" = commission + additional − discount.
+// "from Delivery Men" = the USER delivery fee admin keeps (the rider is paid the
+// partner-slab payout out of it). GST is the government's — shown for reference only.
 const MONEY: Array<{ key: keyof AdminEarningOrderRow; label: string }> = [
   { key: "commission", label: "Commission / PPO" },
   { key: "commission_gst", label: "GST on Commission → Govt" },
   { key: "earning_additional", label: "Additional Charge (Platform/Packaging)" },
   { key: "admin_discount", label: "Admin Discount (−)" },
-  { key: "total_earning", label: "Total Admin Income" },
+  { key: "total_earning", label: "Admin Income from Restaurant" },
+  { key: "earning_from_delivery", label: "Admin Income from Delivery Men" },
 ];
 
 export function AdminEarningOrdersTable({ rows }: { rows: AdminEarningOrderRow[] }) {
@@ -61,13 +64,14 @@ export function AdminEarningOrdersTable({ rows }: { rows: AdminEarningOrderRow[]
 
   // "Total as per filter" — category sums over the filtered set.
   const t = useMemo(() => {
-    const s = { commission: 0, commissionGst: 0, additional: 0, adminDiscount: 0, total: 0 };
+    const s = { commission: 0, commissionGst: 0, additional: 0, adminDiscount: 0, total: 0, fromDelivery: 0 };
     for (const r of filtered) {
       s.commission += Number(r.commission) || 0;
       s.commissionGst += Number(r.commission_gst) || 0;
       s.additional += Number(r.earning_additional) || 0;
       s.adminDiscount += Number(r.admin_discount) || 0;
       s.total += Number(r.total_earning) || 0;
+      s.fromDelivery += Number(r.earning_from_delivery) || 0;
     }
     return s;
   }, [filtered]);
@@ -116,9 +120,14 @@ export function AdminEarningOrdersTable({ rows }: { rows: AdminEarningOrderRow[]
             <div className="text-[10px] text-slate-400">deducted</div>
           </div>
           <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-            <div className="text-[11px] text-emerald-700">Total Admin Income</div>
+            <div className="text-[11px] text-emerald-700">Admin Earning from Restaurant</div>
             <div className="text-lg font-bold text-emerald-700">{inr(t.total)}</div>
             <div className="text-[10px] text-emerald-600/70">commission + additional − discount (GST → Govt)</div>
+          </div>
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
+            <div className="text-[11px] text-blue-700">Admin Earning from Delivery Men</div>
+            <div className="text-lg font-bold text-blue-700">{inr(t.fromDelivery)}</div>
+            <div className="text-[10px] text-blue-600/70">user delivery fee (rider paid partner slab from it)</div>
           </div>
         </div>
       </div>
