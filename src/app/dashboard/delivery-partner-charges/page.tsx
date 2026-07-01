@@ -4,6 +4,7 @@ import { CreateForm } from "../../../components/CreateForm";
 import { DmChargesCalculator } from "../../../components/DmChargesCalculator";
 import { SituationalSurchargeEditor } from "../../../components/SituationalSurchargeEditor";
 import { EditRecordButton } from "../../../components/EditRecordButton";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface Slab {
   id: number;
@@ -152,8 +153,8 @@ export default async function DeliveryPartnerChargesPage() {
       )}
 
       {/* ── Distance slabs table ───────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-base font-semibold text-slate-900">Distance slabs</h2>
             <p className="text-xs text-slate-500 mt-0.5">Sorted ascending. Each slab applies once and is matched by the live calculator.</p>
@@ -169,21 +170,24 @@ export default async function DeliveryPartnerChargesPage() {
             ]}
           />
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Range</th>
-                <th className="px-4 py-3 font-semibold text-right">Base ₹</th>
-                <th className="px-4 py-3 font-semibold text-right">Long-trip reward ₹</th>
-                <th className="px-4 py-3 font-semibold">Effective from</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sortedSlabs.map((s, i) => (
+        <PaginatedTable
+          searchable
+          pageSize={15}
+          colCount={7}
+          searchTexts={sortedSlabs.map((s) => `#${s.id} ${s.min_km} ${s.max_km} km ${s.base_charge} ${s.extra_per_km} ${s.status ? "active" : "inactive"}`.toLowerCase())}
+          empty="No distance slabs yet — click “+ New slab” to define the first distance band."
+          headerRow={
+            <tr>
+              <th className="px-6 py-3 font-semibold">#</th>
+              <th className="px-4 py-3 font-semibold">Range</th>
+              <th className="px-4 py-3 font-semibold text-right">Base ₹</th>
+              <th className="px-4 py-3 font-semibold text-right">Long-trip reward ₹</th>
+              <th className="px-4 py-3 font-semibold">Effective from</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold text-right">Actions</th>
+            </tr>
+          }
+          bodyRows={sortedSlabs.map((s, i) => (
                 <tr key={s.id} className="hover:bg-emerald-50/40 transition-colors">
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center justify-center w-7 h-7 rounded-lg text-white text-[10px] font-bold ${SLAB_COLORS[i % SLAB_COLORS.length]}`}>
@@ -217,22 +221,7 @@ export default async function DeliveryPartnerChargesPage() {
                   </td>
                 </tr>
               ))}
-              {slabs.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 12h18m-9-9v18" />
-                      </svg>
-                      <p className="text-sm font-medium">No distance slabs yet</p>
-                      <p className="text-xs">Click &quot;+ New slab&quot; to define the first distance band.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        />
       </div>
 
       {/* ── Surcharges ─────────────────────────────────────────── */}

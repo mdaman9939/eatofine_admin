@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { DeleteButton } from "./ActionButton";
+import { TablePager } from "./TablePager";
 
 export interface Subscriber {
   id: number;
@@ -33,6 +34,8 @@ export function NewsletterSubscribersTable({ subscribers }: { subscribers: Subsc
   const [status, setStatus] = useState("");
   const [date, setDate] = useState("");       // Subscription Date filter (exact day)
   const [first, setFirst] = useState("");      // "Choose First" — show first N rows
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
 
   const sources = useMemo(() => Array.from(new Set(subscribers.map((s) => s.source).filter(Boolean))), [subscribers]);
   const statuses = useMemo(() => Array.from(new Set(subscribers.map((s) => s.status).filter(Boolean))), [subscribers]);
@@ -56,8 +59,12 @@ export function NewsletterSubscribersTable({ subscribers }: { subscribers: Subsc
     return r;
   }, [subscribers, search, sort, source, status, date, first]);
 
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = rows.slice((safePage - 1) * pageSize, safePage * pageSize);
+
   const inputCls = "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500";
-  const clearAll = () => { setSearch(""); setSort("newest"); setSource(""); setStatus(""); setDate(""); setFirst(""); };
+  const clearAll = () => { setSearch(""); setSort("newest"); setSource(""); setStatus(""); setDate(""); setFirst(""); setPage(1); };
   const anyFilter = !!(search || source || status || date || first || sort !== "newest");
 
   return (
@@ -66,15 +73,15 @@ export function NewsletterSubscribersTable({ subscribers }: { subscribers: Subsc
       <div className="px-6 py-4 border-b border-slate-100 flex flex-wrap items-center gap-3">
         <input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="🔍 Search by email…"
           className={`${inputCls} flex-1 min-w-[200px]`}
         />
         <label className="flex items-center gap-2 text-xs text-slate-500">
           <span className="font-semibold uppercase tracking-wider">Date</span>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
+          <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} className={inputCls} />
         </label>
-        <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className={inputCls}>
+        <select value={sort} onChange={(e) => { setSort(e.target.value as Sort); setPage(1); }} className={inputCls}>
           <option value="newest">Sort: Newest first</option>
           <option value="oldest">Sort: Oldest first</option>
           <option value="email">Sort: Email A–Z</option>
@@ -83,16 +90,16 @@ export function NewsletterSubscribersTable({ subscribers }: { subscribers: Subsc
           type="number"
           min={1}
           value={first}
-          onChange={(e) => setFirst(e.target.value)}
+          onChange={(e) => { setFirst(e.target.value); setPage(1); }}
           placeholder="First N"
           className={`${inputCls} w-24`}
           title="Choose First — show only the first N rows"
         />
-        <select value={source} onChange={(e) => setSource(e.target.value)} className={inputCls}>
+        <select value={source} onChange={(e) => { setSource(e.target.value); setPage(1); }} className={inputCls}>
           <option value="">All sources</option>
           {sources.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputCls}>
+        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className={inputCls}>
           <option value="">All statuses</option>
           {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
@@ -117,7 +124,7 @@ export function NewsletterSubscribersTable({ subscribers }: { subscribers: Subsc
           <tbody className="divide-y divide-slate-100">
             {rows.length === 0 ? (
               <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">No subscribers match the filter.</td></tr>
-            ) : rows.map((s) => (
+            ) : pageRows.map((s) => (
               <tr key={s.id} className="hover:bg-emerald-50/40 transition-colors">
                 <td className="px-6 py-3 font-mono text-xs text-slate-400">#{s.id}</td>
                 <td className="px-4 py-3 text-slate-900 font-medium">{s.email}</td>
@@ -137,6 +144,7 @@ export function NewsletterSubscribersTable({ subscribers }: { subscribers: Subsc
           </tbody>
         </table>
       </div>
+      <TablePager page={safePage} totalPages={totalPages} total={rows.length} pageSize={pageSize} onPage={setPage} filtered={anyFilter} />
     </div>
   );
 }

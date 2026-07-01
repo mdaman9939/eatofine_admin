@@ -2,6 +2,7 @@ import { adminFetch } from "../../../lib/api";
 import { CreateForm } from "../../../components/CreateForm";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { EditRecordButton } from "../../../components/EditRecordButton";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface Banner {
   id: number;
@@ -70,28 +71,29 @@ export default async function PromotionalBannersPage() {
         <StatTile label="With image" value={banners.filter((b) => !!b.image).length.toString()} accent="slate" />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="text-base font-semibold text-slate-900">All banners</h2>
           <p className="text-xs text-slate-500 mt-0.5">{banners.length} total.</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Title</th>
-                <th className="px-4 py-3 font-semibold">Type</th>
-                <th className="px-4 py-3 font-semibold">Target</th>
-                <th className="px-4 py-3 font-semibold">Created</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {banners.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">No banners yet. Click <strong>+ New banner</strong> to create one.</td></tr>
-              ) : banners.map((b) => (
+        <PaginatedTable
+          searchable
+          pageSize={15}
+          colCount={7}
+          searchTexts={banners.map((b) => `#${b.id} ${b.title} ${b.subtitle ?? ""} ${b.type} ${b.target ?? ""} ${b.status ? "active" : "inactive"}`.toLowerCase())}
+          empty="No banners yet — click “+ New banner” above to create one."
+          headerRow={
+            <tr>
+              <th className="px-6 py-3 font-semibold">#</th>
+              <th className="px-4 py-3 font-semibold">Title</th>
+              <th className="px-4 py-3 font-semibold">Type</th>
+              <th className="px-4 py-3 font-semibold">Target</th>
+              <th className="px-4 py-3 font-semibold">Created</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold text-right">Actions</th>
+            </tr>
+          }
+          bodyRows={banners.map((b) => (
                 <tr key={b.id} className="hover:bg-emerald-50/40">
                   <td className="px-6 py-3 font-mono text-xs text-slate-400">#{b.id}</td>
                   <td className="px-4 py-3">
@@ -130,9 +132,7 @@ export default async function PromotionalBannersPage() {
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
+        />
       </div>
     </div>
   );

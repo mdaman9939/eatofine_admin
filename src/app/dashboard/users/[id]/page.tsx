@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { adminFetch } from "../../../../lib/api";
 import { ToggleStatusButton } from "../../../../components/ActionButton";
+import { PaginatedTable } from "../../../../components/PaginatedTable";
 
 interface UserDetail {
   user: {
@@ -119,30 +120,33 @@ export default async function UserDetailPage({
         </div>
       </div>
 
-      <div className="mt-4 bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500 mb-3">Recent orders</h2>
-        {data.recent_orders?.length ? (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase text-zinc-500">
-                <th className="py-1">Order</th><th>Status</th><th>Payment</th><th className="text-right">Amount</th><th className="text-right">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.recent_orders.map((o) => (
-                <tr key={o.id} className="border-t border-zinc-100 dark:border-zinc-700">
-                  <td className="py-1.5"><Link href={`/dashboard/orders/${o.id}`} className="text-emerald-700 hover:underline font-mono">#{o.id}</Link></td>
-                  <td className="text-xs">{o.order_status ?? "—"}</td>
-                  <td className="text-xs text-zinc-500">{o.payment_status ?? "—"}</td>
-                  <td className="text-right tabular-nums font-semibold">₹{o.order_amount.toLocaleString("en-IN")}</td>
-                  <td className="text-right text-xs text-zinc-500">{o.created_at ? new Date(o.created_at).toLocaleDateString() : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="text-sm text-zinc-400">No orders yet.</p>
-        )}
+      <div className="mt-4 space-y-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Recent orders</h2>
+        <PaginatedTable
+          searchable
+          pageSize={10}
+          colCount={5}
+          empty="No orders yet."
+          searchTexts={(data.recent_orders ?? []).map((o) => `#${o.id} ${o.order_status ?? ""} ${o.payment_status ?? ""}`.toLowerCase())}
+          headerRow={
+            <tr>
+              <th className="px-4 py-3 font-semibold">Order</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold">Payment</th>
+              <th className="px-4 py-3 font-semibold text-right">Amount</th>
+              <th className="px-4 py-3 font-semibold text-right">Date</th>
+            </tr>
+          }
+          bodyRows={(data.recent_orders ?? []).map((o) => (
+            <tr key={o.id} className="hover:bg-emerald-50/40">
+              <td className="px-4 py-2.5"><Link href={`/dashboard/orders/${o.id}`} className="text-emerald-700 hover:underline font-mono">#{o.id}</Link></td>
+              <td className="px-4 py-2.5 text-xs">{o.order_status ?? "—"}</td>
+              <td className="px-4 py-2.5 text-xs text-zinc-500">{o.payment_status ?? "—"}</td>
+              <td className="px-4 py-2.5 text-right tabular-nums font-semibold">₹{o.order_amount.toLocaleString("en-IN")}</td>
+              <td className="px-4 py-2.5 text-right text-xs text-zinc-500">{o.created_at ? new Date(o.created_at).toLocaleDateString() : "—"}</td>
+            </tr>
+          ))}
+        />
       </div>
     </div>
   );

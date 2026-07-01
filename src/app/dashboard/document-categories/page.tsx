@@ -2,6 +2,7 @@ import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
 import { EditRecordButton } from "../../../components/EditRecordButton";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface DocCategory {
   id: number;
@@ -90,8 +91,8 @@ export default async function DocumentCategoriesPage() {
         <StatCard label="Rider docs" value={dmCount.toString()} suffix="delivery partners" accent="teal" />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-base font-semibold text-slate-900">Configured categories</h2>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -102,22 +103,25 @@ export default async function DocumentCategoriesPage() {
             {categories.length} {categories.length === 1 ? "category" : "categories"}
           </span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Document</th>
-                <th className="px-4 py-3 font-semibold">Applies to</th>
-                <th className="px-4 py-3 font-semibold">Formats</th>
-                <th className="px-4 py-3 font-semibold text-right">Max size</th>
-                <th className="px-4 py-3 font-semibold">Mandatory</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {categories.map((c) => (
+        <PaginatedTable
+          searchable
+          pageSize={15}
+          colCount={8}
+          searchTexts={categories.map((c) => `#${c.id} ${c.name} ${ROLE_LABEL[c.target_role] ?? c.target_role} ${c.allowed_formats} ${c.is_mandatory ? "mandatory required" : "optional"} ${c.status ? "active" : "disabled"} ${c.description ?? ""}`.toLowerCase())}
+          empty="No document categories yet — use the “+ New document category” button above to create the first one."
+          headerRow={
+            <tr>
+              <th className="px-6 py-3 font-semibold">#</th>
+              <th className="px-4 py-3 font-semibold">Document</th>
+              <th className="px-4 py-3 font-semibold">Applies to</th>
+              <th className="px-4 py-3 font-semibold">Formats</th>
+              <th className="px-4 py-3 font-semibold text-right">Max size</th>
+              <th className="px-4 py-3 font-semibold">Mandatory</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold text-right">Actions</th>
+            </tr>
+          }
+          bodyRows={categories.map((c) => (
                 <tr key={c.id} className="hover:bg-emerald-50/40 transition-colors">
                   <td className="px-6 py-4 font-mono text-xs text-slate-400">#{c.id}</td>
                   <td className="px-4 py-4">
@@ -191,19 +195,7 @@ export default async function DocumentCategoriesPage() {
                   </td>
                 </tr>
               ))}
-              {categories.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <p className="text-sm font-medium">No document categories yet</p>
-                      <p className="text-xs">Use the &quot;+ New document category&quot; button above to create the first one.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        />
       </div>
     </div>
   );

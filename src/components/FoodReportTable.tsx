@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { TablePager } from "./TablePager";
 
 export interface FoodReportRow {
   food_id: number;
@@ -51,12 +52,18 @@ function YearlyChart({ yearly }: { yearly: Array<{ year: number; total: number }
 
 export function FoodReportTable({ rows, yearly }: { rows: FoodReportRow[]; yearly: Array<{ year: number; total: number }> }) {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((r) => (r.name ?? "").toLowerCase().includes(q) || (r.restaurant ?? "").toLowerCase().includes(q));
   }, [rows, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const csv = useMemo(() => {
     const head = "sl,name,restaurant,order_count,price,total_amount_sold,total_discount,average_sale_value,avg_rating,rating_count";
@@ -83,7 +90,7 @@ export function FoodReportTable({ rows, yearly }: { rows: FoodReportRow[]; yearl
           <div className="flex items-center gap-3">
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="🔍 Search by food name…"
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[220px]"
             />
@@ -109,9 +116,9 @@ export function FoodReportTable({ rows, yearly }: { rows: FoodReportRow[]; yearl
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr><td colSpan={9} className="px-6 py-12 text-center text-slate-400 text-sm">No food sales found.</td></tr>
-              ) : filtered.map((r, i) => (
+              ) : pageRows.map((r, i) => (
                 <tr key={r.food_id} className="hover:bg-emerald-50/40 transition-colors">
-                  <td className="px-6 py-3 font-mono text-xs text-slate-400">{i + 1}</td>
+                  <td className="px-6 py-3 font-mono text-xs text-slate-400">{(safePage - 1) * pageSize + i + 1}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {r.image_full_url ? (
@@ -140,6 +147,7 @@ export function FoodReportTable({ rows, yearly }: { rows: FoodReportRow[]; yearl
             </tbody>
           </table>
         </div>
+        <TablePager page={safePage} totalPages={totalPages} total={filtered.length} pageSize={pageSize} onPage={setPage} filtered={!!search} />
       </div>
     </div>
   );

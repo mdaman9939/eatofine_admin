@@ -64,7 +64,7 @@ export default async function RestaurantDetailPage({
       <div className="mt-2 flex items-start gap-4">
         {r.logo ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={`${STORAGE_BASE}${r.logo}`} alt={r.name} className="w-16 h-16 rounded-lg object-cover bg-zinc-100" />
+          <img src={r.logo.startsWith("http") ? r.logo : `${STORAGE_BASE}${r.logo}`} alt={r.name} className="w-16 h-16 rounded-lg object-cover bg-zinc-100" />
         ) : (
           <div className="w-16 h-16 rounded-lg bg-zinc-200" />
         )}

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { TablePager } from "./TablePager";
 
 export interface TdsRow {
   restaurant_id: number;
@@ -31,6 +32,8 @@ export function TdsReportTable({ rows, rate, threshold }: { rows: TdsRow[]; rate
 
   const [search, setSearch] = useState("");
   const [tdsOnly, setTdsOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
   const [rateInput, setRateInput] = useState(String(rate));
   const [thrInput, setThrInput] = useState(String(threshold));
 
@@ -42,6 +45,10 @@ export function TdsReportTable({ rows, rate, threshold }: { rows: TdsRow[]; rate
       return (r.restaurant ?? "").toLowerCase().includes(q) || String(r.vendor_id ?? "").includes(q) || String(r.restaurant_id).includes(q);
     });
   }, [rows, search, tdsOnly]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const totals = useMemo(
     () => filtered.reduce(
@@ -100,9 +107,9 @@ export function TdsReportTable({ rows, rate, threshold }: { rows: TdsRow[]; rate
             <input type="number" value={thrInput} onChange={(e) => setThrInput(e.target.value)} className={`${cls} w-28 mt-0.5`} />
           </label>
           <button type="button" onClick={applyRateThreshold} className="rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold px-3 py-1.5">Apply</button>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 Vendor / restaurant…" className={`${cls} min-w-[180px]`} />
+          <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="🔍 Vendor / restaurant…" className={`${cls} min-w-[180px]`} />
           <label className="inline-flex items-center gap-1.5 text-xs text-slate-600 select-none cursor-pointer px-2 py-1.5">
-            <input type="checkbox" checked={tdsOnly} onChange={(e) => setTdsOnly(e.target.checked)} /> TDS only
+            <input type="checkbox" checked={tdsOnly} onChange={(e) => { setTdsOnly(e.target.checked); setPage(1); }} /> TDS only
           </label>
           <a
             href={`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`}
@@ -129,7 +136,7 @@ export function TdsReportTable({ rows, rate, threshold }: { rows: TdsRow[]; rate
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {filtered.map((r) => (
+            {pageRows.map((r) => (
               <tr key={r.restaurant_id} className="hover:bg-emerald-50/40 transition-colors">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2.5">
@@ -184,6 +191,7 @@ export function TdsReportTable({ rows, rate, threshold }: { rows: TdsRow[]; rate
           )}
         </table>
       </div>
+      <TablePager page={safePage} totalPages={totalPages} total={filtered.length} pageSize={pageSize} onPage={setPage} filtered={!!search || tdsOnly} />
     </div>
   );
 }

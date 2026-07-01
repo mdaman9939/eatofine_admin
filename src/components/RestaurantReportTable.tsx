@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { TablePager } from "./TablePager";
 
 export interface RestaurantReportRow {
   restaurant_id: number;
@@ -48,12 +49,18 @@ function OrderChart({ yearly }: { yearly: Array<{ year: number; total: number }>
 
 export function RestaurantReportTable({ rows, yearly }: { rows: RestaurantReportRow[]; yearly: Array<{ year: number; total: number }> }) {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((r) => (r.name ?? "").toLowerCase().includes(q));
   }, [rows, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const csv = useMemo(() => {
     const head = "sl,restaurant,total_food,total_order,total_order_amount,total_discount,total_admin_commission,total_vat,avg_rating,rating_count";
@@ -78,7 +85,7 @@ export function RestaurantReportTable({ rows, yearly }: { rows: RestaurantReport
             Restaurant Report Table <span className="ml-1 text-xs font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">{filtered.length}</span>
           </h2>
           <div className="flex items-center gap-3">
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="🔍 Search restaurant name…" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[220px]" />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="🔍 Search restaurant name…" className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[220px]" />
             <a href={`data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`} download="restaurant-report.csv" className="rounded-lg bg-gradient-to-b from-emerald-600 to-emerald-700 hover:from-emerald-500 text-white text-sm font-semibold px-4 py-2 whitespace-nowrap">⬇ Export</a>
           </div>
         </div>
@@ -101,9 +108,9 @@ export function RestaurantReportTable({ rows, yearly }: { rows: RestaurantReport
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr><td colSpan={9} className="px-6 py-12 text-center text-slate-400 text-sm">No restaurant sales found.</td></tr>
-              ) : filtered.map((r, i) => (
+              ) : pageRows.map((r, i) => (
                 <tr key={r.restaurant_id} className="hover:bg-emerald-50/40 transition-colors">
-                  <td className="px-6 py-3 font-mono text-xs text-slate-400">{i + 1}</td>
+                  <td className="px-6 py-3 font-mono text-xs text-slate-400">{(safePage - 1) * pageSize + i + 1}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {r.image_full_url ? (
@@ -132,6 +139,7 @@ export function RestaurantReportTable({ rows, yearly }: { rows: RestaurantReport
             </tbody>
           </table>
         </div>
+        <TablePager page={safePage} totalPages={totalPages} total={filtered.length} pageSize={pageSize} onPage={setPage} filtered={!!search} />
       </div>
     </div>
   );

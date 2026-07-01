@@ -129,7 +129,7 @@ export default async function RestaurantsPage() {
                   <div className="flex items-center gap-3">
                     {r.logo ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`${STORAGE_BASE}${r.logo}`} alt={r.name ?? ""} className="w-10 h-10 rounded-lg object-cover ring-1 ring-slate-200" />
+                      <img src={r.logo.startsWith("http") ? r.logo : `${STORAGE_BASE}${r.logo}`} alt={r.name ?? ""} className="w-10 h-10 rounded-lg object-cover ring-1 ring-slate-200" />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 ring-1 ring-emerald-300/50 text-white flex items-center justify-center text-xs font-bold">
                         {(r.name ?? "R").slice(0, 2).toUpperCase()}

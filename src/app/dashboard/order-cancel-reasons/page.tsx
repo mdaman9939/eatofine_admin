@@ -2,6 +2,7 @@ import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface Reason {
   id: number;
@@ -165,8 +166,8 @@ export default async function OrderCancelReasonsPage() {
       </div>
 
       {/* ── Reasons table ──────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-base font-semibold text-slate-900">Order cancel reasons</h2>
             <p className="text-xs text-slate-500 mt-0.5">Grouped by user type. These show up in cancel flows across the customer, vendor, and delivery apps.</p>
@@ -175,20 +176,23 @@ export default async function OrderCancelReasonsPage() {
             {reasons.length} {reasons.length === 1 ? "reason" : "reasons"}
           </span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Reason</th>
-                <th className="px-4 py-3 font-semibold">Applies to</th>
-                <th className="px-4 py-3 font-semibold">Fault mapping</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sorted.map((r) => (
+        <PaginatedTable
+          searchable
+          pageSize={15}
+          colCount={6}
+          searchTexts={sorted.map((r) => `#${r.id} ${r.reason} ${r.user_type} ${scenarioLabel(r.scenario_key)}`.toLowerCase())}
+          empty="No cancellation reasons yet — add one with the “+ New cancel reason” button above."
+          headerRow={
+            <tr>
+              <th className="px-6 py-3 font-semibold">#</th>
+              <th className="px-4 py-3 font-semibold">Reason</th>
+              <th className="px-4 py-3 font-semibold">Applies to</th>
+              <th className="px-4 py-3 font-semibold">Fault mapping</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold text-right">Actions</th>
+            </tr>
+          }
+          bodyRows={sorted.map((r) => (
                 <tr key={r.id} className="hover:bg-emerald-50/40 transition-colors">
                   <td className="px-6 py-4 font-mono text-xs text-slate-400">#{r.id}</td>
                   <td className="px-4 py-4">
@@ -221,22 +225,7 @@ export default async function OrderCancelReasonsPage() {
                   </td>
                 </tr>
               ))}
-              {reasons.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-sm font-medium">No cancellation reasons yet</p>
-                      <p className="text-xs">Add one using the &quot;+ New cancel reason&quot; button above.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { CreateForm } from "../../../components/CreateForm";
 import { SlabRangeAxis } from "../../../components/SlabRangeAxis";
 import { SlabCalculator } from "../../../components/SlabCalculator";
 import { SlabEditButton } from "../../../components/SlabEditButton";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface Slab {
   id: number;
@@ -122,8 +123,8 @@ export default async function BusinessPlansPage() {
       <SlabCalculator />
 
       {/* ── Slabs table ────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 flex items-center justify-between border-b border-slate-100">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-base font-semibold text-slate-900">Charge slabs</h2>
             <p className="text-xs text-slate-500 mt-0.5">Sorted by order-value range. Each slab applies to one specific window.</p>
@@ -132,22 +133,25 @@ export default async function BusinessPlansPage() {
             {slabs.length} {slabs.length === 1 ? "row" : "rows"}
           </span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold w-[28%]">Range</th>
-                <th className="px-4 py-3 font-semibold text-right">Fixed</th>
-                <th className="px-4 py-3 font-semibold text-right">Extra %</th>
-                <th className="px-4 py-3 font-semibold text-right">GST</th>
-                <th className="px-4 py-3 font-semibold">GST basis</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sorted.map((s) => (
+        <PaginatedTable
+          searchable
+          pageSize={15}
+          colCount={8}
+          searchTexts={sorted.map((s) => `#${s.id} ${money(s.min_order_value)} ${money(s.max_order_value)} ${s.fixed_charge} ${s.gst_rate} ${s.gst_on_extra ? "fixed + extra" : "fixed only"} ${s.status ? "active" : "inactive"}`.toLowerCase())}
+          empty="No slabs configured yet — click “+ New slab” above to add your first charge slab."
+          headerRow={
+            <tr>
+              <th className="px-6 py-3 font-semibold">#</th>
+              <th className="px-4 py-3 font-semibold w-[28%]">Range</th>
+              <th className="px-4 py-3 font-semibold text-right">Fixed</th>
+              <th className="px-4 py-3 font-semibold text-right">Extra %</th>
+              <th className="px-4 py-3 font-semibold text-right">GST</th>
+              <th className="px-4 py-3 font-semibold">GST basis</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold text-right">Actions</th>
+            </tr>
+          }
+          bodyRows={sorted.map((s) => (
                 <tr key={s.id} className="hover:bg-emerald-50/40 transition-colors align-top">
                   <td className="px-6 py-4">
                     <div className="font-mono text-xs text-slate-400">#{s.id}</div>
@@ -214,22 +218,7 @@ export default async function BusinessPlansPage() {
                   </td>
                 </tr>
               ))}
-              {slabs.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                      </svg>
-                      <p className="text-sm font-medium">No slabs configured yet</p>
-                      <p className="text-xs">Click &quot;+ New slab&quot; above to add your first charge slab.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        />
       </div>
 
       {/* ── Calculation logic (brand gradient closing card) ────── */}

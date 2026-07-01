@@ -2,6 +2,7 @@ import { adminFetch } from "../../../lib/api";
 import { CreateForm } from "../../../components/CreateForm";
 import { DeleteButton } from "../../../components/ActionButton";
 import { EditRecordButton } from "../../../components/EditRecordButton";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface Template {
   id: number;
@@ -65,48 +66,47 @@ export default async function EmailTemplatesPage() {
         <StatTile label="DM" value={byAudience("dm").toString()} accent="slate" />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="text-base font-semibold text-slate-900">All templates</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Event</th>
-                <th className="px-4 py-3 font-semibold">Audience</th>
-                <th className="px-4 py-3 font-semibold">Subject</th>
-                <th className="px-4 py-3 font-semibold">Updated</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {templates.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400">No templates yet.</td></tr>
-              ) : templates.map((t) => (
-                <tr key={t.id} className="hover:bg-emerald-50/40">
-                  <td className="px-6 py-3 font-mono text-xs text-slate-400">#{t.id}</td>
-                  <td className="px-4 py-3 text-slate-900 font-medium font-mono text-xs">{t.event}</td>
-                  <td className="px-4 py-3">
-                    <span className="inline-flex px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200">{t.audience}</span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-700 text-sm max-w-md truncate">{t.subject}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{fmtDate(t.updated_at)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <span className="inline-flex gap-2 justify-end">
-                      <EditRecordButton basePath="/email-templates" id={t.id} title="Edit template" values={t as unknown as Record<string, unknown>} fields={[
-                        { name: "subject", label: "Subject" },
-                        { name: "body", label: "Body" },
-                      ]} />
-                      <DeleteButton basePath="/email-templates" id={t.id} />
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <PaginatedTable
+          searchable
+          pageSize={15}
+          colCount={6}
+          searchTexts={templates.map((t) => `#${t.id} ${t.event} ${t.audience} ${t.subject}`.toLowerCase())}
+          empty="No templates yet."
+          headerRow={
+            <tr>
+              <th className="px-6 py-3 font-semibold">#</th>
+              <th className="px-4 py-3 font-semibold">Event</th>
+              <th className="px-4 py-3 font-semibold">Audience</th>
+              <th className="px-4 py-3 font-semibold">Subject</th>
+              <th className="px-4 py-3 font-semibold">Updated</th>
+              <th className="px-4 py-3 font-semibold text-right">Actions</th>
+            </tr>
+          }
+          bodyRows={templates.map((t) => (
+            <tr key={t.id} className="hover:bg-emerald-50/40">
+              <td className="px-6 py-3 font-mono text-xs text-slate-400">#{t.id}</td>
+              <td className="px-4 py-3 text-slate-900 font-medium font-mono text-xs">{t.event}</td>
+              <td className="px-4 py-3">
+                <span className="inline-flex px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200">{t.audience}</span>
+              </td>
+              <td className="px-4 py-3 text-slate-700 text-sm max-w-md truncate">{t.subject}</td>
+              <td className="px-4 py-3 text-slate-500 text-xs">{fmtDate(t.updated_at)}</td>
+              <td className="px-4 py-3 text-right">
+                <span className="inline-flex gap-2 justify-end">
+                  <EditRecordButton basePath="/email-templates" id={t.id} title="Edit template" values={t as unknown as Record<string, unknown>} fields={[
+                    { name: "subject", label: "Subject" },
+                    { name: "body", label: "Body" },
+                  ]} />
+                  <DeleteButton basePath="/email-templates" id={t.id} />
+                </span>
+              </td>
+            </tr>
+          ))}
+        />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { TablePager } from "./TablePager";
 
 export interface TxnRow {
   order_id: number;
@@ -56,6 +57,8 @@ const COLS: Array<{ key: keyof TxnRow; label: string; money?: boolean }> = [
 
 export function TransactionDetailsTable({ rows }: { rows: TxnRow[] }) {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -67,6 +70,10 @@ export function TransactionDetailsTable({ rows }: { rows: TxnRow[] }) {
         (r.customer_name ?? "").toLowerCase().includes(q),
     );
   }, [rows, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const csv = useMemo(() => {
     const headers = ["sl", "order_id", "restaurant", "customer", ...COLS.map((c) => c.key), "amount_received_by", "payment_method", "payment_status"];
@@ -91,7 +98,7 @@ export function TransactionDetailsTable({ rows }: { rows: TxnRow[] }) {
         <div className="flex items-center gap-3">
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             placeholder="🔍 Order id / restaurant / customer…"
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[240px]"
           />
@@ -125,9 +132,9 @@ export function TransactionDetailsTable({ rows }: { rows: TxnRow[] }) {
           <tbody className="divide-y divide-slate-100">
             {filtered.length === 0 ? (
               <tr><td colSpan={COLS.length + 8} className="px-6 py-12 text-center text-slate-400 text-sm">No transactions in this window.</td></tr>
-            ) : filtered.map((r, i) => (
+            ) : pageRows.map((r, i) => (
               <tr key={r.order_id} className="hover:bg-emerald-50/40 transition-colors">
-                <td className="px-4 py-3 font-mono text-xs text-slate-400 sticky left-0 bg-white z-10">{i + 1}</td>
+                <td className="px-4 py-3 font-mono text-xs text-slate-400 sticky left-0 bg-white z-10">{(safePage - 1) * pageSize + i + 1}</td>
                 <td className="px-4 py-3 font-mono text-xs text-slate-700">#{r.order_id}</td>
                 <td className="px-4 py-3 text-slate-800">{r.restaurant ?? "—"}</td>
                 <td className="px-4 py-3 text-slate-800">{r.customer_name ?? "—"}</td>
@@ -151,6 +158,7 @@ export function TransactionDetailsTable({ rows }: { rows: TxnRow[] }) {
           </tbody>
         </table>
       </div>
+      <TablePager page={safePage} totalPages={totalPages} total={filtered.length} pageSize={pageSize} onPage={setPage} filtered={!!search} />
     </div>
   );
 }

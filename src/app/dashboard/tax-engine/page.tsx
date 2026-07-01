@@ -2,6 +2,7 @@ import { adminFetch } from "../../../lib/api";
 import { TaxCalculator } from "../../../components/TaxCalculator";
 import { TaxRowEditor } from "../../../components/TaxRowEditor";
 import { CreateForm } from "../../../components/CreateForm";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface Tax {
   id: number;
@@ -92,8 +93,8 @@ export default async function TaxEnginePage() {
       </div>
 
       {/* ── GST Applicability Matrix ───────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-base font-semibold text-slate-900">GST Applicability Matrix</h2>
             <p className="text-xs text-slate-500 mt-0.5">CGST + SGST for intra-state, IGST for inter-state. Sort: highest rate first.</p>
@@ -102,22 +103,25 @@ export default async function TaxEnginePage() {
             {taxes.length} {taxes.length === 1 ? "head" : "heads"}
           </span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">Charge head</th>
-                <th className="px-4 py-3 font-semibold">GST rate</th>
-                <th className="px-4 py-3 font-semibold text-right">CGST</th>
-                <th className="px-4 py-3 font-semibold text-right">SGST</th>
-                <th className="px-4 py-3 font-semibold text-right">IGST</th>
-                <th className="px-4 py-3 font-semibold">HSN / SAC</th>
-                <th className="px-4 py-3 font-semibold">Type</th>
-                <th className="px-4 py-3 font-semibold text-right relative">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sorted.map((t) => (
+        <PaginatedTable
+          searchable
+          pageSize={15}
+          colCount={8}
+          searchTexts={sorted.map((t) => `#${t.id} ${t.charge_head} ${t.gst_rate}% ${t.hsn_sac ?? ""} ${t.gst_rate === 0 ? "exempt" : t.configurable ? "configurable" : "fixed"}`.toLowerCase())}
+          empty="No charge heads yet — click “+ Add charge head” above to define your first GST rule."
+          headerRow={
+            <tr>
+              <th className="px-6 py-3 font-semibold">Charge head</th>
+              <th className="px-4 py-3 font-semibold">GST rate</th>
+              <th className="px-4 py-3 font-semibold text-right">CGST</th>
+              <th className="px-4 py-3 font-semibold text-right">SGST</th>
+              <th className="px-4 py-3 font-semibold text-right">IGST</th>
+              <th className="px-4 py-3 font-semibold">HSN / SAC</th>
+              <th className="px-4 py-3 font-semibold">Type</th>
+              <th className="px-4 py-3 font-semibold text-right relative">Actions</th>
+            </tr>
+          }
+          bodyRows={sorted.map((t) => (
                 <tr key={t.id} className="hover:bg-emerald-50/40 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-medium text-slate-800">{t.charge_head}</div>
@@ -146,22 +150,7 @@ export default async function TaxEnginePage() {
                   </td>
                 </tr>
               ))}
-              {taxes.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 7h6m-6 4h6m-6 4h4m2 5l4-4M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2h-2" />
-                      </svg>
-                      <p className="text-sm font-medium">No charge heads yet</p>
-                      <p className="text-xs">Click &quot;+ Add charge head&quot; above to define your first GST rule.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        />
       </div>
 
       {/* ── GST rate distribution ──────────────────────────────── */}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ApproveRejectButtons } from "./ApproveRejectButtons";
 import { DeliveryManViewButton } from "./DeliveryManViewButton";
+import { TablePager } from "./TablePager";
 
 export interface PendingDm {
   id: number;
@@ -44,13 +45,19 @@ function daysSince(iso: string | null): string {
 
 export function DmJoiningTabs({ pending, denied }: { pending: PendingDm[]; denied: DeniedDm[] }) {
   const [tab, setTab] = useState<"pending" | "denied">("pending");
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
+  const rows = tab === "pending" ? pending : denied;
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * pageSize;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Tab bar */}
       <div className="px-6 pt-4 border-b border-slate-100 flex gap-1">
-        <TabButton active={tab === "pending"} onClick={() => setTab("pending")} label="Pending Delivery Man" count={pending.length} accent="amber" />
-        <TabButton active={tab === "denied"} onClick={() => setTab("denied")} label="Denied Deliveryman" count={denied.length} accent="rose" />
+        <TabButton active={tab === "pending"} onClick={() => { setTab("pending"); setPage(1); }} label="Pending Delivery Man" count={pending.length} accent="amber" />
+        <TabButton active={tab === "denied"} onClick={() => { setTab("denied"); setPage(1); }} label="Denied Deliveryman" count={denied.length} accent="rose" />
       </div>
 
       {tab === "pending" ? (
@@ -69,7 +76,7 @@ export function DmJoiningTabs({ pending, denied }: { pending: PendingDm[]; denie
             <tbody className="divide-y divide-slate-100">
               {pending.length === 0 ? (
                 <EmptyRow cols={6} title="No pending applications" hint="All riders are processed." />
-              ) : pending.map((r) => (
+              ) : pending.slice(pageStart, pageStart + pageSize).map((r) => (
                 <tr key={r.id} className="hover:bg-emerald-50/40 align-top">
                   <td className="px-6 py-4 font-mono text-xs text-slate-400">#{r.id}</td>
                   <td className="px-4 py-4 font-semibold text-slate-900">{r.name}</td>
@@ -114,7 +121,7 @@ export function DmJoiningTabs({ pending, denied }: { pending: PendingDm[]; denie
             <tbody className="divide-y divide-slate-100">
               {denied.length === 0 ? (
                 <EmptyRow cols={8} title="No denied delivery men" hint="Rejected applications will appear here." />
-              ) : denied.map((r) => (
+              ) : denied.slice(pageStart, pageStart + pageSize).map((r) => (
                 <tr key={r.id} className="hover:bg-rose-50/30 align-top">
                   <td className="px-6 py-4 font-mono text-xs text-slate-400">#{r.id}</td>
                   <td className="px-4 py-4 font-semibold text-slate-900">{r.name}</td>
@@ -141,6 +148,7 @@ export function DmJoiningTabs({ pending, denied }: { pending: PendingDm[]; denie
           </table>
         </div>
       )}
+      <TablePager page={safePage} totalPages={totalPages} total={rows.length} pageSize={pageSize} onPage={setPage} />
     </div>
   );
 }

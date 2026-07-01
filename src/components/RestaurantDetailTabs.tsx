@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { TablePager } from "./TablePager";
 
 export interface RestaurantTabData {
   foods: Array<{ id: number; name: string | null; price: number; image: string | null; status: boolean; veg: boolean | null }>;
@@ -81,8 +82,14 @@ function FoodsTab({ data }: { data: RestaurantTabData["foods"] }) {
 }
 
 function OrdersTab({ data }: { data: RestaurantTabData["orders"] }) {
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
+  const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = data.slice((safePage - 1) * pageSize, safePage * pageSize);
   if (!data.length) return <Empty label="orders" />;
   return (
+    <>
     <table className="w-full text-sm">
       <thead>
         <tr className="text-left text-xs uppercase text-slate-500">
@@ -90,7 +97,7 @@ function OrdersTab({ data }: { data: RestaurantTabData["orders"] }) {
         </tr>
       </thead>
       <tbody>
-        {data.map((o) => (
+        {pageRows.map((o) => (
           <tr key={o.id} className="border-t border-slate-100">
             <td className="py-2"><Link href={`/dashboard/orders/${o.id}`} className="text-emerald-700 hover:underline font-mono">#{o.id}</Link></td>
             <td className="text-slate-600">{o.order_type ?? "—"}</td>
@@ -102,6 +109,8 @@ function OrdersTab({ data }: { data: RestaurantTabData["orders"] }) {
         ))}
       </tbody>
     </table>
+    <TablePager page={safePage} totalPages={totalPages} total={data.length} pageSize={pageSize} onPage={setPage} />
+    </>
   );
 }
 
@@ -145,8 +154,14 @@ function WalletTab({ wallet }: { wallet: RestaurantTabData["wallet"] }) {
 }
 
 function TransactionsTab({ data }: { data: RestaurantTabData["transactions"] }) {
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
+  const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = data.slice((safePage - 1) * pageSize, safePage * pageSize);
   if (!data.length) return <Empty label="transactions" />;
   return (
+    <>
     <table className="w-full text-sm">
       <thead>
         <tr className="text-left text-xs uppercase text-slate-500">
@@ -154,7 +169,7 @@ function TransactionsTab({ data }: { data: RestaurantTabData["transactions"] }) 
         </tr>
       </thead>
       <tbody>
-        {data.map((t) => (
+        {pageRows.map((t) => (
           <tr key={t.id} className="border-t border-slate-100">
             <td className="py-2 font-mono">#{t.id}</td>
             <td className="text-right tabular-nums">{inr(t.order_amount)}</td>
@@ -165,5 +180,7 @@ function TransactionsTab({ data }: { data: RestaurantTabData["transactions"] }) 
         ))}
       </tbody>
     </table>
+    <TablePager page={safePage} totalPages={totalPages} total={data.length} pageSize={pageSize} onPage={setPage} />
+    </>
   );
 }

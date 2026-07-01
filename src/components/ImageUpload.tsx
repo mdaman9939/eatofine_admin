@@ -55,7 +55,7 @@ export function ImageUpload({
         <div className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={`${NODE_PUBLIC}/storage/${dir}/${value}`}
+            src={value.startsWith("http") ? value : `${NODE_PUBLIC}/storage/${dir}/${value}`}
             alt={value}
             className="w-16 h-16 rounded object-cover bg-zinc-100 border border-zinc-200"
           />

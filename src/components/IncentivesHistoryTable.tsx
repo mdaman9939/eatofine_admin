@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { TablePager } from "./TablePager";
 
 export interface IncentiveHistoryRow {
   id: number;
@@ -38,12 +39,18 @@ function StatusBadge({ status }: { status: string }) {
 
 export function IncentivesHistoryTable({ rows }: { rows: IncentiveHistoryRow[] }) {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return rows;
     return rows.filter((r) => r.dm_name.toLowerCase().includes(q) || (r.zone_name ?? "").toLowerCase().includes(q));
   }, [rows, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -53,7 +60,7 @@ export function IncentivesHistoryTable({ rows }: { rows: IncentiveHistoryRow[] }
         </h2>
         <input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           placeholder="🔍 Search delivery man / zone…"
           className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 min-w-[240px]"
         />
@@ -74,9 +81,9 @@ export function IncentivesHistoryTable({ rows }: { rows: IncentiveHistoryRow[] }
           <tbody className="divide-y divide-slate-100">
             {filtered.length === 0 ? (
               <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">No incentive history yet.</td></tr>
-            ) : filtered.map((r, i) => (
+            ) : pageRows.map((r, i) => (
               <tr key={r.id} className="hover:bg-emerald-50/40">
-                <td className="px-6 py-3 font-mono text-xs text-slate-400">{i + 1}</td>
+                <td className="px-6 py-3 font-mono text-xs text-slate-400">{(safePage - 1) * pageSize + i + 1}</td>
                 <td className="px-4 py-3 font-semibold text-slate-900">{r.dm_name}</td>
                 <td className="px-4 py-3 text-slate-600">{r.zone_name ?? "—"}</td>
                 <td className="px-4 py-3 text-right tabular-nums text-slate-800">{inr(r.total_earning)}</td>
@@ -88,6 +95,7 @@ export function IncentivesHistoryTable({ rows }: { rows: IncentiveHistoryRow[] }
           </tbody>
         </table>
       </div>
+      <TablePager page={safePage} totalPages={totalPages} total={filtered.length} pageSize={pageSize} onPage={setPage} filtered={!!search} />
     </div>
   );
 }

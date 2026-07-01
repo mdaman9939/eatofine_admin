@@ -2,6 +2,7 @@ import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { ToggleStatusButton, DeleteButton } from "../../../components/ActionButton";
 import { CreateForm } from "../../../components/CreateForm";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface P {
   id: number;
@@ -133,8 +134,8 @@ export default async function SubscriptionPackagesPage() {
       </div>
 
       {/* ── Packages table ─────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-base font-semibold text-slate-900">Subscription tiers</h2>
             <p className="text-xs text-slate-500 mt-0.5">Restaurants pick one plan at signup; the default tier auto-applies when no plan is chosen.</p>
@@ -143,23 +144,26 @@ export default async function SubscriptionPackagesPage() {
             {packages.length} {packages.length === 1 ? "package" : "packages"}
           </span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Package</th>
-                <th className="px-4 py-3 font-semibold text-right">Price</th>
-                <th className="px-4 py-3 font-semibold text-right">Validity</th>
-                <th className="px-4 py-3 font-semibold text-right">Max orders</th>
-                <th className="px-4 py-3 font-semibold text-right">Max products</th>
-                <th className="px-4 py-3 font-semibold">Features</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sorted.map((p) => {
+        <PaginatedTable
+          searchable
+          pageSize={15}
+          colCount={9}
+          searchTexts={sorted.map((p) => `#${p.id} ${p.package_name} ${inr(p.price)} ${p.validity} ${p.max_order} ${p.max_product} ${p.default ? "default" : ""} ${p.price === 0 ? "free" : "paid"} ${p.status ? "active" : "disabled"}`.toLowerCase())}
+          empty="No subscription packages yet — use the “+ New subscription package” button above to create the first tier."
+          headerRow={
+            <tr>
+              <th className="px-6 py-3 font-semibold">#</th>
+              <th className="px-4 py-3 font-semibold">Package</th>
+              <th className="px-4 py-3 font-semibold text-right">Price</th>
+              <th className="px-4 py-3 font-semibold text-right">Validity</th>
+              <th className="px-4 py-3 font-semibold text-right">Max orders</th>
+              <th className="px-4 py-3 font-semibold text-right">Max products</th>
+              <th className="px-4 py-3 font-semibold">Features</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold text-right">Actions</th>
+            </tr>
+          }
+          bodyRows={sorted.map((p) => {
                 const features: Array<{ k: string; on: boolean }> = [
                   { k: "POS", on: !!p.pos },
                   { k: "App", on: !!p.mobile_app },
@@ -230,22 +234,7 @@ export default async function SubscriptionPackagesPage() {
                   </tr>
                 );
               })}
-              {packages.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                      </svg>
-                      <p className="text-sm font-medium">No subscription packages yet</p>
-                      <p className="text-xs">Use the &quot;+ New subscription package&quot; button above to create the first tier.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        />
       </div>
 
       {/* ── Closing card ───────────────────────────────────────── */}

@@ -1,4 +1,5 @@
 import { adminFetch } from "../../../lib/api";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 /**
  * Wallet ledger — cross-order audit of every restaurant/DM wallet movement
@@ -61,23 +62,26 @@ export default async function WalletLedgerPage({
         <FilterChip href="/dashboard/wallet-ledger?actor_type=deliveryman" active={actor_type === "deliveryman"}>Deliveryman</FilterChip>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Actor</th>
-                <th className="px-4 py-3 font-semibold">Order</th>
-                <th className="px-4 py-3 font-semibold">Direction</th>
-                <th className="px-4 py-3 font-semibold text-right">Amount</th>
-                <th className="px-4 py-3 font-semibold">Scenario</th>
-                <th className="px-4 py-3 font-semibold">Note</th>
-                <th className="px-4 py-3 font-semibold">When</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {data.items.map((e) => (
+      <div className="space-y-3">
+        <PaginatedTable
+          searchable
+          pageSize={15}
+          colCount={8}
+          searchTexts={data.items.map((e) => `#${e.mysql_id} ${e.actor_type} ${e.actor_id ?? ""} #${e.order_id} ${e.direction} ${e.scenario} ${e.note}`.toLowerCase())}
+          empty="No ledger entries yet. They appear once a refund/cancellation scenario is applied to an order."
+          headerRow={
+            <tr>
+              <th className="px-6 py-3 font-semibold">#</th>
+              <th className="px-4 py-3 font-semibold">Actor</th>
+              <th className="px-4 py-3 font-semibold">Order</th>
+              <th className="px-4 py-3 font-semibold">Direction</th>
+              <th className="px-4 py-3 font-semibold text-right">Amount</th>
+              <th className="px-4 py-3 font-semibold">Scenario</th>
+              <th className="px-4 py-3 font-semibold">Note</th>
+              <th className="px-4 py-3 font-semibold">When</th>
+            </tr>
+          }
+          bodyRows={data.items.map((e) => (
                 <tr key={e.mysql_id} className="hover:bg-emerald-50/40">
                   <td className="px-6 py-3 font-mono text-xs text-slate-400">#{e.mysql_id}</td>
                   <td className="px-4 py-3">
@@ -101,16 +105,7 @@ export default async function WalletLedgerPage({
                   </td>
                 </tr>
               ))}
-              {data.items.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-400">
-                    No ledger entries yet. They appear once a refund/cancellation scenario is applied to an order.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        />
       </div>
     </div>
   );

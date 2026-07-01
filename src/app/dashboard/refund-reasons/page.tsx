@@ -2,6 +2,7 @@ import { adminFetch } from "../../../lib/api";
 import { DeleteButton } from "../../../components/ActionButton";
 import { EditRecordButton } from "../../../components/EditRecordButton";
 import { CreateForm } from "../../../components/CreateForm";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface Reason {
   id: number;
@@ -60,8 +61,8 @@ export default async function RefundReasonsPage() {
       </div>
 
       {/* ── Reasons table ──────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-3">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h2 className="text-base font-semibold text-slate-900">Refund reasons</h2>
             <p className="text-xs text-slate-500 mt-0.5">Customer picks one of these when raising a refund. Keep it short and specific for cleaner reporting.</p>
@@ -70,18 +71,21 @@ export default async function RefundReasonsPage() {
             {reasons.length} {reasons.length === 1 ? "reason" : "reasons"}
           </span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
-              <tr>
-                <th className="px-6 py-3 font-semibold">#</th>
-                <th className="px-4 py-3 font-semibold">Reason</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sorted.map((r) => (
+        <PaginatedTable
+          searchable
+          pageSize={15}
+          colCount={4}
+          searchTexts={sorted.map((r) => `#${r.id} ${r.reason} ${r.status ? "active" : "inactive"}`.toLowerCase())}
+          empty="No refund reasons yet — click “+ New refund reason” above to add the first one."
+          headerRow={
+            <tr>
+              <th className="px-6 py-3 font-semibold">#</th>
+              <th className="px-4 py-3 font-semibold">Reason</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold text-right">Actions</th>
+            </tr>
+          }
+          bodyRows={sorted.map((r) => (
                 <tr key={r.id} className="hover:bg-emerald-50/40 transition-colors">
                   <td className="px-6 py-4 font-mono text-xs text-slate-400">#{r.id}</td>
                   <td className="px-4 py-4">
@@ -100,22 +104,7 @@ export default async function RefundReasonsPage() {
                   </td>
                 </tr>
               ))}
-              {reasons.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center">
-                    <div className="inline-flex flex-col items-center gap-2 text-slate-400">
-                      <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 10h11a4 4 0 014 4v0a4 4 0 01-4 4h-3m-8-8l3-3m-3 3l3 3" />
-                      </svg>
-                      <p className="text-sm font-medium">No refund reasons yet</p>
-                      <p className="text-xs">Click &quot;+ New refund reason&quot; above to add the first one.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        />
       </div>
     </div>
   );

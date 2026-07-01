@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { adminFetch } from "../../../lib/api";
 import { CashDepositButton } from "../../../components/CashDepositButton";
+import { PaginatedTable } from "../../../components/PaginatedTable";
 
 interface Payout {
   dm_id: number;
@@ -57,28 +58,29 @@ export default async function DmPayoutsPage() {
         <StatTile label="Riders owing platform" value={owingRiders.toString()} accent="rose" hint="net position < 0" />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="text-base font-semibold text-slate-900">Per-rider reconciliation</h2>
           <p className="text-xs text-slate-500 mt-0.5">{items.length} riders with a wallet.</p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm whitespace-nowrap">
-            <thead className="bg-slate-50 text-left text-[11px] uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-6 py-3 font-semibold">Rider</th>
-                <th className="px-4 py-3 font-semibold text-right">Earnings (balance)</th>
-                <th className="px-4 py-3 font-semibold text-right">COD held</th>
-                <th className="px-4 py-3 font-semibold text-right">Pending</th>
-                <th className="px-4 py-3 font-semibold text-right">Available</th>
-                <th className="px-4 py-3 font-semibold text-right">Net position</th>
-                <th className="px-4 py-3 font-semibold text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {items.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-12 text-center text-slate-400 text-sm">No rider wallets yet.</td></tr>
-              ) : items.map((p) => (
+        <PaginatedTable
+          searchable
+          pageSize={15}
+          colCount={7}
+          searchTexts={items.map((p) => `#${p.dm_id} ${p.dm_name} ${p.phone ?? ""}`.toLowerCase())}
+          empty="No rider wallets yet."
+          headerRow={
+            <tr>
+              <th className="px-6 py-3 font-semibold">Rider</th>
+              <th className="px-4 py-3 font-semibold text-right">Earnings (balance)</th>
+              <th className="px-4 py-3 font-semibold text-right">COD held</th>
+              <th className="px-4 py-3 font-semibold text-right">Pending</th>
+              <th className="px-4 py-3 font-semibold text-right">Available</th>
+              <th className="px-4 py-3 font-semibold text-right">Net position</th>
+              <th className="px-4 py-3 font-semibold text-right">Action</th>
+            </tr>
+          }
+          bodyRows={items.map((p) => (
                 <tr key={p.dm_id} className="hover:bg-emerald-50/40">
                   <td className="px-6 py-3">
                     <div className="font-semibold text-slate-900">{p.dm_name}</div>
@@ -98,9 +100,7 @@ export default async function DmPayoutsPage() {
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
+        />
       </div>
     </div>
   );
